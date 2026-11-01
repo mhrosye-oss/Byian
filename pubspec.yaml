@@ -36,6 +36,7 @@ dependencies:
 
 # Fix for AGP 8 compatibility and SDK version issues
 dependency_overrides:
+  record_android: 1.4.0
   geolocator_android: 4.6.1
   package_info_plus: 8.3.1
   record: 5.0.4
