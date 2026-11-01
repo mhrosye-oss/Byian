@@ -16,3 +16,13 @@ tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
 project.evaluationDependsOn(":app")
+
+subprojects {
+    afterEvaluate {
+        if (plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library")) {
+            extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
+                compileSdkVersion(34)
+            }
+        }
+    }
+}
