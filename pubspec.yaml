@@ -24,6 +24,7 @@ dependencies:
   shimmer: ^3.0.0
   path_provider: ^2.1.2
   cupertino_icons: ^1.0.8
+  package_info_plus: ^8.3.1
 
   # New dependencies for our 12 services
   adhan: ^2.0.0+1
@@ -34,9 +35,11 @@ dependencies:
   flutter_compass: ^0.8.0
   hijri: ^3.0.0
 
-# Fix for the geolocator_android build error
+# Fix for Android build compatibility issues in CI
+# package_info_plus 9.x is not compatible with this Flutter/AGP setup.
 dependency_overrides:
   geolocator_android: 4.6.1
+  package_info_plus: 8.3.1
 
 dev_dependencies:
   flutter_test:
