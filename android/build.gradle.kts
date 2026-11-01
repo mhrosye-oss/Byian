@@ -18,12 +18,16 @@ tasks.register<Delete>("clean") {
 project.evaluationDependsOn(":app")
 
 
+
 subprojects {
-    afterEvaluate {
-        if (plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library")) {
-            extensions.findByType<com.android.build.gradle.BaseExtension>()?.apply {
-                compileSdkVersion(34)
-            }
+    plugins.withId("com.android.library") {
+        extensions.configure<com.android.build.gradle.LibraryExtension> {
+            compileSdk = 34
+        }
+    }
+    plugins.withId("com.android.application") {
+        extensions.configure<com.android.build.gradle.AppExtension> {
+            compileSdk = 34
         }
     }
 }
