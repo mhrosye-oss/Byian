@@ -15,3 +15,4 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+project.evaluationDependsOn(":app")
