@@ -21,15 +21,16 @@ tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
 
-// Force all subprojects to use compileSdk 34
+// Force compileSdk = 34 for all Android app/library subprojects using AGP 8 API
 subprojects {
-    plugins.withId("com.android.library") {
-        extensions.configure<com.android.build.gradle.LibraryExtension> {
+    plugins.withType<com.android.build.gradle.AppPlugin> {
+        extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
             compileSdk = 34
         }
     }
-    plugins.withId("com.android.application") {
-        extensions.configure<com.android.build.gradle.AppExtension> {
+
+    plugins.withType<com.android.build.gradle.LibraryPlugin> {
+        extensions.configure<com.android.build.api.dsl.LibraryExtension> {
             compileSdk = 34
         }
     }
