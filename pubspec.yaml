@@ -7,7 +7,7 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
-  adhan: ^2.0.1
+  adhan: ^2.0.0+1
   geolocator: ^13.0.0
   flutter_local_notifications: ^17.2.2
   timezone: ^0.9.4
