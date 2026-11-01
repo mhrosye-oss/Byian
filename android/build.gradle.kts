@@ -17,6 +17,7 @@ tasks.register<Delete>("clean") {
 }
 project.evaluationDependsOn(":app")
 
+
 subprojects {
     afterEvaluate {
         if (plugins.hasPlugin("com.android.application") || plugins.hasPlugin("com.android.library")) {
