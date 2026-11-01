@@ -15,7 +15,7 @@ dependencies:
   # Existing dependencies
   intl: ^0.19.0
   just_audio: ^0.9.36
-  record: ^7.1.2
+  record: 5.0.4  # Strict version to prevent Dart 3.12.0 requirement
   dio: ^5.4.0
   hive_flutter: ^1.1.0
   flutter_riverpod: ^2.4.9
@@ -24,9 +24,8 @@ dependencies:
   shimmer: ^3.0.0
   path_provider: ^2.1.2
   cupertino_icons: ^1.0.8
-  package_info_plus: ^8.3.1
 
-  # New dependencies for our 12 services
+  # New dependencies for our services
   adhan: ^2.0.0+1
   geolocator: ^14.0.0
   flutter_local_notifications: ^17.2.2
@@ -35,12 +34,11 @@ dependencies:
   flutter_compass: ^0.8.0
   hijri: ^3.0.0
 
-# Fix for Android build compatibility issues in CI
-# package_info_plus 9.x is not compatible with this Flutter/AGP setup.
+# Fix for AGP 8 compatibility and SDK version issues
 dependency_overrides:
   geolocator_android: 4.6.1
   package_info_plus: 8.3.1
-  record_android: 2.2.0
+  record: 5.0.4
 
 dev_dependencies:
   flutter_test:
