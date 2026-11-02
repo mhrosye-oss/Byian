@@ -21,17 +21,5 @@ tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
 
-// Force compileSdk = 34 for all Android app/library subprojects using AGP 8 API
-subprojects {
-    plugins.withType<com.android.build.gradle.AppPlugin> {
-        extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
-            compileSdk = 34
-        }
-    }
-
-    plugins.withType<com.android.build.gradle.LibraryPlugin> {
-        extensions.configure<com.android.build.api.dsl.LibraryExtension> {
-            compileSdk = 34
-        }
-    }
-}
+// Do not force compileSdk here. Each Android module should define its own SDK level
+// to stay compatible with the Flutter/AGP version used by the project.
