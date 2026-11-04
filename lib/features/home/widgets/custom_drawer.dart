@@ -56,7 +56,7 @@ class CustomDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.info_outline_rounded, color: Color(0xFF1B5E20)),
-              title: const Text('م�� نحن'),
+              title: const Text('من نحن'),
               onTap: () => _open(context, const AboutScreen()),
             ),
           ],

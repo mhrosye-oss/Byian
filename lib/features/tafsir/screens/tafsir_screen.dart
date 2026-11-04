@@ -5,6 +5,7 @@ import 'package:itqan/features/quran/services/quran_service.dart';
 
 class TafsirScreen extends StatefulWidget {
   const TafsirScreen({super.key});
+
   @override
   State<TafsirScreen> createState() => _TafsirScreenState();
 }
@@ -12,9 +13,11 @@ class TafsirScreen extends StatefulWidget {
 class _TafsirScreenState extends State<TafsirScreen> {
   final QuranService _quran = QuranService();
   late Future<List<Surah>> _surahs;
+  final Map<String, Future<String>> _tafsirRequests = {};
   int? _selected;
   List<Ayah> _ayahs = const [];
   bool _loadingAyahs = false;
+  bool _ayahLoadFailed = false;
 
   @override
   void initState() {
@@ -23,19 +26,40 @@ class _TafsirScreenState extends State<TafsirScreen> {
   }
 
   Future<void> _selectSurah(Surah surah) async {
-    setState(() { _selected = surah.number; _loadingAyahs = true; _ayahs = const []; });
+    setState(() {
+      _selected = surah.number;
+      _loadingAyahs = true;
+      _ayahLoadFailed = false;
+      _ayahs = const [];
+      _tafsirRequests.clear();
+    });
     try {
       final verses = await _quran.getAyahs(surah.number);
       if (mounted) setState(() { _ayahs = verses; _loadingAyahs = false; });
     } catch (_) {
-      if (mounted) setState(() => _loadingAyahs = false);
+      if (mounted) setState(() { _loadingAyahs = false; _ayahLoadFailed = true; });
     }
   }
+
+  Future<String> _tafsirFor(Ayah ayah) => _tafsirRequests.putIfAbsent(
+        ayah.verseKey,
+        () async {
+          final text = await _quran.getTafsir(ayah.verseKey);
+          if (text.trim().isEmpty) throw StateError('لم يرجع مصدر التفسير نصًا لهذه الآية.');
+          return text;
+        },
+      );
 
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: ItqanColors.cream,
-        appBar: AppBar(title: Text(_selected == null ? 'التفاسير' : 'تفسير القرآن')),
+        appBar: AppBar(
+          title: Text(_selected == null ? 'التفاسير' : 'تفسير القرآن'),
+          leading: _selected == null ? null : IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => setState(() { _selected = null; _ayahs = const []; }),
+          ),
+        ),
         body: _selected == null ? _surahList() : _verseList(),
       );
 
@@ -67,6 +91,17 @@ class _TafsirScreenState extends State<TafsirScreen> {
 
   Widget _verseList() {
     if (_loadingAyahs) return const Center(child: CircularProgressIndicator());
+    if (_ayahLoadFailed) {
+      return Center(child: TextButton.icon(
+        onPressed: () {
+          final surahNumber = _selected;
+          if (surahNumber == null) return;
+          _selectSurah(Surah(number: surahNumber, nameArabic: '', nameSimple: '', nameTranslation: '', ayahCount: 0, revelationPlace: ''));
+        },
+        icon: const Icon(Icons.refresh),
+        label: const Text('تعذر تحميل الآيات. أعد المحاولة.'),
+      ));
+    }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: _ayahs.length,
@@ -81,14 +116,31 @@ class _TafsirScreenState extends State<TafsirScreen> {
                   style: const TextStyle(fontFamily: 'NotoNaskhArabic', fontSize: 23, height: 1.9, color: ItqanColors.ink)),
               const Divider(height: 24),
               FutureBuilder<String>(
-                future: _quran.getTafsir('${ayah.surahNumber}:${ayah.ayahNumber}'),
-                builder: (context, snapshot) => Text(
-                  snapshot.connectionState != ConnectionState.done
-                      ? 'جارٍ تحميل التفسير…'
-                      : (snapshot.hasError || (snapshot.data ?? '').isEmpty ? 'تعذر تحميل التفسير. تحقق من اتصال الإنترنت.' : snapshot.data!),
-                  textDirection: TextDirection.rtl,
-                  style: const TextStyle(fontSize: 15, height: 1.8, color: ItqanColors.inkSoft),
-                ),
+                future: _tafsirFor(ayah),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Row(textDirection: TextDirection.rtl, children: [
+                        SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                        SizedBox(width: 10),
+                        Text('جارٍ تحميل التفسير…', textDirection: TextDirection.rtl),
+                      ]),
+                    );
+                  }
+                  if (snapshot.hasError || (snapshot.data ?? '').trim().isEmpty) {
+                    return Row(textDirection: TextDirection.rtl, children: [
+                      const Expanded(child: Text('تعذر تحميل التفسير. تحقق من اتصال الإنترنت.', textDirection: TextDirection.rtl, style: TextStyle(color: ItqanColors.inkSoft))),
+                      IconButton(
+                        tooltip: 'إعادة المحاولة',
+                        onPressed: () => setState(() => _tafsirRequests.remove(ayah.verseKey)),
+                        icon: const Icon(Icons.refresh_rounded, color: ItqanColors.emerald),
+                      ),
+                    ]);
+                  }
+                  return Text(snapshot.data!, textDirection: TextDirection.rtl,
+                    style: const TextStyle(fontSize: 15, height: 1.8, color: ItqanColors.inkSoft));
+                },
               ),
             ]),
           ),
