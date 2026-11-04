@@ -7,7 +7,7 @@ import '../asma/screens/asma_screen.dart';
 import '../calendar/screens/hijri_calendar_screen.dart';
 import '../hadiths/screens/hadiths_screen.dart';
 import '../khatmah/screens/khatmah_screen.dart';
-import '../mushaf/mushaf_screen.dart';
+import '../mushaf/qcf_quran_screen.dart';
 import '../prayer/screens/prayer_times_screen.dart';
 import '../qibla/screens/qibla_screen.dart';
 import '../quran/models/ayah.dart';
@@ -25,7 +25,7 @@ class HomeScreen extends StatelessWidget {
     final Widget page;
     switch (route) {
       case 'quran':
-        page = const MushafScreen();
+        page = const QcfQuranScreen();
         break;
       case 'prayer':
         page = const PrayerTimesScreen();
