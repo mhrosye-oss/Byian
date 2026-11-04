@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/custom_drawer.dart';
 
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
@@ -81,6 +82,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const CustomDrawer(),
       backgroundColor: ItqanColors.cream,
       body: SafeArea(
         bottom: false,
