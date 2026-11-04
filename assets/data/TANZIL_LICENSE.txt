@@ -1,0 +1,21 @@
+Tanzil Quran Text
+Copyright (C) 2007-2026 Tanzil Project
+License: Creative Commons Attribution 3.0
+
+The Uthmani Quran text is included verbatim from the official Tanzil download.
+Permission is granted to copy and distribute verbatim copies of the text; changing
+its text is not allowed. Source: Tanzil Project (https://tanzil.net/).
+Please visit https://tanzil.net/updates/ to keep track of text updates.
+
+The metadata file is from Tanzil Quran Metadata, version 1.0, copyright
+(C) 2008-2009 Tanzil.info, license CC-BY. Source:
+https://tanzil.net/docs/Quran_Metadata
+
+Included files:
+- tanzil-quran-uthmani.txt — official Uthmani text, version 1.1. The source file
+  includes Tanzil's full copyright and terms block at its end; do not edit it.
+- tanzil-quran-metadata.xml — official Quran metadata, version 1.0.
+
+The application displays the verbatim text as supplied and uses normalization
+only on a separate in-memory copy for search matching; it never rewrites the
+stored or displayed Quran text.
