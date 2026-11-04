@@ -16,3 +16,17 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+// Force compileSdk = 34 for all Android app/library subprojects (Fixes record_android/geolocator)
+subprojects {
+    pluginManager.withPlugin("com.android.library") {
+        extensions.configure<com.android.build.api.dsl.LibraryExtension> {
+            compileSdk = 34
+        }
+    }
+    pluginManager.withPlugin("com.android.application") {
+        extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
+            compileSdk = 34
+        }
+    }
+}
