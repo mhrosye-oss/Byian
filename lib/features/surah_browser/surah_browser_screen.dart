@@ -5,7 +5,7 @@ import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../quran/models/ayah.dart';
 import '../mushaf/mushaf_screen.dart'; // for providers
-import '../mushaf/qcf_quran_screen.dart';
+import '../mushaf/mushaf_screen.dart';
 import '../recitation/recitation_screen.dart';
 
 // Juz metadata: starting surah name + ayah for each juz (1-indexed)
@@ -282,7 +282,7 @@ class _SurahRow extends ConsumerWidget {
     final page = _surahFirstPage[surah.number] ?? 1;
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => QcfQuranScreen(startPage: page)),
+      MaterialPageRoute(builder: (_) => MushafScreen(startPage: page)),
     );
   }
 
@@ -352,7 +352,7 @@ class _JuzTab extends StatelessWidget {
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => QcfQuranScreen(startPage: juz['page'] as int),
+              builder: (_) => MushafScreen(startPage: juz['page'] as int),
             ),
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
