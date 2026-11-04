@@ -1,0 +1,17 @@
+[
+  {"id": "morning_evening", "title": "أذكار الصباح والمساء", "icon": "wb_sunny", "color": "orange"},
+  {"id": "sleep_wake", "title": "النوم والاستيقاظ", "icon": "bedtime", "color": "indigo"},
+  {"id": "wudu_prayer", "title": "الوضوء والصلاة", "icon": "clean_hands", "color": "teal"},
+  {"id": "mosque", "title": "المسجد", "icon": "mosque", "color": "green"},
+  {"id": "food_drink", "title": "الأكل والشرب", "icon": "restaurant", "color": "brown"},
+  {"id": "travel", "title": "السفر", "icon": "flight_takeoff", "color": "blue"},
+  {"id": "sadness", "title": "الهم والحزن", "icon": "cloud", "color": "grey"},
+  {"id": "istikharah", "title": "الاستخارة", "icon": "auto_awesome", "color": "purple"},
+  {"id": "sickness", "title": "المرض", "icon": "healing", "color": "red"},
+  {"id": "debt", "title": "قضاء الدين", "icon": "account_balance", "color": "amber"},
+  {"id": "marriage", "title": "الزواج", "icon": "favorite", "color": "pink"},
+  {"id": "rain", "title": "المطر والرعد", "icon": "water_drop", "color": "lightBlue"},
+  {"id": "home", "title": "المنزل", "icon": "home", "color": "deepOrange"},
+  {"id": "clothing", "title": "اللباس", "icon": "checkroom", "color": "cyan"},
+  {"id": "misc", "title": "أذكار متنوعة", "icon": "star", "color": "yellow"}
+]

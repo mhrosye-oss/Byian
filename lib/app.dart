@@ -32,14 +32,35 @@ class ItqanApp extends ConsumerWidget {
       title: 'إتقان',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      themeMode: ThemeMode.light,
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primaryColor: const Color(0xFF1B5E20),
+        scaffoldBackgroundColor: const Color(0xFFF9F6F0),
+        cardColor: Colors.white,
+        dividerColor: Colors.grey.shade300,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B5E20), brightness: Brightness.light),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primaryColor: const Color(0xFF1B5E20),
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        cardColor: const Color(0xFF1E1E1E),
+        dividerColor: Colors.grey.shade800,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B5E20), brightness: Brightness.dark),
+        useMaterial3: true,
+      ),
+      themeMode: AppSettingsScope.of(context).isDarkMode ? ThemeMode.dark : ThemeMode.light,,
 
       // Localization
       locale: locale,
       supportedLocales: const [
-        Locale('ar'), // Arabic — DEFAULT
-        Locale('en'), // English
-        Locale('fr'), // French
+        Locale('ar'), Locale('en'), Locale('fr'), Locale('ur'), Locale('id'),
+        Locale('tr'), Locale('es'), Locale('de'), Locale('ru'), Locale('zh'),
+        Locale('ja'), Locale('ko'), Locale('hi'), Locale('bn'), Locale('fa'),
+        Locale('ms'), Locale('sw'), Locale('pt'), Locale('it'), Locale('nl'),
+        Locale('pl'), Locale('uk'), Locale('ro'), Locale('el'), Locale('cs'),
+        Locale('sv'), Locale('he'), Locale('th'), Locale('vi'), Locale('az')
       ],
       localizationsDelegates: const [
         AppLocalizations.delegate,

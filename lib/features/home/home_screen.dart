@@ -4,6 +4,7 @@ import 'widgets/custom_drawer.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../adhkar/screens/new_adhkar_screen.dart';
+import '../adhkar/screens/duas_screen.dart';
 import '../about/screens/about_screen.dart';
 import '../ai/screens/ai_chat_screen.dart';
 import '../audio/screens/audio_quran_screen.dart';
@@ -42,6 +43,7 @@ class HomeScreen extends StatelessWidget {
         );
         break;
       case 'adhkar': page = const NewAdhkarScreen(); break;
+      case 'duas': page = const DuasScreen(); break;
       case 'tasbih': page = const SmartTasbihScreen(); break;
       case 'calendar': page = const HijriCalendarScreen(); break;
       case 'hadith': page = const HadithsScreen(); break;
@@ -63,7 +65,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         drawer: const CustomDrawer(),
-        backgroundColor: ItqanColors.cream,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           bottom: false,
           child: CustomScrollView(
@@ -165,7 +167,8 @@ class HomeScreen extends StatelessWidget {
       (title: 'حاسبة الزكاة', route: 'zakat', icon: Icons.volunteer_activism_rounded),
       (title: 'إذاعة القرآن', route: 'radio', icon: Icons.radio_rounded),
       (title: 'مواقيت الصلاة', route: 'prayer', icon: Icons.access_time_rounded),
-      (title: 'الأدعية', route: 'adhkar', icon: Icons.favorite_border_rounded),
+      (title: 'الأذكار', route: 'adhkar', icon: Icons.spa_rounded),
+      (title: 'الأدعية', route: 'duas', icon: Icons.pan_tool_rounded),
       (title: 'التجويد', route: 'tajweed', icon: Icons.menu_book_rounded),
       (title: 'التفاسير', route: 'tafsir', icon: Icons.chrome_reader_mode_rounded),
       (title: 'القرآن الصوتي', route: 'audio', icon: Icons.headphones_rounded),
@@ -174,7 +177,7 @@ class HomeScreen extends StatelessWidget {
       onPressed: () => _open(context, service.route),
       avatar: Icon(service.icon, size: 17, color: ItqanColors.emerald),
       label: Text(service.title),
-      labelStyle: const TextStyle(color: ItqanColors.ink, fontSize: 12, fontWeight: FontWeight.w600),
+      labelStyle: const TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black, fontSize: 12, fontWeight: FontWeight.w600),
       backgroundColor: ItqanColors.surface,
       side: const BorderSide(color: ItqanColors.border),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -187,7 +190,7 @@ class HomeScreen extends StatelessWidget {
         child: const Row(children: [
           Icon(Icons.favorite_rounded, color: ItqanColors.roseGold, size: 18),
           SizedBox(width: 10),
-          Expanded(child: Text('خطوة صغيرة كل يوم تصنع أثرًا كبيرًا', style: TextStyle(color: ItqanColors.ink, fontSize: 12, fontWeight: FontWeight.w600), textDirection: TextDirection.rtl)),
+          Expanded(child: Text('خطوة صغيرة كل يوم تصنع أثرًا كبيرًا', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black, fontSize: 12, fontWeight: FontWeight.w600), textDirection: TextDirection.rtl)),
           Icon(Icons.auto_awesome_rounded, color: ItqanColors.emerald, size: 18),
         ]),
       );

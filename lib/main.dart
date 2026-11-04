@@ -192,7 +192,14 @@ class _ItqanAppWithOnboardingState extends State<ItqanAppWithOnboarding> {
               ),
               themeMode: dark ? ThemeMode.dark : ThemeMode.light,
               locale: _settings.locale,
-              supportedLocales: const [Locale('ar'), Locale('en'), Locale('fr'), Locale('ur')],
+              supportedLocales: const [
+        Locale('ar'), Locale('en'), Locale('fr'), Locale('ur'), Locale('id'),
+        Locale('tr'), Locale('es'), Locale('de'), Locale('ru'), Locale('zh'),
+        Locale('ja'), Locale('ko'), Locale('hi'), Locale('bn'), Locale('fa'),
+        Locale('ms'), Locale('sw'), Locale('pt'), Locale('it'), Locale('nl'),
+        Locale('pl'), Locale('uk'), Locale('ro'), Locale('el'), Locale('cs'),
+        Locale('sv'), Locale('he'), Locale('th'), Locale('vi'), Locale('az')
+      ],
               localizationsDelegates: const [
                 AppLocalizations.delegate,
                 GlobalMaterialLocalizations.delegate,

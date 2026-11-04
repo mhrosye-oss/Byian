@@ -339,6 +339,27 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F6F0),
+      
+      bottomNavigationBar: Container(
+        height: 70,
+        decoration: const BoxDecoration(
+          color: Color(0xFFF9F6F0),
+          border: Border(top: BorderSide(color: Colors.black12)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildBottomIcon(Icons.headphones_rounded, 'سماع', const Color(0xFF1B5E20)),
+            _buildBottomIcon(Icons.book_rounded, 'المراجع', Colors.grey),
+            _buildBottomIcon(Icons.swap_vert_rounded, 'لف تلقائي', Colors.grey),
+            _buildBottomIcon(Icons.share_rounded, 'مشاركة', Colors.grey),
+            _buildBottomIcon(Icons.translate_rounded, 'الترجمة', Colors.grey),
+            _buildBottomIcon(Icons.bookmark_rounded, 'الحفظ', Colors.grey),
+            _buildBottomIcon(Icons.more_horiz_rounded, 'مزيد', Colors.grey),
+          ],
+        ),
+      ),
+
       body: SafeArea(
         child: Column(
           children: [
