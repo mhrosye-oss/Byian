@@ -1,47 +1,78 @@
 import 'package:flutter/material.dart';
-import 'package:itqan/core/theme/colors.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: ItqanColors.cream,
-        appBar: AppBar(title: const Text('من نحن')),
-        body: ListView(padding: const EdgeInsets.all(20), children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(children: [
-                const CircleAvatar(radius: 38, backgroundColor: Color(0xFF1B5E20),
-                    child: Icon(Icons.menu_book_rounded, color: Colors.white, size: 38)),
-                const SizedBox(height: 16),
-                const Text('إتقان', style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20))),
+  Widget build(BuildContext context) {
+    const Color green = Color(0xFF1B5E20);
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text('من نحن'),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Card(
+          color: theme.cardColor,
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'عن التطبيق:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: green),
+                ),
                 const SizedBox(height: 8),
-                Text('تطبيق ي��اعدك على الارتباط بالقرآن الكريم والعبادات اليومية.', textAlign: TextAlign.center,
-                    style: TextStyle(color: ItqanColors.inkSoft, height: 1.6)),
-              ]),
+                Text(
+                  'هذا التطبيق أُسس ليكون صدقة جارية، وعملاً خالصاً لوجه الله تعالى، يخدم كتاب الله وسنة نبيه ﷺ.',
+                  style: TextStyle(fontSize: 16, height: 1.6, color: theme.textTheme.bodyLarge?.color),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'الرعاية والدعم السخي:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: green),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'ببادرة كريمة ورعاية سخية، تفضل رجل الأعمال الأستاذ / صلاح صالح القنان (حفظه الله) بدعم وإشراف على هذا العمل وإطلاقه، ليكون عوناً في خدمة كتاب الله ونشر العلم. جزاه الله خيراً وجعل ذلك في موازين حسناته.',
+                  style: TextStyle(fontSize: 16, height: 1.6, color: theme.textTheme.bodyLarge?.color),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'البرمجة والتطوير:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: green),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'تم تطوير وبناء التطبيق بجهود المهندس / محروس لطف الآنسي.',
+                  style: TextStyle(fontSize: 16, height: 1.6, color: theme.textTheme.bodyLarge?.color),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'رسالة الوقف والدعاء:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: green),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'وقد جُعل هذا التطبيق وقفاً خالصاً لوجه الله تعالى من كلا الفريقين، لولديهما ولذريتهم من قبل ومن بعد.\nسائلين المولى عز وجل أن ينفع به، وأن يتقبله بقبولٍ حسن، وأن يجعله في موازين حسناتهم يوم القيامة، وصدقة جارية لوالديهم وذريتهم.',
+                  style: TextStyle(fontSize: 16, height: 1.6, color: theme.textTheme.bodyLarge?.color),
+                  textDirection: TextDirection.rtl,
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          const Card(child: ListTile(leading: Icon(Icons.code_rounded, color: Color(0xFF1B5E20)), title: Text('المطوّر'), subtitle: Text('فريق إتقان'))),
-          const Card(child: ListTile(leading: Icon(Icons.email_outlined, color: Color(0xFF1B5E20)), title: Text('للتواصل'), subtitle: Text('user@example.com'))),
-          const SizedBox(height: 12),
-          Card(
-            color: const Color(0xFF1B5E20),
-            child: Padding(
-              padding: const EdgeInsets.all(22),
-              child: Column(children: [
-                const Icon(Icons.volunteer_activism_rounded, color: Colors.white, size: 32),
-                const SizedBox(height: 12),
-                const Text('رسالة الوقف', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Text('نسعى أن يكون هذا العمل نافعًا مستمرًا، ونسأل الله أن يجعله صدقةً جاريةً وأثرًا طيبًا لكل من ساهم فيه.',
-                    textAlign: TextAlign.center, textDirection: TextDirection.rtl,
-                    style: TextStyle(color: Colors.white.withOpacity(.9), height: 1.8)),
-              ]),
-            ),
-          ),
-        ]),
-      );
+        ),
+      ),
+    );
+  }
 }
