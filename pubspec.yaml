@@ -16,7 +16,7 @@ dependencies:
   # Existing dependencies
   intl: ^0.20.3
   just_audio: ^0.9.36
-  record: 5.0.4  # Strict version to prevent Dart 3.12.0 requirement
+  record: 5.0.4
   dio: ^5.4.0
   hive_flutter: ^1.1.0
   flutter_riverpod: ^2.4.9
@@ -26,18 +26,21 @@ dependencies:
   path_provider: ^2.1.2
   cupertino_icons: ^1.0.8
 
-  # New dependencies for our services
+  # Quran and prayer services
   geolocator: ^14.0.0
   flutter_local_notifications: ^17.2.2
   timezone: ^0.9.4
-  shared_preferences: ^2.0.0
+  shared_preferences: ^2.2.2
   flutter_compass: ^0.8.0
   hijri: ^3.0.0
   adhan: ^2.0.0+1
   flutter_timezone: ^5.1.1
   speech_to_text: ^7.5.0
 
-# Fix for AGP 8 compatibility and SDK version issues
+  # Requested content libraries
+  azkary: ^1.1.0
+  quran_with_tafsir: ^1.0.0
+
 dependency_overrides:
   record_android: 1.4.0
   record_linux: 1.3.1
