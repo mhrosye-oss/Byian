@@ -614,3 +614,15 @@ class _FloatingMenuButton extends StatelessWidget {
         ),
       );
 }
+
+
+Widget _buildBottomIcon(IconData icon, String label, Color color) {
+  return Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Icon(icon, color: color, size: 22),
+      const SizedBox(height: 4),
+      Text(label, style: TextStyle(fontSize: 10, color: color)),
+    ],
+  );
+}

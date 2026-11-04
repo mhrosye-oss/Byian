@@ -87,7 +87,7 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildMoreServices(context),
                   const SizedBox(height: 18),
-                  _buildFooterNote(),
+                  _buildFooterNote(context),
                 ])),
               ),
             ],
@@ -177,18 +177,18 @@ class HomeScreen extends StatelessWidget {
       onPressed: () => _open(context, service.route),
       avatar: Icon(service.icon, size: 17, color: ItqanColors.emerald),
       label: Text(service.title),
-      labelStyle: const TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black, fontSize: 12, fontWeight: FontWeight.w600),
+      labelStyle: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black, fontSize: 12, fontWeight: FontWeight.w600),
       backgroundColor: ItqanColors.surface,
       side: const BorderSide(color: ItqanColors.border),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
     )).toList());
   }
 
-  Widget _buildFooterNote() => Container(
+  Widget _buildFooterNote(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
         decoration: BoxDecoration(color: ItqanColors.roseGold.withOpacity(.10), borderRadius: BorderRadius.circular(18)),
-        child: const Row(children: [
-          Icon(Icons.favorite_rounded, color: ItqanColors.roseGold, size: 18),
+        child: Row(children: [
+          const Icon(Icons.favorite_rounded, color: ItqanColors.roseGold, size: 18),
           SizedBox(width: 10),
           Expanded(child: Text('خطوة صغيرة كل يوم تصنع أثرًا كبيرًا', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black, fontSize: 12, fontWeight: FontWeight.w600), textDirection: TextDirection.rtl)),
           Icon(Icons.auto_awesome_rounded, color: ItqanColors.emerald, size: 18),
