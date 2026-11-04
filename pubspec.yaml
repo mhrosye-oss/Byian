@@ -38,7 +38,7 @@ dependencies:
   speech_to_text: ^7.5.0
 
   # Requested content libraries
-  azkary: ^1.1.0
+  azkary: ^0.0.3
   quran_with_tafsir: ^1.0.0
 
 dependency_overrides:
