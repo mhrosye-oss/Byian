@@ -34,7 +34,7 @@ dependencies:
   hijri: ^3.0.0
   adhan: ^2.0.0+1
   flutter_timezone: ^4.1.0
-  speech_to_text: ^7.4.0
+  speech_to_text: ^7.0.0
 
   # Quran and tafsir content
   quran_with_tafsir: ^1.0.0
