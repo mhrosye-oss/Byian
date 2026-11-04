@@ -185,7 +185,7 @@ class HijriCalendarScreen extends StatelessWidget {
                         ],
                       ),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),

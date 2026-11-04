@@ -37,7 +37,9 @@ class _WaveformVisualizerState extends State<WaveformVisualizer> with TickerProv
   void didUpdateWidget(WaveformVisualizer old) {
     super.didUpdateWidget(old);
     if (widget.isActive && !old.isActive) {
-      for (final c in _controllers) c.repeat(reverse: true);
+      for (final c in _controllers) {
+        c.repeat(reverse: true);
+      }
     } else if (!widget.isActive && old.isActive) {
       for (final c in _controllers) {
         c.animateTo(0.1);
@@ -47,7 +49,9 @@ class _WaveformVisualizerState extends State<WaveformVisualizer> with TickerProv
 
   @override
   void dispose() {
-    for (final c in _controllers) c.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 

@@ -112,7 +112,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) => Row(children: [
         Container(width: 48, height: 48,
-          decoration: BoxDecoration(color: ItqanColors.emerald.withValues(alpha: .09), borderRadius: BorderRadius.circular(17)),
+          decoration: BoxDecoration(color: ItqanColors.emerald.withOpacity(.09), borderRadius: BorderRadius.circular(17)),
           child: const Icon(Icons.auto_awesome_rounded, color: ItqanColors.emerald, size: 24)),
         const SizedBox(width: 12),
         const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -183,7 +183,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildFooterNote() => Container(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-        decoration: BoxDecoration(color: ItqanColors.roseGold.withValues(alpha: .10), borderRadius: BorderRadius.circular(18)),
+        decoration: BoxDecoration(color: ItqanColors.roseGold.withOpacity(.10), borderRadius: BorderRadius.circular(18)),
         child: const Row(children: [
           Icon(Icons.favorite_rounded, color: ItqanColors.roseGold, size: 18),
           SizedBox(width: 10),
@@ -206,7 +206,7 @@ class _BentoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final foreground = featured ? ItqanColors.white : ItqanColors.ink;
-    final supporting = featured ? ItqanColors.white.withValues(alpha: .76) : ItqanColors.inkSoft;
+    final supporting = featured ? ItqanColors.white.withOpacity(.76) : ItqanColors.inkSoft;
     return SizedBox(height: height, child: Material(
       color: featured ? ItqanColors.emerald : ItqanColors.surface,
       borderRadius: BorderRadius.circular(20),
@@ -214,11 +214,11 @@ class _BentoCard extends StatelessWidget {
         width: double.infinity,
         padding: EdgeInsets.all(featured ? 14 : 12),
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: featured ? ItqanColors.emerald : ItqanColors.border),
-            boxShadow: [BoxShadow(color: ItqanColors.ink.withValues(alpha: .045), blurRadius: 14, offset: const Offset(0, 5))]),
+            boxShadow: [BoxShadow(color: ItqanColors.ink.withOpacity(.045), blurRadius: 14, offset: const Offset(0, 5))]),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Row(children: [
             Container(width: featured ? 52 : 36, height: featured ? 52 : 36,
-              decoration: BoxDecoration(color: featured ? ItqanColors.roseGold : accent.withValues(alpha: .15), borderRadius: BorderRadius.circular(15)),
+              decoration: BoxDecoration(color: featured ? ItqanColors.roseGold : accent.withOpacity(.15), borderRadius: BorderRadius.circular(15)),
               child: Icon(icon, color: featured ? ItqanColors.white : accent, size: featured ? 27 : 20)),
             const Spacer(),
             Icon(Icons.north_west_rounded, size: 16, color: featured ? Colors.white70 : ItqanColors.muted),

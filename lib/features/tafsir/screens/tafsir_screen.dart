@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:itqan/core/theme/colors.dart';
+import 'package:itqan/features/quran/models/ayah.dart';
 import 'package:itqan/features/quran/services/quran_service.dart';
 
 class TafsirScreen extends StatefulWidget {
@@ -52,7 +53,7 @@ class _TafsirScreenState extends State<TafsirScreen> {
               final surah = rows[index];
               return Card(
                 child: ListTile(
-                  leading: CircleAvatar(backgroundColor: ItqanColors.emerald.withValues(alpha: .1), child: Text('${surah.number}', style: const TextStyle(color: ItqanColors.emerald))),
+                  leading: CircleAvatar(backgroundColor: ItqanColors.emerald.withOpacity(.1), child: Text('${surah.number}', style: const TextStyle(color: ItqanColors.emerald))),
                   title: Text(surah.nameArabic, textDirection: TextDirection.rtl, style: const TextStyle(fontFamily: 'NotoNaskhArabic', fontSize: 21)),
                   subtitle: Text('${surah.nameSimple} • ${surah.ayahCount} آية'),
                   trailing: const Icon(Icons.chevron_right),

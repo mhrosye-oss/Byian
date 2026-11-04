@@ -141,12 +141,12 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
                   decoration: BoxDecoration(
                     color: _scheduleSucceeded
                         ? ItqanColors.goldShimmer
-                        : ItqanColors.error.withValues(alpha: 0.12),
+                        : ItqanColors.error.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(ItqanRadius.md),
                     border: Border.all(
                       color: _scheduleSucceeded
                           ? ItqanColors.goldGlow
-                          : ItqanColors.error.withValues(alpha: 0.4),
+                          : ItqanColors.error.withOpacity(0.4),
                     ),
                   ),
                   child: Text(

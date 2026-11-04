@@ -1,11 +1,11 @@
-/// Integration test: Full recitation flow
-/// 
-/// NOTE: These tests require a connected device or emulator.
-/// They cannot run in headless flutter test mode without a device.
-/// Run with: flutter test integration_test/ --device-id <device-id>
-///
-/// Stubbed here for structure — assertions verify basic UI rendering
-/// without actual audio recording (which requires platform permissions).
+// Integration test: Full recitation flow
+//
+// NOTE: These tests require a connected device or emulator.
+// They cannot run in headless flutter test mode without a device.
+// Run with: flutter test integration_test/ --device-id <device-id>
+//
+// Stubbed here for structure — assertions verify basic UI rendering
+// without actual audio recording (which requires platform permissions).
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

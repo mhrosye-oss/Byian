@@ -261,7 +261,7 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(ItqanSpacing.sm),
                     decoration: BoxDecoration(
-                      color: ItqanColors.roseGold.withValues(alpha: 0.12),
+                      color: ItqanColors.roseGold.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(ItqanRadius.sm),
                     ),
                     child: Text(
@@ -375,7 +375,7 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: ItqanColors.roseGold.withValues(alpha: 0.12),
+                            color: ItqanColors.roseGold.withOpacity(0.12),
                             borderRadius:
                                 BorderRadius.circular(ItqanRadius.full),
                           ),

@@ -85,7 +85,9 @@ class ProgressScreen extends ConsumerWidget {
     for (int i = days.length - 1; i > 0; i--) {
       if (days[i].difference(days[i - 1]).inDays == 1) {
         streak++;
-      } else break;
+      } else {
+        break;
+      }
     }
     return streak;
   }

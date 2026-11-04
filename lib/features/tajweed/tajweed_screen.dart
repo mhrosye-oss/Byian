@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:itqan/features/mushaf/qcf_quran_screen.dart';
+import 'package:itqan/features/mushaf/mushaf_page_screen.dart';
 
-/// Tajweed learning entry point. The project Mushaf uses the existing QCF
-/// Quran renderer, which includes the verified Tajweed presentation.
+/// Tajweed learning entry point. The project Mushaf uses the internal page renderer for Tajweed reading.
 class TajweedScreen extends StatelessWidget {
   const TajweedScreen({super.key});
   @override
-  Widget build(BuildContext context) => const QcfQuranScreen();
+  Widget build(BuildContext context) => const MushafPageScreen();
 }

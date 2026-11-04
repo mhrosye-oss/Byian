@@ -298,8 +298,11 @@ class _IslamicPatternPainter extends CustomPainter {
       final angle2 = ((i * 45) + 22.5) * 3.14159 / 180;
       final outer = Offset(center.dx + (r - 10) * _cos(angle1), center.dy + (r - 10) * _sin(angle1));
       final inner = Offset(center.dx + (r * 0.4) * _cos(angle2), center.dy + (r * 0.4) * _sin(angle2));
-      if (i == 0) path.moveTo(outer.dx, outer.dy);
-      else path.lineTo(outer.dx, outer.dy);
+      if (i == 0) {
+        path.moveTo(outer.dx, outer.dy);
+      } else {
+        path.lineTo(outer.dx, outer.dy);
+      }
       path.lineTo(inner.dx, inner.dy);
     }
     path.close();

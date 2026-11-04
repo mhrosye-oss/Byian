@@ -129,7 +129,7 @@ class _SurahTile extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(ItqanRadius.md),
             border:
-                Border.all(color: ItqanColors.charcoal.withValues(alpha: 0.55)),
+                Border.all(color: ItqanColors.charcoal.withOpacity(0.55)),
           ),
           child: Row(
             children: [

@@ -38,7 +38,7 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text('نسعى أن يكون هذا العمل نافعًا مستمرًا، ونسأل الله أن يجعله صدقةً جاريةً وأثرًا طيبًا لكل من ساهم فيه.',
                     textAlign: TextAlign.center, textDirection: TextDirection.rtl,
-                    style: TextStyle(color: Colors.white.withValues(alpha: .9), height: 1.8)),
+                    style: TextStyle(color: Colors.white.withOpacity(.9), height: 1.8)),
               ]),
             ),
           ),

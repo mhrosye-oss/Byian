@@ -1,7 +1,7 @@
-/// Integration test: Mushaf reader navigation
-///
-/// NOTE: Requires a connected device/emulator AND network connectivity.
-/// Run with: flutter test integration_test/ --device-id <device-id>
+// Integration test: Mushaf reader navigation
+//
+// NOTE: Requires a connected device/emulator AND network connectivity.
+// Run with: flutter test integration_test/ --device-id <device-id>
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

@@ -122,7 +122,7 @@ class _AdhkarScreenState extends State<AdhkarScreen> {
                 textDirection: TextDirection.rtl,
               ),
               const SizedBox(height: 12),
-              ...items.map((item) => _DhikrCard(item: item)).toList(),
+              ...items.map((item) => _DhikrCard(item: item)),
             ],
           );
         },

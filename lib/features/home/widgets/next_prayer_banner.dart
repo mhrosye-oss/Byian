@@ -35,7 +35,7 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: ItqanColors.emerald.withValues(alpha: 0.16),
+                color: ItqanColors.emerald.withOpacity(0.16),
                 blurRadius: 18,
                 offset: const Offset(0, 8),
               ),
@@ -47,7 +47,7 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: ItqanColors.roseGold.withValues(alpha: 0.20),
+                  color: ItqanColors.roseGold.withOpacity(0.20),
                   borderRadius: BorderRadius.circular(17),
                 ),
                 child: const Icon(
@@ -71,7 +71,7 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
                         Text(
                           prayer == null ? 'مواقيت الصلاة' : 'الصلاة القادمة',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.78),
+                            color: Colors.white.withOpacity(0.78),
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -114,7 +114,7 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
                               ? 'مواقيت محلية وتنبيهات أذان'
                               : 'الموقع محفوظ على جهازك',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.72),
+                            color: Colors.white.withOpacity(0.72),
                             fontSize: 11,
                           ),
                           textDirection: TextDirection.rtl,

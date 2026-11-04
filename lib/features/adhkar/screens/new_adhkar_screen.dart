@@ -139,7 +139,7 @@ class _CategoryHeading extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: _green.withValues(alpha: 0.09),
+              color: _green.withOpacity(0.09),
               borderRadius: BorderRadius.circular(15),
             ),
             child: Icon(category.icon, color: _green),
@@ -232,7 +232,7 @@ class _DhikrCardState extends State<_DhikrCard> {
                   style: FilledButton.styleFrom(
                     backgroundColor: _green,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: _green.withValues(alpha: 0.12),
+                    disabledBackgroundColor: _green.withOpacity(0.12),
                     disabledForegroundColor: _green,
                   ),
                   icon: Icon(isComplete ? Icons.check_rounded : Icons.touch_app_rounded),

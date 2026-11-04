@@ -66,7 +66,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
     }
 
     return Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.medium,
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
     );
   }
 
@@ -214,7 +214,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                               builder: (context, heading, _) {
                                 return Transform.rotate(
                                   angle: -heading * math.pi / 180,
-                                  child: Container(
+                                  child: SizedBox(
                                     width: 220,
                                     height: 220,
                                     child: Stack(

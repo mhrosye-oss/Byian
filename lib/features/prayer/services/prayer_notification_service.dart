@@ -19,7 +19,7 @@ class PrayerNotificationService {
 
     tz_data.initializeTimeZones();
     final localZone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(localZone.identifier));
+    tz.setLocalLocation(tz.getLocation(localZone));
 
     const settings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),

@@ -218,7 +218,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: ItqanColors.roseGold.withValues(alpha: 0.12),
+                    color: ItqanColors.roseGold.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(ItqanRadius.full),
                   ),
                   child: const Text(
@@ -414,7 +414,7 @@ class _SwitchRow extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             activeTrackColor: ItqanColors.gold,
-            activeThumbColor: ItqanColors.void_,
+            activeColor: ItqanColors.void_,
             inactiveTrackColor: ItqanColors.charcoal,
             inactiveThumbColor: ItqanColors.silver,
           ),
