@@ -1,97 +1,254 @@
 import 'package:flutter/material.dart';
-import 'package:itqan/core/theme/colors.dart';
+
+const _green = Color(0xFF1B5E20);
+const _cream = Color(0xFFF9F6F0);
+const _surface = Color(0xFFFFFEFC);
+const _muted = Color(0xFF687268);
+const _border = Color(0xFFE7E0D5);
 
 class NewAdhkarScreen extends StatelessWidget {
   const NewAdhkarScreen({super.key});
 
-  static const _categories = <_Category>[
-    _Category('أذكار الص��اح', Icons.wb_sunny_outlined, ['أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ', 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', 'اللَّهُمَّ بِكَ أَصْبَحْنَا وَبِكَ أَمْسَيْنَا']),
-    _Category('أذكار المساء', Icons.nights_stay_outlined, ['أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ', 'أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ']),
-    _Category('أذكار النوم', Icons.bedtime_outlined, ['بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا', 'اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ']),
-    _Category('أذكار الصلاة', Icons.mosque_outlined, ['أَسْتَغْفِرُ اللَّهَ', 'اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ']),
-    _Category('أذكار الاستيقاظ', Icons.alarm_on_outlined, ['الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا']),
-    _Category('أذكار متنوعة', Icons.spa_outlined, ['سُبْحَانَ اللَّهِ', 'الْحَمْدُ لِلَّهِ', 'اللَّهُ أَكْبَرُ']),
+  static const _categories = <_AdhkarCategory>[
+    _AdhkarCategory(
+      title: 'أذكار الصباح',
+      subtitle: 'ابدأ يومك بذكر الله',
+      icon: Icons.wb_sunny_outlined,
+      adhkar: [
+        _Dhikr(text: 'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ', repetitions: 1),
+        _Dhikr(text: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', repetitions: 100),
+        _Dhikr(text: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ', repetitions: 3),
+      ],
+    ),
+    _AdhkarCategory(
+      title: 'أذكار المساء',
+      subtitle: 'اختم يومك بالسكينة',
+      icon: Icons.nights_stay_outlined,
+      adhkar: [
+        _Dhikr(text: 'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ', repetitions: 1),
+        _Dhikr(text: 'أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ', repetitions: 3),
+        _Dhikr(text: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', repetitions: 100),
+      ],
+    ),
+    _AdhkarCategory(
+      title: 'أذكار النوم',
+      subtitle: 'اذكر الله قبل أن تنام',
+      icon: Icons.bedtime_outlined,
+      adhkar: [
+        _Dhikr(text: 'بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا', repetitions: 1),
+        _Dhikr(text: 'سُبْحَانَ اللَّهِ', repetitions: 33),
+        _Dhikr(text: 'الْحَمْدُ لِلَّهِ', repetitions: 33),
+        _Dhikr(text: 'اللَّهُ أَكْبَرُ', repetitions: 34),
+      ],
+    ),
   ];
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: ItqanColors.cream,
-        appBar: AppBar(title: const Text('الأذكار')),
-        body: GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.15),
-          itemCount: _categories.length,
-          itemBuilder: (context, index) {
-            final category = _categories[index];
-            return Card(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => _DhikrListScreen(category: category))),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(category.icon, size: 34, color: const Color(0xFF1B5E20)),
-                    const SizedBox(height: 12),
-                    Text(category.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 5),
-                    Text('${category.items.length} أذكار', style: const TextStyle(color: ItqanColors.inkSoft, fontSize: 12)),
-                  ]),
-                ),
+        backgroundColor: _cream,
+        appBar: AppBar(
+          title: const Text('الأذكار', textDirection: TextDirection.rtl),
+          backgroundColor: _cream,
+          foregroundColor: _green,
+          elevation: 0,
+          centerTitle: true,
+        ),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: _green,
+                borderRadius: BorderRadius.circular(24),
               ),
-            );
-          },
-        ),
-      );
-}
-
-class _Category {
-  const _Category(this.title, this.icon, this.items);
-  final String title;
-  final IconData icon;
-  final List<String> items;
-}
-
-class _DhikrListScreen extends StatelessWidget {
-  const _DhikrListScreen({required this.category});
-  final _Category category;
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: ItqanColors.cream,
-        appBar: AppBar(title: Text(category.title)),
-        body: ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: category.items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (context, index) => _DhikrCounterCard(text: category.items[index]),
-        ),
-      );
-}
-
-class _DhikrCounterCard extends StatefulWidget {
-  const _DhikrCounterCard({required this.text});
-  final String text;
-  @override
-  State<_DhikrCounterCard> createState() => _DhikrCounterCardState();
-}
-
-class _DhikrCounterCardState extends State<_DhikrCounterCard> {
-  int _count = 0;
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text(widget.text, textAlign: TextAlign.center, textDirection: TextDirection.rtl,
-                style: const TextStyle(fontFamily: 'NotoNaskhArabic', fontSize: 23, height: 1.8)),
-            const SizedBox(height: 14),
-            FilledButton.icon(
-              onPressed: () => setState(() => _count++),
-              icon: const Icon(Icons.touch_app_rounded),
-              label: Text('$_count'),
+              child: const Row(
+                textDirection: TextDirection.rtl,
+                children: [
+                  Icon(Icons.spa_outlined, color: Colors.white, size: 32),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'طمئن قلبك بذكر الله',
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          'أذكار مختارة ليومك وليلتك',
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            TextButton(onPressed: () => setState(() => _count = 0), child: const Text('إعادة العداد')),
-          ]),
+            const SizedBox(height: 22),
+            for (final category in _categories) ...[
+              _CategoryHeading(category: category),
+              const SizedBox(height: 10),
+              for (final dhikr in category.adhkar)
+                _DhikrCard(dhikr: dhikr),
+              const SizedBox(height: 14),
+            ],
+          ],
         ),
       );
+}
+
+class _AdhkarCategory {
+  const _AdhkarCategory({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.adhkar,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final List<_Dhikr> adhkar;
+}
+
+class _Dhikr {
+  const _Dhikr({required this.text, required this.repetitions});
+
+  final String text;
+  final int repetitions;
+}
+
+class _CategoryHeading extends StatelessWidget {
+  const _CategoryHeading({required this.category});
+
+  final _AdhkarCategory category;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        textDirection: TextDirection.rtl,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: _green.withValues(alpha: 0.09),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Icon(category.icon, color: _green),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category.title,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(
+                    color: _green,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  category.subtitle,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(color: _muted, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${category.adhkar.length} أذكار',
+            textDirection: TextDirection.rtl,
+            style: const TextStyle(color: _muted, fontSize: 12),
+          ),
+        ],
+      );
+}
+
+class _DhikrCard extends StatefulWidget {
+  const _DhikrCard({required this.dhikr});
+
+  final _Dhikr dhikr;
+
+  @override
+  State<_DhikrCard> createState() => _DhikrCardState();
+}
+
+class _DhikrCardState extends State<_DhikrCard> {
+  int _count = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final isComplete = _count >= widget.dhikr.repetitions;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      color: _surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: _border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              widget.dhikr.text,
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.rtl,
+              style: const TextStyle(
+                color: Color(0xFF263329),
+                fontFamily: 'NotoNaskhArabic',
+                fontSize: 21,
+                height: 1.8,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              textDirection: TextDirection.rtl,
+              children: [
+                Expanded(
+                  child: Text(
+                    'التكرار: ${widget.dhikr.repetitions}',
+                    textDirection: TextDirection.rtl,
+                    style: const TextStyle(color: _muted, fontSize: 12),
+                  ),
+                ),
+                FilledButton.icon(
+                  onPressed: isComplete
+                      ? null
+                      : () => setState(() => _count++),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _green,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: _green.withValues(alpha: 0.12),
+                    disabledForegroundColor: _green,
+                  ),
+                  icon: Icon(isComplete ? Icons.check_rounded : Icons.touch_app_rounded),
+                  label: Text('$_count / ${widget.dhikr.repetitions}'),
+                ),
+                IconButton(
+                  tooltip: 'إعادة العداد',
+                  onPressed: _count == 0 ? null : () => setState(() => _count = 0),
+                  color: _muted,
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
