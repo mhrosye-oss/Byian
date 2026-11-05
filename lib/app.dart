@@ -32,7 +32,7 @@ class _ItqanAppState extends State<ItqanApp> {
 
   @override
   Widget build(BuildContext context) {
-    // شاشة تحميل بسيطة أثناء جلب الإعدادات لمنع الانهيار
+    // شاشة البداية (Splash Screen) لمنع الانهيار
     if (!_isLoaded) {
       return const MaterialApp(
         debugShowCheckedModeBanner: false,

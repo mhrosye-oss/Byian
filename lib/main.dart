@@ -5,10 +5,8 @@ import 'app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // تثبيت اتجاه الشاشة عمودياً
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   
-  // إعادة غلاف Riverpod الأساسي (ضروري جداً لمنع الانهيار)
+  // إعادة غلاف Riverpod الأساسي لمنع الانهيار
   runApp(const ProviderScope(child: ItqanApp()));
 }
