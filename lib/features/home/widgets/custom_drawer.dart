@@ -70,6 +70,21 @@ class CustomDrawer extends StatelessWidget {
               onTap: () => _open(context, const AiChatScreen()),
             ),
             ListTile(
+              leading: const Icon(Icons.child_care_rounded, color: _green),
+              title: const Text('وضع الأطفال'),
+              onTap: () => _open(context, const WaqfScreen()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.volunteer_activism_rounded, color: _green),
+              title: const Text('أثرك معنا (الصدقة الجارية)'),
+              onTap: () => _open(context, const WaqfScreen()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.child_care_rounded, color: _green),
+              title: const Text('وضع الأطفال'),
+              onTap: () => _open(context, const KidsModeScreen()),
+            ),
+            ListTile(
               leading: const Icon(Icons.info_outline_rounded, color: _green),
               title: const Text('من نحن'),
               onTap: () => _open(context, const AboutScreen()),

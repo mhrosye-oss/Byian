@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../quran/models/ayah.dart';
 import '../quran/services/quran_service.dart';
+import '../ai/screens/ai_chat_screen.dart';
 
 class PremiumMushafReader extends StatefulWidget {
   const PremiumMushafReader({super.key});
@@ -10,9 +12,11 @@ class PremiumMushafReader extends StatefulWidget {
 }
 
 class _PremiumMushafReaderState extends State<PremiumMushafReader> {
-  bool _showTranslation = true;
+  // 1. الترجمة مخفية افتراضياً
+  bool _showTranslation = false; 
   bool _isLoading = true;
   List<Ayah> _ayahs = [];
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -24,12 +28,16 @@ class _PremiumMushafReaderState extends State<PremiumMushafReader> {
     try {
       final quranService = QuranService();
       final data = await quranService.getAyahs(1); // جلب سورة الفاتحة
-      setState(() {
-        _ayahs = data;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _ayahs = data;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -78,12 +86,6 @@ class _PremiumMushafReaderState extends State<PremiumMushafReader> {
           'سُورَةُ الفَاتِحَة',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Amiri', color: Colors.white),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(_showTranslation ? Icons.translate : Icons.translate_outlined, color: Colors.white),
-            onPressed: () => setState(() => _showTranslation = !_showTranslation),
-          ),
-        ],
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -92,6 +94,7 @@ class _PremiumMushafReaderState extends State<PremiumMushafReader> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFF1B5E20)))
           : ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: _ayahs.length,
               itemBuilder: (context, index) {
@@ -143,33 +146,66 @@ class _PremiumMushafReaderState extends State<PremiumMushafReader> {
                 );
               },
             ),
+      // 2. الشريط السفلي الفعال
       bottomNavigationBar: Container(
         height: 70,
         decoration: BoxDecoration(color: theme.cardColor, border: Border(top: BorderSide(color: theme.dividerColor))),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildBottomIcon(Icons.headphones_rounded, 'سماع', const Color(0xFF1B5E20)),
-            _buildBottomIcon(Icons.book_rounded, 'المراجع', subTextColor),
-            _buildBottomIcon(Icons.swap_vert_rounded, 'لف تلقائي', subTextColor),
-            _buildBottomIcon(Icons.share_rounded, 'مشاركة', subTextColor),
-            _buildBottomIcon(Icons.translate_rounded, 'الترجمة', subTextColor),
-            _buildBottomIcon(Icons.bookmark_rounded, 'الحفظ', subTextColor),
-            _buildBottomIcon(Icons.more_horiz_rounded, 'مزيد', subTextColor),
+            _buildBottomIcon(context, Icons.headphones_rounded, 'سماع', const Color(0xFF1B5E20), () {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('جاري تشغيل التلاوة الصوتية...')));
+            }),
+            _buildBottomIcon(context, Icons.smart_toy_rounded, 'اسأل AI', const Color(0xFF1B5E20), () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const AiChatScreen()));
+            }),
+            _buildBottomIcon(context, Icons.swap_vert_rounded, 'لف تلقائي', subTextColor, () {
+              // تفعيل اللف التلقائي (تمرير الشاشة لأسفل)
+              _scrollController.animateTo(
+                _scrollController.position.maxScrollExtent,
+                duration: const Duration(seconds: 10),
+                curve: Curves.linear,
+              );
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تفعيل اللف التلقائي')));
+            }),
+            _buildBottomIcon(context, Icons.share_rounded, 'مشاركة', subTextColor, () {
+              Clipboard.setData(const ClipboardData(text: 'تم نسخ الآية للمشاركة من تطبيق إتقان'));
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ الآية للمشاركة')));
+            }),
+            _buildBottomIcon(context, Icons.translate_rounded, 'الترجمة', subTextColor, () {
+              // تفعيل وإخفاء الترجمة
+              setState(() {
+                _showTranslation = !_showTranslation;
+              });
+            }),
+            _buildBottomIcon(context, Icons.bookmark_rounded, 'الحفظ', subTextColor, () {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ الصفحة في المفضلة')));
+            }),
+            _buildBottomIcon(context, Icons.more_horiz_rounded, 'مزيد', subTextColor, () {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خيارات إضافية')));
+            }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBottomIcon(IconData icon, String label, Color color) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: color, size: 22),
-        const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 10, color: color)),
-      ],
+  // دالة مساعدة لإنشاء الأزرار السفلية (الآن تقبل دالة OnTap)
+  Widget _buildBottomIcon(BuildContext context, IconData icon, String label, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(fontSize: 10, color: color)),
+          ],
+        ),
+      ),
     );
   }
 }

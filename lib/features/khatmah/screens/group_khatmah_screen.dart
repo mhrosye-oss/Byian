@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter/services.dart'; // للنسخ
 
 enum KhatmahView { intro, create, join, result }
 
@@ -15,24 +16,21 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
   KhatmahView _currentView = KhatmahView.intro;
   bool _isLoading = false;
 
-  // إعدادات الـ API
   final String apiUrl = 'https://blueviolet-viper-439935.hostingersite.com/api.php';
-  final String apiToken = 'MySecretToken123!'; // نفس التوكن في api.php
+  final String apiToken = 'MySecretToken123!';
 
-  // بيانات الإنشاء
   final TextEditingController _customGroupNameController = TextEditingController();
   String? _selectedGroupType;
-  final List<String> _groupTypes = [
-    'أصدقاء المسجد', 'أفراد العائلة', 'أصدقاء العمل', 'أصدقاء الحارة', 'أخرى...'
-  ];
+  final List<String> _groupTypes = ['أصدقاء المسجد', 'أفراد العائلة', 'أصدقاء العمل', 'أصدقاء الحارة', 'أخرى...'];
   
   int _participantCount = 3;
   final List<TextEditingController> _participantControllers = [];
 
-  // بيانات الانضمام والنتيجة
   final TextEditingController _joinCodeController = TextEditingController();
-  String _generatedCode = "";
-  int _pagesPerPerson = 0;
+  
+  // لحفظ نتيجة الإنشاء
+  String _groupCode = "";
+  List<dynamic> _resultMembers = [];
 
   @override
   void initState() {
@@ -50,10 +48,9 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
     }
   }
 
-  // ---------------- دالة إنشاء الختمة من السيرفر ----------------
   Future<void> _createKhatmahApi() async {
-    String? finalName = _selectedGroupType == 'أخرى...' ? _customGroupNameController.text : _selectedGroupType;
-    if (finalName == null || finalName.trim().isEmpty) {
+    String finalName = _selectedGroupType == 'أخرى...' ? _customGroupNameController.text : (_selectedGroupType ?? '');
+    if (finalName.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء تحديد اسم المجموعة')));
       return;
     }
@@ -71,19 +68,14 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
       var response = await http.post(
         Uri.parse(apiUrl),
         headers: {'Authorization': 'Bearer $apiToken', 'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'action': 'create_khatmah',
-          'name': finalName,
-          'creator': 'أنا',
-          'members': members,
-        }),
+        body: jsonEncode({'action': 'create_khatmah', 'name': finalName, 'creator': 'أنا', 'members': members}),
       );
 
       var data = jsonDecode(response.body);
       if (data['status'] == 'success') {
         setState(() {
-          _generatedCode = data['code'];
-          _pagesPerPerson = (604 / members.length).ceil();
+          _groupCode = data['group_code'];
+          _resultMembers = data['members'];
           _currentView = KhatmahView.result;
         });
       } else {
@@ -96,28 +88,21 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
     }
   }
 
-  // ---------------- دالة الانضمام من السيرفر ----------------
   Future<void> _joinKhatmahApi() async {
-    if (_joinCodeController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إدخال الكود')));
-      return;
-    }
+    if (_joinCodeController.text.trim().isEmpty) return;
 
     setState(() => _isLoading = true);
     try {
       var response = await http.post(
         Uri.parse(apiUrl),
         headers: {'Authorization': 'Bearer $apiToken', 'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'action': 'join_khatmah',
-          'code': _joinCodeController.text.trim(),
-          'member_name': 'مستخدم جديد', // للتجربة
-        }),
+        body: jsonEncode({'action': 'join_by_personal_code', 'member_code': _joinCodeController.text.trim()}),
       );
 
       var data = jsonDecode(response.body);
       if (data['status'] == 'success') {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم الانضمام بنجاح!')));
+        // هنا نعرض رسالة نجاح وتفاصيل الشخص
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('مرحباً ${data['data']['member_name']}، حصتك من صفحة ${data['data']['start_page']} إلى ${data['data']['end_page']}')));
         setState(() => _currentView = KhatmahView.intro);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? 'الكود غير صحيح')));
@@ -169,7 +154,6 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
     }
   }
 
-  // 1. الشاشة التعريفية
   Widget _buildIntroView(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -180,17 +164,16 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
           const SizedBox(height: 20),
           Text('ختمة جماعية', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
           const SizedBox(height: 16),
-          Text('اجمع أصدقاءك أو عائلتك لتقسيم المصحف بينكم. التطبيق سيقوم بتوزيع الصفحات تلقائياً بالتساوي.', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, height: 1.6, color: theme.textTheme.bodyMedium?.color)),
+          Text('اجمع أصدقاءك أو عائلتك لتقسيم المصحف بينكم. كل شخص سيحصل على كود خاص به.', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, height: 1.6, color: theme.textTheme.bodyMedium?.color)),
           const SizedBox(height: 40),
           SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => setState(() => _currentView = KhatmahView.create), icon: const Icon(Icons.add_circle_outline, color: Colors.white), label: const Text('إنشاء مجموعة جديدة', style: TextStyle(fontSize: 18, color: Colors.white)), style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5E20), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))))),
           const SizedBox(height: 16),
-          SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => setState(() => _currentView = KhatmahView.join), icon: const Icon(Icons.login_rounded, color: Color(0xFF1B5E20)), label: const Text('الانضمام لمجموعة (بكود)', style: TextStyle(fontSize: 18, color: Color(0xFF1B5E20))), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), side: const BorderSide(color: Color(0xFF1B5E20), width: 2), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))))),
+          SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => setState(() => _currentView = KhatmahView.join), icon: const Icon(Icons.login_rounded, color: Color(0xFF1B5E20)), label: const Text('الانضمام بكود شخصي', style: TextStyle(fontSize: 18, color: Color(0xFF1B5E20))), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), side: const BorderSide(color: Color(0xFF1B5E20), width: 2), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))))),
         ],
       ),
     );
   }
 
-  // 2. شاشة إنشاء مجموعة
   Widget _buildCreateView(ThemeData theme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -246,13 +229,12 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
             },
           ),
           const SizedBox(height: 24),
-          SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _createKhatmahApi, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5E20), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('إنشاء الختمة (حفظ في السيرفر)', style: TextStyle(fontSize: 18, color: Colors.white)))),
+          SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _createKhatmahApi, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5E20), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('إنشاء الختمة وتوليد الأكواد', style: TextStyle(fontSize: 18, color: Colors.white)))),
         ],
       ),
     );
   }
 
-  // 3. شاشة الانضمام
   Widget _buildJoinView(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -261,11 +243,11 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
         children: [
           const Icon(Icons.vpn_key_rounded, size: 80, color: Color(0xFF1B5E20)),
           const SizedBox(height: 20),
-          Text('الانضمام لمجموعة', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
+          Text('الانضمام بكود شخصي', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
           const SizedBox(height: 10),
-          Text('اطلب الكود من صديقك الذي أنشأ الختمة، واكتبه هنا.', style: TextStyle(color: theme.textTheme.bodySmall?.color)),
+          Text('اطلب من صديقك كودك الشخصي الخاص بك (يبدأ بحرف M) واكتبه هنا.', textAlign: TextAlign.center, style: TextStyle(color: theme.textTheme.bodySmall?.color)),
           const SizedBox(height: 30),
-          TextField(controller: _joinCodeController, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, letterSpacing: 4, fontWeight: FontWeight.bold), decoration: InputDecoration(hintText: 'KH-1234', filled: true, fillColor: theme.cardColor, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
+          TextField(controller: _joinCodeController, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, letterSpacing: 4, fontWeight: FontWeight.bold), decoration: InputDecoration(hintText: 'M-1234', filled: true, fillColor: theme.cardColor, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none))),
           const SizedBox(height: 30),
           SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _joinKhatmahApi, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1B5E20), padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('انضمام', style: TextStyle(fontSize: 18, color: Colors.white)))),
         ],
@@ -273,7 +255,7 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
     );
   }
 
-  // 4. شاشة النتيجة
+  // عرض النتيجة مع أيقونة النسخ
   Widget _buildResultView(ThemeData theme) {
     String groupName = _selectedGroupType == 'أخرى...' ? _customGroupNameController.text : (_selectedGroupType ?? 'المجموعة');
 
@@ -292,28 +274,40 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
                   const SizedBox(height: 10),
                   Text('تم إنشاء: $groupName', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 5),
-                  const Text('كود الانضمام (شاركه مع أصدقائك):', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                  Text(_generatedCode, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 4)),
-                  const SizedBox(height: 10),
-                  Text('حصة كل شخص: $_pagesPerPerson صفحة', style: const TextStyle(color: Colors.white, fontSize: 16)),
+                  Text('كود المجموعة: $_groupCode', style: const TextStyle(color: Colors.white70, fontSize: 14)),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 20),
+          Text('أرسل الكود الخاص لكل شخص:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
+          const SizedBox(height: 10),
           Expanded(
             child: ListView.builder(
-              itemCount: _participantCount,
+              itemCount: _resultMembers.length,
               itemBuilder: (context, index) {
-                final startPage = index * _pagesPerPerson + 1;
-                final endPage = (index + 1) * _pagesPerPerson > 604 ? 604 : (index + 1) * _pagesPerPerson;
+                final member = _resultMembers[index];
                 return Card(
                   color: theme.cardColor,
                   margin: const EdgeInsets.only(bottom: 10),
                   child: ListTile(
                     leading: CircleAvatar(backgroundColor: const Color(0xFF1B5E20).withOpacity(0.1), child: Text('${index + 1}', style: const TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold))),
-                    title: Text(_participantControllers[index].text, style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
-                    subtitle: Text('من صفحة $startPage إلى $endPage', style: TextStyle(color: theme.textTheme.bodySmall?.color)),
+                    title: Text(member['name'], style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
+                    subtitle: Text('صفحات ${member['start_page']} إلى ${member['end_page']}', style: TextStyle(color: theme.textTheme.bodySmall?.color)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(member['code'], style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), fontSize: 16)),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.copy_rounded, color: Colors.grey, size: 20),
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: member['code']));
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم نسخ كود ${member['name']}')));
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },

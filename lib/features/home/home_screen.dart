@@ -1,4 +1,5 @@
 import '../khatmah/screens/group_khatmah_screen.dart';
+import '../hifz/screens/group_hifz_screen.dart';
 import '../mushaf/premium_mushaf_reader.dart';
 import 'package:flutter/material.dart';
 import 'widgets/custom_drawer.dart';
@@ -6,6 +7,7 @@ import 'widgets/custom_drawer.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../adhkar/screens/new_adhkar_screen.dart';
+import '../adhkar/screens/smart_adhkar_screen.dart';
 import '../adhkar/screens/duas_screen.dart';
 import '../about/screens/about_screen.dart';
 import '../ai/screens/ai_chat_screen.dart';
@@ -18,6 +20,9 @@ import '../mushaf/mushaf_screen.dart';
 import '../prayer/screens/prayer_times_screen.dart';
 import '../qibla/screens/qibla_screen.dart';
 import '../quran/models/ayah.dart';
+import '../sacred_places/screens/sacred_places_screen.dart';
+import '../inheritance/screens/inheritance_screen.dart';
+import '../quran_mood/screens/mood_quran_screen.dart';
 import '../radio/screens/radio_screen.dart';
 import '../recitation/recitation_screen.dart';
 import '../settings/settings_screen.dart';
@@ -45,12 +50,15 @@ class HomeScreen extends StatelessWidget {
         );
         break;
       case 'adhkar': page = const NewAdhkarScreen(); break;
+      case 'smart_adhkar': page = const SmartAdhkarScreen(); break;
       case 'duas': page = const DuasScreen(); break;
       case 'tasbih': page = const SmartTasbihScreen(); break;
       case 'calendar': page = const HijriCalendarScreen(); break;
       case 'hadith': page = const HadithsScreen(); break;
       case 'asma': page = const AsmaScreen(); break;
       case 'group_khatmah': page = const GroupKhatmahScreen(); break;
+      case 'group_hifz': page = const GroupHifzScreen(); break;
+      case 'mood_quran': page = const MoodQuranScreen(); break;
       case 'khatmah': page = const KhatmahScreen(); break;
       case 'zakat': page = const ZakatCalculatorScreen(); break;
       case 'radio': page = const RadioScreen(); break;
@@ -60,6 +68,8 @@ class HomeScreen extends StatelessWidget {
       case 'audio': page = const AudioQuranScreen(); break;
       case 'ai': page = const AiChatScreen(); break;
       case 'about': page = const AboutScreen(); break;
+      case 'inheritance': page = const InheritanceScreen(); break;
+      case 'sacred_places': page = const SacredPlacesScreen(); break;
       default: return;
     }
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
@@ -171,11 +181,14 @@ class HomeScreen extends StatelessWidget {
       (title: 'إذاعة القرآن', route: 'radio', icon: Icons.radio_rounded),
       (title: 'مواقيت الصلاة', route: 'prayer', icon: Icons.access_time_rounded),
       (title: 'الأذكار', route: 'adhkar', icon: Icons.spa_rounded),
+      (title: 'أذكار ذكية', route: 'smart_adhkar', icon: Icons.psychology_rounded),
       (title: 'الأدعية', route: 'duas', icon: Icons.pan_tool_rounded),
       (title: 'التجويد', route: 'tajweed', icon: Icons.menu_book_rounded),
       (title: 'التفاسير', route: 'tafsir', icon: Icons.chrome_reader_mode_rounded),
       (title: 'القرآن الصوتي', route: 'audio', icon: Icons.headphones_rounded),
+      (title: 'القرآن حسب حالتك', route: 'mood_quran', icon: Icons.sentiment_satisfied_alt_rounded),
       (title: 'ختمة جماعية', route: 'group_khatmah', icon: Icons.group_rounded),
+      (title: 'تحدي الحفظ', route: 'group_hifz', icon: Icons.psychology_rounded),
     ];
     return Wrap(spacing: 9, runSpacing: 9, children: services.map((service) => ActionChip(
       onPressed: () => _open(context, service.route),
