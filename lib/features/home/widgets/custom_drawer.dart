@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../waqf/screens/waqf_screen.dart';
+import '../../kids/screens/kids_mode_screen.dart';
 import 'package:itqan/core/settings/app_settings_provider.dart';
 import 'package:itqan/features/about/screens/about_screen.dart';
 import 'package:itqan/features/ai/screens/ai_chat_screen.dart';
