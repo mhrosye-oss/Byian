@@ -1,22 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/settings/app_settings_provider.dart';
 import 'features/home/home_screen.dart';
 
-class ItqanApp extends StatelessWidget {
+class ItqanApp extends StatefulWidget {
   const ItqanApp({super.key});
 
   @override
+  State<ItqanApp> createState() => _ItqanAppState();
+}
+
+class _ItqanAppState extends State<ItqanApp> {
+  final AppSettingsProvider _settings = AppSettingsProvider();
+
+  @override
+  void initState() {
+    super.initState();
+    _settings.load(); // تحميل الإعدادات المحفوظة
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // استخدام Consumer للاستماع لتغيير اللغة والوضع الليلي بأمان
-    return Consumer<AppSettingsProvider>(
-      builder: (context, settings, child) {
+    // استخدام AnimatedBuilder للاستماع لتغيرات الثيم واللغة
+    return AnimatedBuilder(
+      animation: _settings,
+      builder: (context, child) {
         return MaterialApp(
           title: 'Itqan',
           debugShowCheckedModeBanner: false,
-          themeMode: settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          themeMode: _settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           theme: ThemeData(
             brightness: Brightness.light,
             primaryColor: const Color(0xFF1B5E20),
@@ -35,7 +48,7 @@ class ItqanApp extends StatelessWidget {
             colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B5E20), brightness: Brightness.dark),
             useMaterial3: true,
           ),
-          locale: settings.locale,
+          locale: _settings.locale,
           supportedLocales: const [
             Locale('ar'), Locale('en'), Locale('fr'), Locale('es'), Locale('ur'), 
             Locale('id'), Locale('hi'), Locale('bn'), Locale('fa'), Locale('uz')
