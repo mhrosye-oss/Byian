@@ -1,386 +1,110 @@
 import 'package:flutter/material.dart';
-import 'package:itqan/l10n/app_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../../core/theme/colors.dart';
-import '../../core/theme/spacing.dart';
-import '../../core/theme/typography.dart';
-import '../settings/settings_service.dart';
 import '../home/home_screen.dart';
-import '../quran/models/ayah.dart';
-import '../quran/services/quran_service.dart';
-import '../recitation/recitation_screen.dart';
 
-class OnboardingScreen extends ConsumerStatefulWidget {
+class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
-  final _controller = PageController();
-  int _page = 0;
-  String _selectedLevel = 'beginner';
-  int _selectedGoal = 20;
-
-  void _next() {
-    if (_page < 2) {
-      _controller.nextPage(duration: const Duration(milliseconds: 350), curve: Curves.easeInOut);
-    }
-  }
-
-  Future<void> _finish() async {
-    // Save settings
-    final settings = ref.read(settingsProvider);
-    await ref.read(settingsProvider.notifier).update(
-      settings.copyWith(level: _selectedLevel, dailyGoalMinutes: _selectedGoal),
-    );
-    // Mark onboarding done
-    await Hive.box('settings').put('onboarding_done', true);
-    if (!mounted) return;
-    // Navigate to recitation for Surah 1 Ayah 1
-    List<Ayah> ayahs = [];
-    try {
-      final service = QuranService();
-      await service.init();
-      ayahs = await service.getAyahs(1);
-    } catch (_) {
-      // Onboarding must still complete when the Quran API is unavailable.
-    }
-    if (!mounted) return;
-    if (ayahs.isNotEmpty) {
-      Navigator.pushReplacement(context, MaterialPageRoute(
-        builder: (_) => RecitationScreenWrapper(ayah: ayahs.first, surahName: 'Al-Fatiha'),
-      ));
-    } else {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
-    }
-  }
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  final PageController _controller = PageController();
+  int _currentPage = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF9F6F0),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0, top: 8.0),
-            child: TextButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomeScreen()),
-                );
-              },
-              child: const Text(
-                'تخطي',
-                style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
+          TextButton(
+            onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen())),
+            child: const Text('تخطي', style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 16)),
           ),
         ],
       ),
-      body:
-      backgroundColor: const Color(0xFFF9F6F0),
-      body: Stack(
+      body: PageView(
+        controller: _controller,
+        onPageChanged: (index) => setState(() => _currentPage = index),
         children: [
-          PageView(
-            controller: _controller,
-            onPageChanged: (i) => setState(() => _page = i),
-            children: [
-              _WelcomePage(onNext: _next),
-              _LevelPage(
-                selected: _selectedLevel,
-                onSelect: (l) => setState(() => _selectedLevel = l),
-                onNext: _next,
-              ),
-              _GoalPage(
-                selected: _selectedGoal,
-                onSelect: (g) => setState(() => _selectedGoal = g),
-                onFinish: _finish,
-              ),
-            ],
+          _buildPage(
+            title: 'إتقان',
+            subtitle: 'أتقن تلاوة القرآن الكريم',
+            icon: Icons.star_rounded,
           ),
-          // Dot indicators
-          Positioned(
-            bottom: 40, left: 0, right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (i) => AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: _page == i ? 20 : 8,
+          _buildPage(
+            title: 'حدد مستواك',
+            subtitle: 'اختر مستواك لنقدم لك تجربة مخصصة',
+            icon: Icons.school_rounded,
+          ),
+          _buildPage(
+            title: 'ابدأ رحلتك',
+            subtitle: 'استمع، اقرأ، وتدبر آيات الله',
+            icon: Icons.menu_book_rounded,
+          ),
+        ],
+      ),
+      bottomSheet: Container(
+        color: const Color(0xFFF9F6F0),
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: List.generate(3, (index) => Container(
+                margin: const EdgeInsets.only(right: 8),
+                width: _currentPage == index ? 24 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: _page == i ? const Color(0xFFD4AF37) : ItqanColors.charcoal,
-                  borderRadius: BorderRadius.circular(ItqanRadius.full),
+                  color: _currentPage == index ? const Color(0xFF1B5E20) : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(4),
                 ),
               )),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WelcomePage extends StatelessWidget {
-  final VoidCallback onNext;
-  const _WelcomePage({required this.onNext});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Islamic pattern placeholder
-        CustomPaint(size: const Size(160, 160), painter: _IslamicPatternPainter()),
-        const SizedBox(height: ItqanSpacing.xl),
-        const Text(
-          'إتقان',
-          style: TextStyle(fontFamily: 'Amiri', fontSize: 64, color: const Color(0xFFD4AF37), height: 1.4),
-          textDirection: TextDirection.rtl,
-        ),
-        const Text('Itqan', style: TextStyle(fontFamily: 'Inter', fontSize: 24, color: ItqanColors.mist)),
-        const SizedBox(height: ItqanSpacing.sm),
-        Builder(builder: (ctx) => Text(
-          AppLocalizations.of(ctx)!.onboardingWelcomeSubtitle,
-          style: const TextStyle(fontSize: 16, color: ItqanColors.silver),
-        )),
-        const SizedBox(height: ItqanSpacing.xxl),
-        GestureDetector(
-          onTap: onNext,
-          child: Container(
-            width: 56, height: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFFD4AF37)Shimmer,
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFD4AF37)),
-            ),
-            child: const Icon(Icons.arrow_forward_rounded, color: const Color(0xFFD4AF37)),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _LevelPage extends StatelessWidget {
-  final String selected;
-  final ValueChanged<String> onSelect;
-  final VoidCallback onNext;
-  const _LevelPage({required this.selected, required this.onSelect, required this.onNext});
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final levels = [
-      {'key': 'beginner', 'emoji': '🌱', 'title': l10n.settingsLevelBeginner, 'sub': l10n.onboardingLevelBeginner},
-      {'key': 'intermediate', 'emoji': '📖', 'title': l10n.settingsLevelIntermediate, 'sub': l10n.onboardingLevelIntermediate},
-      {'key': 'advanced', 'emoji': '🎓', 'title': l10n.settingsLevelAdvanced, 'sub': l10n.onboardingLevelAdvanced},
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.all(ItqanSpacing.lg),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Builder(builder: (ctx) => Text(AppLocalizations.of(ctx)!.onboardingLevelTitle, style: ItqanTypography.heading2, textAlign: TextAlign.center)),
-          const SizedBox(height: ItqanSpacing.xl),
-          ...levels.map((l) {
-            final active = selected == l['key'];
-            return GestureDetector(
-              onTap: () => onSelect(l['key']!),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.only(bottom: ItqanSpacing.md),
-                padding: const EdgeInsets.all(ItqanSpacing.md),
-                decoration: BoxDecoration(
-                  color: active ? const Color(0xFFD4AF37)Shimmer : ItqanColors.onyx,
-                  borderRadius: BorderRadius.circular(ItqanRadius.lg),
-                  border: Border.all(color: active ? const Color(0xFFD4AF37) : ItqanColors.charcoal),
-                  boxShadow: active ? [BoxShadow(color: const Color(0xFFD4AF37)Glow, blurRadius: 12)] : null,
-                ),
-                child: Row(
-                  children: [
-                    Text(l['emoji']!, style: const TextStyle(fontSize: 28)),
-                    const SizedBox(width: ItqanSpacing.md),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(l['title']!, style: ItqanTypography.label.copyWith(color: active ? const Color(0xFFD4AF37) : ItqanColors.snow)),
-                        Text(l['sub']!, style: ItqanTypography.caption),
-                      ],
-                    ),
-                  ],
-                ),
+            ElevatedButton(
+              onPressed: () {
+                if (_currentPage == 2) {
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+                } else {
+                  _controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1B5E20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
-            );
-          }),
-          const SizedBox(height: ItqanSpacing.xl),
-          Builder(builder: (ctx) => _GoldButton(label: AppLocalizations.of(ctx)!.onboardingContinue, onPressed: onNext)),
-        ],
+              child: Text(_currentPage == 2 ? 'ابدأ الآن' : 'التالي', style: const TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-class _GoalPage extends StatelessWidget {
-  final int selected;
-  final ValueChanged<int> onSelect;
-  final VoidCallback onFinish;
-  const _GoalPage({required this.selected, required this.onSelect, required this.onFinish});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildPage({required String title, required String subtitle, required IconData icon}) {
     return Padding(
-      padding: const EdgeInsets.all(ItqanSpacing.lg),
+      padding: const EdgeInsets.all(40),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Builder(builder: (ctx) => Text(AppLocalizations.of(ctx)!.onboardingGoalTitle, style: ItqanTypography.heading2, textAlign: TextAlign.center)),
-          const SizedBox(height: ItqanSpacing.xl),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [10, 20, 30].map((min) {
-              final active = selected == min;
-              return GestureDetector(
-                onTap: () => onSelect(min),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: active ? const Color(0xFFD4AF37)Shimmer : ItqanColors.onyx,
-                    borderRadius: BorderRadius.circular(ItqanRadius.full),
-                    border: Border.all(color: active ? const Color(0xFFD4AF37) : ItqanColors.charcoal),
-                  ),
-                  child: Text(
-                    '$min min',
-                    style: TextStyle(color: active ? const Color(0xFFD4AF37) : ItqanColors.mist, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              );
-            }).toList(),
+          Container(
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF1B5E20).withOpacity(0.2), width: 2),
+            ),
+            child: Icon(icon, size: 80, color: const Color(0xFF1B5E20)),
           ),
-          const SizedBox(height: ItqanSpacing.xxl),
-          Builder(builder: (ctx) => _GoldButton(label: AppLocalizations.of(ctx)!.onboardingStartBtn, onPressed: onFinish)),
+          const SizedBox(height: 40),
+          Text(title, style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), fontFamily: 'Amiri')),
+          const SizedBox(height: 16),
+          Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, color: Colors.black54)),
         ],
       ),
     );
-  }
-}
-
-class _GoldButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onPressed;
-  const _GoldButton({required this.label, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) => ElevatedButton(
-    onPressed: onPressed,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFFD4AF37),
-      foregroundColor: const Color(0xFFF9F6F0),
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ItqanRadius.lg)),
-    ),
-    child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-  );
-}
-
-// Simple 8-pointed Islamic star pattern
-class _IslamicPatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFD4AF37).withOpacity(0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final r = size.width / 2;
-
-    // Outer circle
-    canvas.drawCircle(center, r - 4, paint);
-
-    // 8-pointed star
-    final starPaint = Paint()
-      ..color = const Color(0xFFD4AF37).withOpacity(0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    final path = Path();
-    for (int i = 0; i < 8; i++) {
-      final angle1 = (i * 45) * 3.14159 / 180;
-      final angle2 = ((i * 45) + 22.5) * 3.14159 / 180;
-      final outer = Offset(center.dx + (r - 10) * _cos(angle1), center.dy + (r - 10) * _sin(angle1));
-      final inner = Offset(center.dx + (r * 0.4) * _cos(angle2), center.dy + (r * 0.4) * _sin(angle2));
-      if (i == 0) {
-        path.moveTo(outer.dx, outer.dy);
-      } else {
-        path.lineTo(outer.dx, outer.dy);
-      }
-      path.lineTo(inner.dx, inner.dy);
-    }
-    path.close();
-    canvas.drawPath(path, starPaint);
-
-    // Inner decorative circle
-    final innerCircle = Paint()
-      ..color = const Color(0xFFD4AF37).withOpacity(0.2)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, r * 0.25, innerCircle);
-  }
-
-  double _cos(double rad) => _approxCos(rad);
-  double _sin(double rad) => _approxSin(rad);
-
-  // Use dart:math equivalent approximations
-  double _approxCos(double x) {
-    // Simple Taylor/identity: use platform's math
-    return _mathCos(x);
-  }
-  double _approxSin(double x) => _mathSin(x);
-
-  static double _mathCos(double x) {
-    // cos via series
-    double result = 1;
-    double term = 1;
-    for (int i = 1; i <= 10; i++) {
-      term *= -x * x / ((2 * i - 1) * (2 * i));
-      result += term;
-    }
-    return result;
-  }
-
-  static double _mathSin(double x) {
-    double result = x;
-    double term = x;
-    for (int i = 1; i <= 10; i++) {
-      term *= -x * x / ((2 * i) * (2 * i + 1));
-      result += term;
-    }
-    return result;
-  }
-
-  @override
-  bool shouldRepaint(_) => false;
-}
-
-// Wrapper to use when navigating to recitation from onboarding
-class RecitationScreenWrapper extends ConsumerWidget {
-  final Ayah ayah;
-  final String surahName;
-  const RecitationScreenWrapper({super.key, required this.ayah, required this.surahName});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return RecitationScreen(ayah: ayah, surahName: surahName);
   }
 }

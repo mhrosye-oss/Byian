@@ -7,10 +7,9 @@ plugins {
 
 android {
     ndkVersion = "27.0.12077973"
-    namespace = "com.itqan.itqan"
+        namespace = "com.itqan.itqan"
     compileSdk = 36
-    ndkVersion = flutter.ndkVersion
-
+    
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
