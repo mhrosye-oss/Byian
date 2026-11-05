@@ -52,7 +52,7 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
 
   // ---------------- دالة إنشاء الختمة من السيرفر ----------------
   Future<void> _createKhatmahApi() async {
-    String finalName = _selectedGroupType == 'أخرى...' ? _customGroupNameController.text : _selectedGroupType;
+    String? finalName = _selectedGroupType == 'أخرى...' ? _customGroupNameController.text : _selectedGroupType;
     if (finalName == null || finalName.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء تحديد اسم المجموعة')));
       return;
