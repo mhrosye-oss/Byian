@@ -84,7 +84,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ],
       ),
       body:
-      backgroundColor: ItqanColors.void_,
+      backgroundColor: ItqanColors.cream,
       body: Stack(
         children: [
           PageView(
@@ -286,7 +286,7 @@ class _GoldButton extends StatelessWidget {
     onPressed: onPressed,
     style: ElevatedButton.styleFrom(
       backgroundColor: ItqanColors.gold,
-      foregroundColor: ItqanColors.void_,
+      foregroundColor: ItqanColors.cream,
       padding: const EdgeInsets.symmetric(vertical: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ItqanRadius.lg)),
     ),
