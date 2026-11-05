@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:itqan/core/services/auth_service.dart';
 import 'package:itqan/features/auth/screens/login_screen.dart';
 import 'package:itqan/features/about/screens/about_screen.dart';
+import 'package:itqan/features/contributors/screens/hall_of_fame_screen.dart';
 import 'package:itqan/features/ai/screens/ai_chat_screen.dart';
 import 'package:itqan/features/waqf/screens/waqf_screen.dart';
 import 'package:itqan/features/kids/screens/kids_mode_screen.dart';
@@ -78,7 +79,11 @@ class _CustomDrawerState extends State<CustomDrawer> {
             ListTile(leading: const Icon(Icons.smart_toy_rounded, color: green), title: const Text('المساعد الذكي'), onTap: () => _open(context, const AiChatScreen())),
             ListTile(leading: const Icon(Icons.child_care_rounded, color: green), title: const Text('وضع الأطفال'), onTap: () => _open(context, const KidsModeScreen())),
             ListTile(leading: const Icon(Icons.volunteer_activism_rounded, color: green), title: const Text('الصدقة الجارية'), onTap: () => _open(context, const WaqfScreen())),
-            ListTile(leading: const Icon(Icons.info_outline_rounded, color: green), title: const Text('من نحن'), onTap: () => _open(context, const AboutScreen())),
+            ListTile(leading: const Icon(Icons.info_outline_rounded, color: green), title: const Text('شكراً لمساهمينا'),
+              onTap: () => _open(context, const HallOfFameScreen()),
+            ),
+            ListTile(leading: const Icon(Icons.info_outline_rounded, color: _green),
+              title: const Text('من نحن'), onTap: () => _open(context, const AboutScreen())),
           ],
         ),
       ),

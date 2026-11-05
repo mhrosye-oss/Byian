@@ -21,6 +21,8 @@ import '../mushaf/mushaf_screen.dart';
 import '../prayer/screens/prayer_times_screen.dart';
 import '../qibla/screens/qibla_screen.dart';
 import '../quran/models/ayah.dart';
+import '../waqf/screens/waqf_screen.dart';
+import '../kids/screens/kids_mode_screen.dart';
 import '../surah_browser/surah_browser_screen.dart';
 import '../sacred_places/screens/sacred_places_screen.dart';
 import '../inheritance/screens/inheritance_screen.dart';
@@ -73,6 +75,8 @@ class HomeScreen extends StatelessWidget {
       case 'about': page = const AboutScreen(); break;
       case 'inheritance': page = const InheritanceScreen(); break;
       case 'sacred_places': page = const SacredPlacesScreen(); break;
+      case 'waqf': page = const WaqfScreen(); break;
+      case 'kids_mode': page = const KidsModeScreen(); break;
       default: return;
     }
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
