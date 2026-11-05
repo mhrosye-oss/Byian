@@ -1,6 +1,6 @@
 import '../khatmah/screens/group_khatmah_screen.dart';
 import '../hifz/screens/group_hifz_screen.dart';
-import '../mushaf/mushaf_swipe_reader.dart';
+import '../mushaf/my_simple_mushaf.dart';
 import 'package:flutter/material.dart';
 import '../../core/localization/app_localizations.dart';
 import 'widgets/custom_drawer.dart';
@@ -43,7 +43,7 @@ class HomeScreen extends StatelessWidget {
     final Widget page;
     switch (route) {
       case 'footer_quran': page = const SurahBrowserScreen(); break;
-      case 'quran': page = const MushafSwipeReader(); break;
+      case 'quran': page = const MySimpleMushaf(); break;
       case 'prayer': page = const PrayerTimesScreen(); break;
       case 'qibla': page = const QiblaScreen(); break;
       case 'recitation':
