@@ -1,3 +1,5 @@
+import '../khatmah/screens/group_khatmah_screen.dart';
+import '../mushaf/premium_mushaf_reader.dart';
 import 'package:flutter/material.dart';
 import 'widgets/custom_drawer.dart';
 
@@ -31,7 +33,7 @@ class HomeScreen extends StatelessWidget {
   void _open(BuildContext context, String route) {
     final Widget page;
     switch (route) {
-      case 'quran': page = const MushafScreen(); break;
+      case 'quran': page = const PremiumMushafReader(); break;
       case 'prayer': page = const PrayerTimesScreen(); break;
       case 'qibla': page = const QiblaScreen(); break;
       case 'recitation':
@@ -48,6 +50,7 @@ class HomeScreen extends StatelessWidget {
       case 'calendar': page = const HijriCalendarScreen(); break;
       case 'hadith': page = const HadithsScreen(); break;
       case 'asma': page = const AsmaScreen(); break;
+      case 'group_khatmah': page = const GroupKhatmahScreen(); break;
       case 'khatmah': page = const KhatmahScreen(); break;
       case 'zakat': page = const ZakatCalculatorScreen(); break;
       case 'radio': page = const RadioScreen(); break;
@@ -172,6 +175,7 @@ class HomeScreen extends StatelessWidget {
       (title: 'التجويد', route: 'tajweed', icon: Icons.menu_book_rounded),
       (title: 'التفاسير', route: 'tafsir', icon: Icons.chrome_reader_mode_rounded),
       (title: 'القرآن الصوتي', route: 'audio', icon: Icons.headphones_rounded),
+      (title: 'ختمة جماعية', route: 'group_khatmah', icon: Icons.group_rounded),
     ];
     return Wrap(spacing: 9, runSpacing: 9, children: services.map((service) => ActionChip(
       onPressed: () => _open(context, service.route),
