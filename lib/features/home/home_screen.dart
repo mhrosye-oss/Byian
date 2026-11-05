@@ -123,7 +123,7 @@ class HomeScreen extends StatelessWidget {
         ])),
         Builder(builder: (context) => IconButton.filledTonal(
           tooltip: 'القائمة', onPressed: () => Scaffold.of(context).openDrawer(),
-          style: IconButton.styleFrom(backgroundColor: ItqanColors.surface, foregroundColor: ItqanColors.emerald),
+          style: IconButton.styleFrom(backgroundColor: Theme.of(context).cardColor, foregroundColor: ItqanColors.emerald),
           icon: const Icon(Icons.menu_rounded))),
       ]);
 
@@ -178,8 +178,8 @@ class HomeScreen extends StatelessWidget {
       avatar: Icon(service.icon, size: 17, color: ItqanColors.emerald),
       label: Text(service.title),
       labelStyle: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black, fontSize: 12, fontWeight: FontWeight.w600),
-      backgroundColor: ItqanColors.surface,
-      side: const BorderSide(color: ItqanColors.border),
+      backgroundColor: Theme.of(context).cardColor,
+      side: BorderSide(color: Theme.of(context).dividerColor),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
     )).toList());
   }

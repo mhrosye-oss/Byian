@@ -8,13 +8,22 @@ class ZakatInput {
   final double investments;
   final double liabilities;
 
-  const ZakatInput({required this.cash, required this.gold, required this.silver, required this.savings, required this.investments, required this.liabilities});
+  const ZakatInput({
+    required this.cash,
+    required this.gold,
+    required this.silver,
+    required this.savings,
+    required this.investments,
+    required this.liabilities,
+  });
+
   double get totalAssets => cash + gold + silver + savings + investments - liabilities;
   double get zakatDue => totalAssets > 0 ? totalAssets * 0.025 : 0;
 }
 
 class ZakatCalculatorScreen extends StatefulWidget {
   const ZakatCalculatorScreen({super.key});
+
   @override
   State<ZakatCalculatorScreen> createState() => _ZakatCalculatorScreenState();
 }
@@ -29,54 +38,95 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> {
 
   @override
   void dispose() {
-    _cashController.dispose(); _goldController.dispose(); _silverController.dispose();
-    _savingsController.dispose(); _investmentsController.dispose(); _liabilitiesController.dispose();
+    _cashController.dispose();
+    _goldController.dispose();
+    _silverController.dispose();
+    _savingsController.dispose();
+    _investmentsController.dispose();
+    _liabilitiesController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final input = ZakatInput(
-      cash: double.tryParse(_cashController.text) ?? 0, gold: double.tryParse(_goldController.text) ?? 0,
-      silver: double.tryParse(_silverController.text) ?? 0, savings: double.tryParse(_savingsController.text) ?? 0,
-      investments: double.tryParse(_investmentsController.text) ?? 0, liabilities: double.tryParse(_liabilitiesController.text) ?? 0,
+      cash: double.tryParse(_cashController.text) ?? 0,
+      gold: double.tryParse(_goldController.text) ?? 0,
+      silver: double.tryParse(_silverController.text) ?? 0,
+      savings: double.tryParse(_savingsController.text) ?? 0,
+      investments: double.tryParse(_investmentsController.text) ?? 0,
+      liabilities: double.tryParse(_liabilitiesController.text) ?? 0,
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(title: const Text('حاسبة الزكاة', style: TextStyle(color: Color(0xFF1A1A1A), fontWeight: FontWeight.w700, fontSize: 22), textDirection: TextDirection.rtl), backgroundColor: Colors.transparent, elevation: 0, iconTheme: const IconThemeData(color: Color(0xFF1A1A1A))),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text('حاسبة الزكاة', style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF1B5E20),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity, padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: const [BoxShadow(color: Color(0x1A000000), blurRadius: 10, offset: Offset(0, 6))]),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('المبلغ القابل للزكاة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A)), textDirection: TextDirection.rtl),
-                  const SizedBox(height: 14),
-                  _buildField('النقد', _cashController), const SizedBox(height: 12),
-                  _buildField('الذهب', _goldController), const SizedBox(height: 12),
-                  _buildField('الفضة', _silverController), const SizedBox(height: 12),
-                  _buildField('التوفير', _savingsController), const SizedBox(height: 12),
-                  _buildField('الاستثمارات', _investmentsController), const SizedBox(height: 12),
-                  _buildField('الالتزامات', _liabilitiesController),
-                ],
+            Card(
+              color: theme.cardColor,
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'المبلغ القابل للزكاة',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildField('النقد', _cashController, theme),
+                    _buildField('الذهب', _goldController, theme),
+                    _buildField('الفضة', _silverController, theme),
+                    _buildField('التوفير', _savingsController, theme),
+                    _buildField('الاستثمارات', _investmentsController, theme),
+                    _buildField('الالتزامات (الديون)', _liabilitiesController, theme),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Container(
-              width: double.infinity, padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: const Color(0xFFD32F2F), borderRadius: BorderRadius.circular(24)),
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B5E20), // اللون الأخضر للتطبيق
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1B5E20).withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('إجمالي الزكاة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white), textDirection: TextDirection.rtl),
+                  const Text(
+                    'إجمالي الزكاة المستحقة',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white70),
+                  ),
                   const SizedBox(height: 8),
-                  Text('${input.zakatDue.toStringAsFixed(2)} ر.س', style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800, color: Colors.white), textDirection: TextDirection.rtl),
+                  Text(
+                    '${input.zakatDue.toStringAsFixed(2)} ر.س',
+                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
                 ],
               ),
             ),
@@ -86,10 +136,32 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> {
     );
   }
 
-  Widget _buildField(String label, TextEditingController controller) {
-    return TextField(
-      controller: controller, keyboardType: const TextInputType.numberWithOptions(decimal: true), textDirection: TextDirection.rtl,
-      decoration: InputDecoration(labelText: label, labelStyle: const TextStyle(color: Color(0xFF1A1A1A)), filled: true, fillColor: const Color(0xFF1A1A1A).withOpacity(0.04), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none)),
+  Widget _buildField(String label, TextEditingController controller, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextField(
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        textDirection: TextDirection.rtl,
+        style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontSize: 16),
+        onChanged: (value) => setState(() {}), // لتحديث الحساب فوراً
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
+          floatingLabelBehavior: FloatingLabelBehavior.always,
+          filled: true,
+          fillColor: theme.scaffoldBackgroundColor,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: theme.dividerColor),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFF1B5E20), width: 2),
+          ),
+        ),
+      ),
     );
   }
 }
