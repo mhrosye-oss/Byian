@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../home/home_screen.dart';
+import '../auth/screens/login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -20,6 +21,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
+        leading: TextButton(
+          onPressed: () async {
+            // الانتقال لشاشة تسجيل الدخول
+            final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+            // إذا عاد المستخدم بعد تسجيل دخول ناجح، ننتقل للشاشة الرئيسية
+            if (result == true && context.mounted) {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+            }
+          },
+          child: const Text('تسجيل', style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 16)),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen())),
