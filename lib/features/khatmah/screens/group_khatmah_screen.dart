@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter/services.dart'; // للنسخ
+import 'package:flutter/services.dart';
+import 'my_khatmah_task_screen.dart'; // للنسخ
 
 enum KhatmahView { intro, create, join, result }
 
@@ -101,9 +102,17 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
 
       var data = jsonDecode(response.body);
       if (data['status'] == 'success') {
-        // هنا نعرض رسالة نجاح وتفاصيل الشخص
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('مرحباً ${data['data']['member_name']}، حصتك من صفحة ${data['data']['start_page']} إلى ${data['data']['end_page']}')));
-        setState(() => _currentView = KhatmahView.intro);
+        // الانتقال لصفحة المهام الخاصة بالشخص
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MyKhatmahTaskScreen(
+              memberName: data['data']['member_name'],
+              startPage: int.parse(data['data']['start_page'].toString()),
+              endPage: int.parse(data['data']['end_page'].toString()),
+            ),
+          ),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? 'الكود غير صحيح')));
       }

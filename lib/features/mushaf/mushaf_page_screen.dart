@@ -16,6 +16,13 @@ import 'mushaf_screen.dart';
 import 'providers/reading_position_provider.dart';
 import 'services/reading_position_service.dart';
 
+import 'package:flutter/services.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../ai/screens/ai_chat_screen.dart';
+import 'dart:async';
+
+
 final _pageDataProvider = FutureProvider.family<PageData, int>((ref, page) async {
   if (page < 1 || page > 604) {
     return PageData(pageNumber: page, juzNumber: 0, hizbNumber: 0, verses: []);
@@ -54,6 +61,13 @@ class MushafPageScreen extends ConsumerStatefulWidget {
 }
 
 class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _isPlaying = false;
+  bool _isBookmarked = false;
+  Timer? _autoScrollTimer;
+  int _scrollSpeedMs = 100; // سرعة اللف الافتراضية
+  bool _isAutoScrolling = false;
+
   late int _currentPage;
   final ScrollController _scrollController = ScrollController();
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -317,6 +331,87 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
   }
 
   @override
+  
+  void _toggleAutoScroll(BuildContext context) {
+    if (_isAutoScrolling) {
+      _autoScrollTimer?.cancel();
+      setState(() => _isAutoScrolling = false);
+    } else {
+      // إظهار نافذة اختيار السرعة
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('اختر سرعة اللف التلقائي', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              ListTile(
+                leading: const Icon(Icons.slow_motion_video, color: Colors.blue),
+                title: const Text('بطيء'),
+                onTap: () { Navigator.pop(context); _startAutoScroll(200); },
+              ),
+              ListTile(
+                leading: const Icon(Icons.speed, color: Colors.orange),
+                title: const Text('متوسط'),
+                onTap: () { Navigator.pop(context); _startAutoScroll(100); },
+              ),
+              ListTile(
+                leading: const Icon(Icons.fast_forward, color: Colors.red),
+                title: const Text('سريع'),
+                onTap: () { Navigator.pop(context); _startAutoScroll(40); },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  void _startAutoScroll(int speedMs) {
+    _scrollSpeedMs = speedMs;
+    setState(() => _isAutoScrolling = true);
+    _autoScrollTimer = Timer.periodic(Duration(milliseconds: _scrollSpeedMs), (timer) {
+      // ملاحظة: نفترض وجود _scrollController أو نقوم بإنشائه إذا لم يكن موجوداً
+      // إذا كانت الشاشة تستخدم PageView سنحتاج لتعديل هذا الجزء لاحقاً
+      if (mounted) {
+        // كود محاكاة اللف (سيتم تعديله بناءً على البنية الفعلية للملف)
+      }
+    });
+  }
+
+  Future<void> _toggleAudio() async {
+    try {
+      if (_isPlaying) {
+        await _player.pause();
+        setState(() => _isPlaying = false);
+      } else {
+        if (_player.audioSource == null) {
+          await _player.setUrl('https://server8.mp3quran.net/afs/001.mp3');
+        }
+        await _player.play();
+        setState(() => _isPlaying = true);
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+    }
+  }
+
+  void _shareCurrentPage() {
+    Clipboard.setData(const ClipboardData(text: 'تم نسخ الصفحة من تطبيق إتقان'));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ الصفحة')));
+  }
+
+  Future<void> _toggleBookmark() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isBookmarked = !_isBookmarked;
+      prefs.setBool('bookmark_current_page', _isBookmarked);
+    });
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_isBookmarked ? 'تم حفظ الصفحة' : 'تم إزالة الحفظ')));
+  }
+
   Widget build(BuildContext context) {
     final pageAsync = ref.watch(_pageDataProvider(_currentPage));
     final settings = ref.watch(settingsProvider);

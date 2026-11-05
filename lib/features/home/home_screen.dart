@@ -1,7 +1,8 @@
 import '../khatmah/screens/group_khatmah_screen.dart';
 import '../hifz/screens/group_hifz_screen.dart';
-import '../mushaf/premium_mushaf_reader.dart';
+import '../mushaf/mushaf_swipe_reader.dart';
 import 'package:flutter/material.dart';
+import '../../core/localization/app_localizations.dart';
 import 'widgets/custom_drawer.dart';
 
 import '../../core/theme/colors.dart';
@@ -20,6 +21,7 @@ import '../mushaf/mushaf_screen.dart';
 import '../prayer/screens/prayer_times_screen.dart';
 import '../qibla/screens/qibla_screen.dart';
 import '../quran/models/ayah.dart';
+import '../surah_browser/surah_browser_screen.dart';
 import '../sacred_places/screens/sacred_places_screen.dart';
 import '../inheritance/screens/inheritance_screen.dart';
 import '../quran_mood/screens/mood_quran_screen.dart';
@@ -38,7 +40,8 @@ class HomeScreen extends StatelessWidget {
   void _open(BuildContext context, String route) {
     final Widget page;
     switch (route) {
-      case 'quran': page = const PremiumMushafReader(); break;
+      case 'footer_quran': page = const SurahBrowserScreen(); break;
+      case 'quran': page = const MushafSwipeReader(); break;
       case 'prayer': page = const PrayerTimesScreen(); break;
       case 'qibla': page = const QiblaScreen(); break;
       case 'recitation':
@@ -96,7 +99,7 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildThreeCardRow(context),
                   const SizedBox(height: 24),
-                  _sectionHeader('اكتشف المزيد', 'خدمات إتقان'),
+                  _sectionHeader(AppLocalizations.of(context)!.translate('discover_more'), 'خدمات إتقان'),
                   const SizedBox(height: 12),
                   _buildMoreServices(context),
                   const SizedBox(height: 18),
@@ -155,17 +158,17 @@ class HomeScreen extends StatelessWidget {
             Expanded(child: _BentoCard(title: 'تلاوتي', subtitle: 'استمع وتعلّم', icon: Icons.graphic_eq_rounded,
                 onTap: () => _open(context, 'recitation'), accent: ItqanColors.roseGold)),
             const SizedBox(height: 12),
-            Expanded(child: _BentoCard(title: 'القبلة', subtitle: 'اتجاه مكة', icon: Icons.explore_rounded,
+            Expanded(child: _BentoCard(title: AppLocalizations.of(context)!.translate('qibla'), subtitle: 'اتجاه مكة', icon: Icons.explore_rounded,
                 onTap: () => _open(context, 'qibla'))),
           ])),
         ]),
       );
 
   Widget _buildThreeCardRow(BuildContext context) => Row(children: [
-        Expanded(child: _BentoCard(height: 142, title: 'الأذكار', subtitle: 'أذكار يومك', icon: Icons.spa_rounded,
+        Expanded(child: _BentoCard(height: 142, title: AppLocalizations.of(context)!.translate('adhkar'), subtitle: 'أذكار يومك', icon: Icons.spa_rounded,
             onTap: () => _open(context, 'adhkar'), accent: ItqanColors.roseGold)),
         const SizedBox(width: 10),
-        Expanded(child: _BentoCard(height: 142, title: 'المسبحة', subtitle: 'سبّح واذكر', icon: Icons.radio_button_checked_rounded,
+        Expanded(child: _BentoCard(height: 142, title: AppLocalizations.of(context)!.translate('tasbih'), subtitle: 'سبّح واذكر', icon: Icons.radio_button_checked_rounded,
             onTap: () => _open(context, 'tasbih'))),
         const SizedBox(width: 10),
         Expanded(child: _BentoCard(height: 142, title: 'الختمة', subtitle: 'تابع وردك', icon: Icons.auto_stories_rounded,
@@ -173,22 +176,22 @@ class HomeScreen extends StatelessWidget {
       ]);
 
   Widget _buildMoreServices(BuildContext context) {
-    const services = <({String title, String route, IconData icon})>[
+    final services = <({String title, String route, IconData icon})>[
       (title: 'التقويم الهجري', route: 'calendar', icon: Icons.calendar_month_rounded),
       (title: 'الأحاديث', route: 'hadith', icon: Icons.format_quote_rounded),
       (title: 'أسماء الله', route: 'asma', icon: Icons.local_florist_rounded),
       (title: 'حاسبة الزكاة', route: 'zakat', icon: Icons.volunteer_activism_rounded),
       (title: 'إذاعة القرآن', route: 'radio', icon: Icons.radio_rounded),
-      (title: 'مواقيت الصلاة', route: 'prayer', icon: Icons.access_time_rounded),
-      (title: 'الأذكار', route: 'adhkar', icon: Icons.spa_rounded),
+      (title: AppLocalizations.of(context)!.translate('prayer'), route: 'prayer', icon: Icons.access_time_rounded),
+      (title: AppLocalizations.of(context)!.translate('adhkar'), route: 'adhkar', icon: Icons.spa_rounded),
       (title: 'أذكار ذكية', route: 'smart_adhkar', icon: Icons.psychology_rounded),
-      (title: 'الأدعية', route: 'duas', icon: Icons.pan_tool_rounded),
-      (title: 'التجويد', route: 'tajweed', icon: Icons.menu_book_rounded),
-      (title: 'التفاسير', route: 'tafsir', icon: Icons.chrome_reader_mode_rounded),
-      (title: 'القرآن الصوتي', route: 'audio', icon: Icons.headphones_rounded),
-      (title: 'القرآن حسب حالتك', route: 'mood_quran', icon: Icons.sentiment_satisfied_alt_rounded),
+      (title: AppLocalizations.of(context)!.translate('duas'), route: 'duas', icon: Icons.pan_tool_rounded),
+      (title: AppLocalizations.of(context)!.translate('tajweed'), route: 'tajweed', icon: Icons.menu_book_rounded),
+      (title: AppLocalizations.of(context)!.translate('tafsir'), route: 'tafsir', icon: Icons.chrome_reader_mode_rounded),
+      (title: AppLocalizations.of(context)!.translate('audio'), route: 'audio', icon: Icons.headphones_rounded),
+      (title: AppLocalizations.of(context)!.translate('mood_quran'), route: 'mood_quran', icon: Icons.sentiment_satisfied_alt_rounded),
       (title: 'ختمة جماعية', route: 'group_khatmah', icon: Icons.group_rounded),
-      (title: 'تحدي الحفظ', route: 'group_hifz', icon: Icons.psychology_rounded),
+      (title: AppLocalizations.of(context)!.translate('hifz'), route: 'group_hifz', icon: Icons.psychology_rounded),
     ];
     return Wrap(spacing: 9, runSpacing: 9, children: services.map((service) => ActionChip(
       onPressed: () => _open(context, service.route),

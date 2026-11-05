@@ -1,18 +1,44 @@
 import 'package:flutter/material.dart';
-import '../../waqf/screens/waqf_screen.dart';
-import '../../kids/screens/kids_mode_screen.dart';
-import 'package:itqan/core/settings/app_settings_provider.dart';
+import 'package:itqan/core/services/auth_service.dart';
+import 'package:itqan/features/auth/screens/login_screen.dart';
 import 'package:itqan/features/about/screens/about_screen.dart';
 import 'package:itqan/features/ai/screens/ai_chat_screen.dart';
+import 'package:itqan/features/waqf/screens/waqf_screen.dart';
+import 'package:itqan/features/kids/screens/kids_mode_screen.dart';
 
-class CustomDrawer extends StatelessWidget {
+class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});
+  @override
+  State<CustomDrawer> createState() => _CustomDrawerState();
+}
 
-  static const Color _green = Color(0xFF1B5E20);
+class _CustomDrawerState extends State<CustomDrawer> {
+  Map<String, String>? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = await AuthService.getUser();
+    setState(() => _user = user);
+  }
+
+  Future<void> _logout() async {
+    await AuthService.logout();
+    setState(() => _user = null);
+  }
+
+  void _goToLogin() async {
+    final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+    if (result == true) _loadUser();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final settings = AppSettingsScope.of(context);
+    const Color green = Color(0xFF1B5E20);
     final theme = Theme.of(context);
 
     return Drawer(
@@ -22,154 +48,45 @@ class CustomDrawer extends StatelessWidget {
           padding: EdgeInsets.zero,
           children: [
             Container(
-              color: _green,
+              color: green,
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 34,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person_rounded,
-                      size: 38,
-                      color: _green,
-                    ),
-                  ),
-                  SizedBox(height: 14),
-                  Text(
-                    'عبد الله',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 3),
-                  Text(
-                    'user@example.com',
-                    style: TextStyle(color: Colors.white70),
-                  ),
+                  const CircleAvatar(radius: 34, backgroundColor: Colors.white, child: Icon(Icons.person_rounded, size: 38, color: green)),
+                  const SizedBox(height: 14),
+                  if (_user != null) ...[
+                    Text(_user!['name']!, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
+                    Text(_user!['email']!, style: const TextStyle(color: Colors.white70)),
+                    TextButton.icon(
+                      onPressed: _logout,
+                      icon: const Icon(Icons.logout, color: Colors.white70, size: 16),
+                      label: const Text('تسجيل الخروج', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    )
+                  ] else ...[
+                    const Text('مرحباً بك', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
+                    TextButton.icon(
+                      onPressed: _goToLogin,
+                      icon: const Icon(Icons.login, color: Colors.white),
+                      label: const Text('تسجيل الدخول / حساب جديد', style: TextStyle(color: Colors.white)),
+                    )
+                  ]
                 ],
               ),
             ),
-            SwitchListTile(
-              secondary: const Icon(Icons.dark_mode_outlined, color: _green),
-              title: const Text('الوضع الداكن'),
-              value: settings.isDarkMode,
-              onChanged: settings.setDarkMode,
-            ),
-            ListTile(
-              leading: const Icon(Icons.language_rounded, color: _green),
-              title: const Text('اللغة'),
-              subtitle: Text(_languageName(settings.locale.languageCode)),
-              onTap: () => _showLanguagePicker(context, settings),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.auto_awesome_rounded, color: _green),
-              title: const Text('اسأل الذكاء الاصطناعي'),
-              onTap: () => _open(context, const AiChatScreen()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.child_care_rounded, color: _green),
-              title: const Text('وضع الأطفال'),
-              onTap: () => _open(context, const WaqfScreen()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.volunteer_activism_rounded, color: _green),
-              title: const Text('أثرك معنا (الصدقة الجارية)'),
-              onTap: () => _open(context, const WaqfScreen()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.child_care_rounded, color: _green),
-              title: const Text('وضع الأطفال'),
-              onTap: () => _open(context, const KidsModeScreen()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline_rounded, color: _green),
-              title: const Text('من نحن'),
-              onTap: () => _open(context, const AboutScreen()),
-            ),
+            SwitchListTile(secondary: const Icon(Icons.dark_mode_outlined, color: green), title: const Text('الوضع الداكن'), value: theme.brightness == Brightness.dark, onChanged: (val) {}),
+            ListTile(leading: const Icon(Icons.smart_toy_rounded, color: green), title: const Text('المساعد الذكي'), onTap: () => _open(context, const AiChatScreen())),
+            ListTile(leading: const Icon(Icons.child_care_rounded, color: green), title: const Text('وضع الأطفال'), onTap: () => _open(context, const KidsModeScreen())),
+            ListTile(leading: const Icon(Icons.volunteer_activism_rounded, color: green), title: const Text('الصدقة الجارية'), onTap: () => _open(context, const WaqfScreen())),
+            ListTile(leading: const Icon(Icons.info_outline_rounded, color: green), title: const Text('من نحن'), onTap: () => _open(context, const AboutScreen())),
           ],
         ),
       ),
     );
   }
-
-  String _languageName(String code) => switch (code) {
-        'en' => 'English',
-        'fr' => 'Français',
-        'ur' => 'اردو',
-        _ => 'العربية',
-      };
 
   void _open(BuildContext context, Widget page) {
-    Navigator.of(context).pop();
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => page),
-    );
-  }
-
-  Future<void> _showLanguagePicker(
-    BuildContext context,
-    AppSettingsProvider settings,
-  ) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'اختر اللغة',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            for (final option in const [
-              (code: 'ar', label: 'العربية (Arabic)'),
-              (code: 'en', label: 'English (الإنجليزية)'),
-              (code: 'fr', label: 'Français (الفرنسية)'),
-              (code: 'ur', label: 'اردو (الأردية)'),
-              (code: 'id', label: 'Bahasa Indonesia (الإندونيسية)'),
-              (code: 'tr', label: 'Türkçe (التركية)'),
-              (code: 'es', label: 'Español (الإسبانية)'),
-              (code: 'de', label: 'Deutsch (الألمانية)'),
-              (code: 'ru', label: 'Русский (الروسية)'),
-              (code: 'zh', label: '中文 (الصينية)'),
-              (code: 'ja', label: '日本語 (اليابانية)'),
-              (code: 'ko', label: '한국어 (الكورية)'),
-              (code: 'hi', label: 'हिन्दी (الهندية)'),
-              (code: 'bn', label: 'বাংলা (البنغالية)'),
-              (code: 'fa', label: 'فارسی (الفارسية)'),
-              (code: 'ms', label: 'Bahasa Melayu (الماليزية)'),
-              (code: 'sw', label: 'Kiswahili (السواحيلية)'),
-              (code: 'pt', label: 'Português (البرتغالية)'),
-              (code: 'it', label: 'Italiano (الإيطالية)'),
-              (code: 'nl', label: 'Nederlands (الهولندية)'),
-            ])
-              ListTile(
-                title: Text(option.label),
-                trailing: settings.locale.languageCode == option.code
-                    ? const Icon(Icons.check, color: _green)
-                    : null,
-                onTap: () async {
-                  await settings.setLocale(Locale(option.code));
-
-                  if (sheetContext.mounted) {
-                    Navigator.of(sheetContext).pop();
-                  }
-                  if (context.mounted && Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-          ],
-        ),
-      ),
-    );
+    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 }

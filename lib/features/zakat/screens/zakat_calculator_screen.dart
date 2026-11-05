@@ -10,13 +10,54 @@ class ZakatCalculatorScreen extends StatefulWidget {
 class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // العملة
-  String _selectedCurrency = 'ر.س';
-  final List<String> _currencies = [
-    'ر.س', 'د.إ', 'ج.م', 'د.ك', 'ر.ق', 'د.أ', 'د.ل', 'ر.ع', 'د.ب', 
-    'USD', 'EUR', 'GBP', 'TRY'
+  // 1. قائمة ضخمة بجميع العملات العربية والعالمية (اليمني هو الافتراضي)
+  String _selectedCurrencyName = 'ريال يمني';
+  final List<Map<String, String>> _currencies = [
+    // العملات العربية
+    {'name': 'ريال يمني', 'symbol': 'ر.ي'},
+    {'name': 'ريال سعودي', 'symbol': 'ر.س'},
+    {'name': 'درهم إماراتي', 'symbol': 'د.إ'},
+    {'name': 'ريال قطري', 'symbol': 'ر.ق'},
+    {'name': 'دينار كويتي', 'symbol': 'د.ك'},
+    {'name': 'دينار بحريني', 'symbol': 'د.ب'},
+    {'name': 'ريال عماني', 'symbol': 'ر.ع'},
+    {'name': 'جنيه مصري', 'symbol': 'ج.م'},
+    {'name': 'دينار أردني', 'symbol': 'د.أ'},
+    {'name': 'دينار عراقي', 'symbol': 'د.ع'},
+    {'name': 'ليرة سورية', 'symbol': 'ل.س'},
+    {'name': 'ليرة لبنانية', 'symbol': 'ل.ل'},
+    {'name': 'دينار ليبي', 'symbol': 'د.ل'},
+    {'name': 'دينار تونسي', 'symbol': 'د.ت'},
+    {'name': 'دينار جزائري', 'symbol': 'د.ج'},
+    {'name': 'درهم مغربي', 'symbol': 'د.م'},
+    {'name': 'جنيه سوداني', 'symbol': 'ج.س'},
+    {'name': 'شيكل فلسطيني', 'symbol': '₪'},
+    {'name': 'أوقية موريتانية', 'symbol': 'أ.م'},
+    {'name': 'شلن صومالي', 'symbol': 'Sh'},
+    {'name': 'فرنك جيبوتي', 'symbol': 'Fdj'},
+    // العملات العالمية
+    {'name': 'دولار أمريكي', 'symbol': 'USD'},
+    {'name': 'يورو', 'symbol': 'EUR'},
+    {'name': 'جنيه إسترليني', 'symbol': 'GBP'},
+    {'name': 'ليرة تركية', 'symbol': 'TRY'},
+    {'name': 'دولار كندي', 'symbol': 'CAD'},
+    {'name': 'دولار أسترالي', 'symbol': 'AUD'},
+    {'name': 'ين ياباني', 'symbol': 'JPY'},
+    {'name': 'يوان صيني', 'symbol': 'CNY'},
+    {'name': 'روبية هندية', 'symbol': 'INR'},
+    {'name': 'روبية باكستانية', 'symbol': 'PKR'},
+    {'name': 'روبية إندونيسية', 'symbol': 'IDR'},
+    {'name': 'رينغيت ماليزي', 'symbol': 'MYR'},
+    {'name': 'فرنك سويسري', 'symbol': 'CHF'},
+    {'name': 'كرون سويدي', 'symbol': 'SEK'},
+    {'name': 'كرون نرويجي', 'symbol': 'NOK'},
+    {'name': 'روبل روسي', 'symbol': 'RUB'},
+    {'name': 'هللة', 'symbol': 'Halala'},
   ];
-  
+
+  // دالة لجلب رمز العملة الحالية
+  String get _currentSymbol => _currencies.firstWhere((c) => c['name'] == _selectedCurrencyName)['symbol'] ?? '';
+
   // 1. الأموال والنقود
   final _cashController = TextEditingController();
   final _goldController = TextEditingController();
@@ -97,29 +138,6 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> with Sing
         centerTitle: true,
         backgroundColor: const Color(0xFF1B5E20),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          // قائمة اختيار العملة
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedCurrency,
-              dropdownColor: const Color(0xFF1B5E20),
-              icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-              items: _currencies.map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  _selectedCurrency = newValue!;
-                });
-              },
-            ),
-          ),
-          const SizedBox(width: 12),
-        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.amber,
@@ -134,13 +152,60 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> with Sing
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _buildFinancialTab(theme),
-          _buildCropsTab(theme),
-          _buildMineralsTab(theme),
-          _buildLivestockTab(theme),
+          // اختيار العملة (واضح في الأعلى)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            color: theme.cardColor,
+            child: Row(
+              children: [
+                const Icon(Icons.monetization_on_rounded, color: Color(0xFF1B5E20)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedCurrencyName,
+                    isExpanded: true, // لمنع خروج النص عن الإطار
+                    decoration: InputDecoration(
+                      labelText: 'اختر العملة (الافتراضي: ريال يمني)',
+                      labelStyle: const TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold),
+                      filled: true,
+                      fillColor: theme.scaffoldBackgroundColor,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: theme.dividerColor),
+                      ),
+                    ),
+                    items: _currencies.map((currency) {
+                      return DropdownMenuItem<String>(
+                        value: currency['name'],
+                        child: Text('${currency['name']} (${currency['symbol']})'),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedCurrencyName = newValue!;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // محتوى التبويبات
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildFinancialTab(theme),
+                _buildCropsTab(theme),
+                _buildMineralsTab(theme),
+                _buildLivestockTab(theme),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: _buildResultCard(theme),
@@ -153,7 +218,7 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> with Sing
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHint('أدخل قيمة ما تملكه بالعملة المحددة ($_selectedCurrency). تجب الزكاة إذا بلغ المجموع نصاباً (ما يعادل 85 جرام ذهب) وحال عليه الحول.'),
+          _buildHint('أدخل قيمة ما تملكه بالعملة المحددة ($_selectedCurrencyName). تجب الزكاة إذا بلغ المجموع نصاباً وحال عليه الحول.'),
           _buildField('النقد (كاش / بنوك)', _cashController, theme),
           _buildField('قيمة الذهب (للزينة/الادخار/التجارة)', _goldController, theme),
           _buildField('قيمة الفضة', _silverController, theme),
@@ -172,7 +237,7 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> with Sing
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHint('تجب الزكاة في الحبوب والثمار إذا بلغت النصاب (653 كجم تقريباً).'),
-          _buildField('إجمالي قيمة الزروع والثمار ($_selectedCurrency)', _cropsValueController, theme),
+          _buildField('إجمالي قيمة الزروع والثمار ($_selectedCurrencyName)', _cropsValueController, theme),
           const SizedBox(height: 10),
           Text('طريقة السقيا:', style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
           RadioListTile<bool>(
@@ -199,8 +264,8 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> with Sing
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHint('المعادن المستخرجة (نفط، ذهب، حديد) فيها ربع العشر (2.5%). الركاز (الكنوز القديمة) فيه الخمس (20%).'),
-          _buildField('قيمة المعادن المستخرجة ($_selectedCurrency)', _mineralsValueController, theme),
-          _buildField('قيمة الركاز (الكنوز) ($_selectedCurrency)', _rikazValueController, theme),
+          _buildField('قيمة المعادن المستخرجة ($_selectedCurrencyName)', _mineralsValueController, theme),
+          _buildField('قيمة الركاز (الكنوز) ($_selectedCurrencyName)', _rikazValueController, theme),
         ],
       ),
     );
@@ -249,7 +314,7 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> with Sing
              Text(livestockNote, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: Colors.white))
           else
             Text(
-              '${currentZakat.toStringAsFixed(2)} $_selectedCurrency',
+              '${currentZakat.toStringAsFixed(2)} $_currentSymbol',
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
             ),
         ],

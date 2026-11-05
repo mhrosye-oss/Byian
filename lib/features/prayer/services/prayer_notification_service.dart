@@ -87,7 +87,7 @@ class PrayerNotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: playAzan,
-      sound: playAzan ? const RawResourceAndroidNotificationSound('adhan') : null,
+      sound: playAzan ?  : null,
       audioAttributesUsage: AudioAttributesUsage.alarm,
     );
     final iosDetails = DarwinNotificationDetails(

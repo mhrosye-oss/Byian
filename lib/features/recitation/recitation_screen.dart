@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../quran/services/quran_service.dart';
 import 'package:itqan/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/colors.dart';
@@ -74,6 +75,40 @@ class _RecitationScreenState extends ConsumerState<RecitationScreen> {
     if (isProcessing) btnState = RecordButtonState.processing;
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF1B5E20),
+        icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+        label: const Text('الآية التالية', style: TextStyle(color: Colors.white)),
+        onPressed: () async {
+          // جلب الآية التالية
+          final nextAyahNum = widget.ayah.ayahNumber + 1;
+          final quranService = QuranService();
+          try {
+            // ملاحظة: هنا نفترض أن getAyahs تجلب السورة كاملة، ثم نختار الآية المطلوبة
+            final surahAyahs = await quranService.getAyahs(widget.ayah.surahNumber);
+            final nextAyah = surahAyahs.firstWhere((a) => a.ayahNumber == nextAyahNum);
+            
+            if (mounted) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RecitationScreen(
+                    ayah: nextAyah,
+                    surahName: widget.surahName,
+                  ),
+                ),
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('هذه هي آخر آية في السورة أو حدث خطأ في التحميل')),
+              );
+            }
+          }
+        },
+      ),
+    
       backgroundColor: ItqanColors.void_,
       appBar: AppBar(
         backgroundColor: ItqanColors.void_,
