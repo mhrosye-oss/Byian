@@ -84,7 +84,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ],
       ),
       body:
-      backgroundColor: ItqanColors.cream,
+      backgroundColor: const Color(0xFFF9F6F0),
       body: Stack(
         children: [
           PageView(
@@ -115,7 +115,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 width: _page == i ? 20 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: _page == i ? ItqanColors.gold : ItqanColors.charcoal,
+                  color: _page == i ? const Color(0xFFD4AF37) : ItqanColors.charcoal,
                   borderRadius: BorderRadius.circular(ItqanRadius.full),
                 ),
               )),
@@ -141,7 +141,7 @@ class _WelcomePage extends StatelessWidget {
         const SizedBox(height: ItqanSpacing.xl),
         const Text(
           'إتقان',
-          style: TextStyle(fontFamily: 'Amiri', fontSize: 64, color: ItqanColors.gold, height: 1.4),
+          style: TextStyle(fontFamily: 'Amiri', fontSize: 64, color: const Color(0xFFD4AF37), height: 1.4),
           textDirection: TextDirection.rtl,
         ),
         const Text('Itqan', style: TextStyle(fontFamily: 'Inter', fontSize: 24, color: ItqanColors.mist)),
@@ -156,11 +156,11 @@ class _WelcomePage extends StatelessWidget {
           child: Container(
             width: 56, height: 56,
             decoration: BoxDecoration(
-              color: ItqanColors.goldShimmer,
+              color: const Color(0xFFD4AF37)Shimmer,
               shape: BoxShape.circle,
-              border: Border.all(color: ItqanColors.gold),
+              border: Border.all(color: const Color(0xFFD4AF37)),
             ),
-            child: const Icon(Icons.arrow_forward_rounded, color: ItqanColors.gold),
+            child: const Icon(Icons.arrow_forward_rounded, color: const Color(0xFFD4AF37)),
           ),
         ),
       ],
@@ -200,10 +200,10 @@ class _LevelPage extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: ItqanSpacing.md),
                 padding: const EdgeInsets.all(ItqanSpacing.md),
                 decoration: BoxDecoration(
-                  color: active ? ItqanColors.goldShimmer : ItqanColors.onyx,
+                  color: active ? const Color(0xFFD4AF37)Shimmer : ItqanColors.onyx,
                   borderRadius: BorderRadius.circular(ItqanRadius.lg),
-                  border: Border.all(color: active ? ItqanColors.gold : ItqanColors.charcoal),
-                  boxShadow: active ? [BoxShadow(color: ItqanColors.goldGlow, blurRadius: 12)] : null,
+                  border: Border.all(color: active ? const Color(0xFFD4AF37) : ItqanColors.charcoal),
+                  boxShadow: active ? [BoxShadow(color: const Color(0xFFD4AF37)Glow, blurRadius: 12)] : null,
                 ),
                 child: Row(
                   children: [
@@ -212,7 +212,7 @@ class _LevelPage extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(l['title']!, style: ItqanTypography.label.copyWith(color: active ? ItqanColors.gold : ItqanColors.snow)),
+                        Text(l['title']!, style: ItqanTypography.label.copyWith(color: active ? const Color(0xFFD4AF37) : ItqanColors.snow)),
                         Text(l['sub']!, style: ItqanTypography.caption),
                       ],
                     ),
@@ -256,13 +256,13 @@ class _GoalPage extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   decoration: BoxDecoration(
-                    color: active ? ItqanColors.goldShimmer : ItqanColors.onyx,
+                    color: active ? const Color(0xFFD4AF37)Shimmer : ItqanColors.onyx,
                     borderRadius: BorderRadius.circular(ItqanRadius.full),
-                    border: Border.all(color: active ? ItqanColors.gold : ItqanColors.charcoal),
+                    border: Border.all(color: active ? const Color(0xFFD4AF37) : ItqanColors.charcoal),
                   ),
                   child: Text(
                     '$min min',
-                    style: TextStyle(color: active ? ItqanColors.gold : ItqanColors.mist, fontWeight: FontWeight.w600),
+                    style: TextStyle(color: active ? const Color(0xFFD4AF37) : ItqanColors.mist, fontWeight: FontWeight.w600),
                   ),
                 ),
               );
@@ -285,8 +285,8 @@ class _GoldButton extends StatelessWidget {
   Widget build(BuildContext context) => ElevatedButton(
     onPressed: onPressed,
     style: ElevatedButton.styleFrom(
-      backgroundColor: ItqanColors.gold,
-      foregroundColor: ItqanColors.cream,
+      backgroundColor: const Color(0xFFD4AF37),
+      foregroundColor: const Color(0xFFF9F6F0),
       padding: const EdgeInsets.symmetric(vertical: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ItqanRadius.lg)),
     ),
@@ -299,7 +299,7 @@ class _IslamicPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = ItqanColors.gold.withOpacity(0.3)
+      ..color = const Color(0xFFD4AF37).withOpacity(0.3)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
@@ -311,7 +311,7 @@ class _IslamicPatternPainter extends CustomPainter {
 
     // 8-pointed star
     final starPaint = Paint()
-      ..color = ItqanColors.gold.withOpacity(0.5)
+      ..color = const Color(0xFFD4AF37).withOpacity(0.5)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
@@ -333,7 +333,7 @@ class _IslamicPatternPainter extends CustomPainter {
 
     // Inner decorative circle
     final innerCircle = Paint()
-      ..color = ItqanColors.gold.withOpacity(0.2)
+      ..color = const Color(0xFFD4AF37).withOpacity(0.2)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, r * 0.25, innerCircle);
   }
