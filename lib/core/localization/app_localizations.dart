@@ -113,6 +113,20 @@ class AppLocalizations {
     },
   };
 
+  
+  static String tr(BuildContext context, String key) {
+    try {
+      final loc = Localizations.of<AppLocalizations>(context, AppLocalizations);
+      if (loc != null) {
+        return loc.translate(key);
+      }
+    } catch (e) {
+      // تجاهل الخطأ
+    }
+    // إذا فشلت الترجمة، نعرض النص العربي مباشرة
+    return _localizedValues['ar']?[key] ?? key;
+  }
+
   String translate(String key) {
     return _localizedValues[locale.languageCode]?[key] ?? _localizedValues['en']![key] ?? key;
   }

@@ -17,25 +17,40 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F6F0),
-            appBar: AppBar(
+      appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: TextButton(
           onPressed: () async {
-            // الانتقال لشاشة تسجيل الدخول
-            final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-            // إذا عاد المستخدم بعد تسجيل دخول ناجح، ننتقل للشاشة الرئيسية
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+            );
             if (result == true && context.mounted) {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
             }
           },
-          child: const Text('تسجيل', style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 16)),
+          child: const Text(
+            'تسجيل الدخول',
+            style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 15),
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen())),
-            child: const Text('تخطي', style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold, fontSize: 16)),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
+            },
+            child: const Text(
+              'تخطي',
+              style: TextStyle(color: Colors.grey, fontSize: 15, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -43,21 +58,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         controller: _controller,
         onPageChanged: (index) => setState(() => _currentPage = index),
         children: [
-          _buildPage(
-            title: 'إتقان',
-            subtitle: 'أتقن تلاوة القرآن الكريم',
-            icon: Icons.star_rounded,
-          ),
-          _buildPage(
-            title: 'حدد مستواك',
-            subtitle: 'اختر مستواك لنقدم لك تجربة مخصصة',
-            icon: Icons.school_rounded,
-          ),
-          _buildPage(
-            title: 'ابدأ رحلتك',
-            subtitle: 'استمع، اقرأ، وتدبر آيات الله',
-            icon: Icons.menu_book_rounded,
-          ),
+          _buildPage(title: 'إتقان', subtitle: 'أتقن تلاوة القرآن الكريم', icon: Icons.star_rounded),
+          _buildPage(title: 'حدد مستواك', subtitle: 'اختر مستواك لنقدم لك تجربة مخصصة', icon: Icons.school_rounded),
+          _buildPage(title: 'ابدأ رحلتك', subtitle: 'استمع، اقرأ، وتدبر آيات الله', icon: Icons.menu_book_rounded),
         ],
       ),
       bottomSheet: Container(
@@ -80,7 +83,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ElevatedButton(
               onPressed: () {
                 if (_currentPage == 2) {
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  );
                 } else {
                   _controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                 }
@@ -88,8 +94,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1B5E20),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
-              child: Text(_currentPage == 2 ? 'ابدأ الآن' : 'التالي', style: const TextStyle(color: Colors.white)),
+              child: Text(_currentPage == 2 ? 'ابدأ الآن' : 'التالي', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
