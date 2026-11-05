@@ -82,7 +82,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
             ListTile(leading: const Icon(Icons.info_outline_rounded, color: green), title: const Text('شكراً لمساهمينا'),
               onTap: () => _open(context, const HallOfFameScreen()),
             ),
-            ListTile(leading: const Icon(Icons.info_outline_rounded, color: _green),
+            ListTile(leading: const Icon(Icons.info_outline_rounded, color: const Color(0xFF1B5E20)),
               title: const Text('من نحن'), onTap: () => _open(context, const AboutScreen())),
           ],
         ),

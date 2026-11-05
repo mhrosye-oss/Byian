@@ -332,42 +332,7 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
 
   @override
   
-  void _toggleAutoScroll(BuildContext context) {
-    if (_isAutoScrolling) {
-      _autoScrollTimer?.cancel();
-      setState(() => _isAutoScrolling = false);
-    } else {
-      // إظهار نافذة اختيار السرعة
-      showModalBottomSheet(
-        context: context,
-        builder: (context) => Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('اختر سرعة اللف التلقائي', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              ListTile(
-                leading: const Icon(Icons.slow_motion_video, color: Colors.blue),
-                title: const Text('بطيء'),
-                onTap: () { Navigator.pop(context); _startAutoScroll(200); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.speed, color: Colors.orange),
-                title: const Text('متوسط'),
-                onTap: () { Navigator.pop(context); _startAutoScroll(100); },
-              ),
-              ListTile(
-                leading: const Icon(Icons.fast_forward, color: Colors.red),
-                title: const Text('سريع'),
-                onTap: () { Navigator.pop(context); _startAutoScroll(40); },
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-  }
+  
 
   void _startAutoScroll(int speedMs) {
     _scrollSpeedMs = speedMs;
@@ -403,14 +368,7 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ الصفحة')));
   }
 
-  Future<void> _toggleBookmark() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isBookmarked = !_isBookmarked;
-      prefs.setBool('bookmark_current_page', _isBookmarked);
-    });
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_isBookmarked ? 'تم حفظ الصفحة' : 'تم إزالة الحفظ')));
-  }
+  
 
   Widget build(BuildContext context) {
     final pageAsync = ref.watch(_pageDataProvider(_currentPage));
