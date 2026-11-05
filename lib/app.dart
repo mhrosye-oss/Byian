@@ -13,16 +13,38 @@ class ItqanApp extends StatefulWidget {
 
 class _ItqanAppState extends State<ItqanApp> {
   final AppSettingsProvider _settings = AppSettingsProvider();
+  bool _isLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    _settings.load(); // تحميل الإعدادات المحفوظة
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    await _settings.load();
+    if (mounted) {
+      setState(() {
+        _isLoaded = true;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // استخدام AnimatedBuilder للاستماع لتغيرات الثيم واللغة
+    // شاشة تحميل بسيطة أثناء جلب الإعدادات لمنع الانهيار
+    if (!_isLoaded) {
+      return const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          backgroundColor: Color(0xFF1B5E20),
+          body: Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
     return AnimatedBuilder(
       animation: _settings,
       builder: (context, child) {
