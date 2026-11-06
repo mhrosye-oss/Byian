@@ -1,5 +1,6 @@
 import '../khatmah/screens/group_khatmah_screen.dart';
 import '../hifz/screens/group_hifz_screen.dart';
+import '../mushaf/my_simple_mushaf.dart';
 import 'package:flutter/material.dart';
 import '../../core/localization/app_localizations.dart';
 import 'widgets/custom_drawer.dart';
@@ -42,7 +43,7 @@ class HomeScreen extends StatelessWidget {
     final Widget page;
     switch (route) {
       case 'footer_quran': page = const SurahBrowserScreen(); break;
-      case 'quran': page = const SurahBrowserScreen(); break;
+      case 'my_mushaf': page = const MySimpleMushaf(); break;
       case 'prayer': page = const PrayerTimesScreen(); break;
       case 'qibla': page = const QiblaScreen(); break;
       case 'recitation':
@@ -117,7 +118,7 @@ class HomeScreen extends StatelessWidget {
           selectedIndex: 0,
           onDestinationSelected: (index) {
             switch (index) {
-              case 1: _open(context, 'quran'); break;
+              case 1: _open(context, 'footer_quran'); break;
               case 2: _open(context, 'prayer'); break;
               case 3: _open(context, 'settings'); break;
             }
@@ -155,7 +156,7 @@ class HomeScreen extends StatelessWidget {
         height: 226,
         child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Expanded(flex: 6, child: _BentoCard(height: 226, title: 'مصحفي', subtitle: 'اقرأ القرآن وتدبّر آياته',
-              icon: Icons.menu_book_rounded, onTap: () => _open(context, 'quran'), featured: true)),
+              icon: Icons.menu_book_rounded, onTap: () => _open(context, 'my_mushaf'), featured: true)),
           const SizedBox(width: 12),
           Expanded(flex: 4, child: Column(children: [
             Expanded(child: _BentoCard(title: 'تلاوتي', subtitle: 'استمع وتعلّم', icon: Icons.graphic_eq_rounded,
