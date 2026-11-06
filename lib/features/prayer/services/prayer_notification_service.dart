@@ -62,12 +62,23 @@ class PrayerNotificationService {
 
   Future<void> cancelPrayerNotifications() async {
     await initialize();
-    final pending = await _plugin.pendingNotificationRequests();
-    for (final request in pending) {
-      if (request.payload?.startsWith('prayer:') ?? false) {
-        await _plugin.cancel(request.id);
+    // Avoid pendingNotificationRequests: older release builds can fail while
+    // Gson reconstructs persisted generic notification data. Prayer IDs are
+    // deterministic, so cancel only the IDs owned by this service directly.
+    final now = DateTime.now();
+    for (var dayOffset = -1; dayOffset <= 6; dayOffset++) {
+      final day = DateTime(now.year, now.month, now.day + dayOffset);
+      for (var prayerIndex = 0; prayerIndex < 5; prayerIndex++) {
+        final baseId = _notificationId(day, prayerIndex);
+        await _plugin.cancel(baseId);
+        await _plugin.cancel(baseId + 1);
       }
     }
+  }
+
+  int _notificationId(DateTime day, int prayerIndex) {
+    final dateKey = day.year * 10000 + day.month * 100 + day.day;
+    return dateKey * 10 + prayerIndex * 2;
   }
 
   Future<void> schedulePrayer({
