@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../home/home_screen.dart';
 import '../auth/screens/login_screen.dart';
 
@@ -12,6 +13,22 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _currentPage = 0;
+
+  Future<void> _finish() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool('onboarding_completed', true);
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               context,
               MaterialPageRoute(builder: (_) => const LoginScreen()),
             );
-            if (result == true && context.mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
-              );
-            }
+            if (result == true && context.mounted) await _finish();
           },
           child: const Text(
             'تسجيل الدخول',
@@ -42,10 +54,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
-              );
+              _finish();
             },
             child: const Text(
               'تخطي',
@@ -83,10 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ElevatedButton(
               onPressed: () {
                 if (_currentPage == 2) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HomeScreen()),
-                  );
+                  _finish();
                 } else {
                   _controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
                 }

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/settings/app_settings_provider.dart';
 import 'features/home/home_screen.dart';
+import 'features/onboarding/onboarding_screen.dart';
 
 class ItqanApp extends StatefulWidget {
   const ItqanApp({super.key});
@@ -14,6 +16,7 @@ class ItqanApp extends StatefulWidget {
 class _ItqanAppState extends State<ItqanApp> {
   final AppSettingsProvider _settings = AppSettingsProvider();
   bool _isLoaded = false;
+  bool _showOnboarding = false;
 
   @override
   void initState() {
@@ -23,9 +26,12 @@ class _ItqanAppState extends State<ItqanApp> {
 
   Future<void> _loadSettings() async {
     await _settings.load();
+    final preferences = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
         _isLoaded = true;
+        _showOnboarding =
+            !(preferences.getBool('onboarding_completed') ?? false);
       });
     }
   }
@@ -39,7 +45,30 @@ class _ItqanAppState extends State<ItqanApp> {
         home: Scaffold(
           backgroundColor: Color(0xFF1B5E20),
           body: Center(
-            child: CircularProgressIndicator(color: Colors.white),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.menu_book_rounded, size: 72, color: Colors.white),
+                SizedBox(height: 18),
+                Text(
+                  'إتقان',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 22),
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -81,7 +110,7 @@ class _ItqanAppState extends State<ItqanApp> {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          home: const HomeScreen(),
+          home: _showOnboarding ? const OnboardingScreen() : const HomeScreen(),
         );
       },
     );

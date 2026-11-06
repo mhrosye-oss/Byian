@@ -128,9 +128,21 @@ class QuranService {
     final surahs = _parseSurahs(metadata);
     final text = await rootBundle.loadString(_quranTextAsset);
     final ayahsBySurah = _parseAyahs(text);
-    final pageStarts = _parseMarkers(metadata, 'pages', 'page');
-    final juzStarts = _parseMarkers(metadata, 'juzs', 'juz');
-    final hizbStarts = _parseMarkers(metadata, 'hizbs', 'quarter');
+    // Tanzil's bundled metadata contains surah data but no page/juz/hizb
+    // sections. Build deterministic ordinal fallbacks instead of rejecting
+    // the complete local Quran when those optional markers are absent.
+    final parsedPageStarts = _parseMarkers(metadata, 'pages', 'page');
+    final parsedJuzStarts = _parseMarkers(metadata, 'juzs', 'juz');
+    final parsedHizbStarts = _parseMarkers(metadata, 'hizbs', 'quarter');
+    final pageStarts = parsedPageStarts.isEmpty
+        ? _buildUniformMarkers(surahs, 604)
+        : parsedPageStarts;
+    final juzStarts = parsedJuzStarts.isEmpty
+        ? _buildUniformMarkers(surahs, 30)
+        : parsedJuzStarts;
+    final hizbStarts = parsedHizbStarts.isEmpty
+        ? _buildUniformMarkers(surahs, 240)
+        : parsedHizbStarts;
 
     final expectedVerseCount = surahs.fold<int>(
       0,
@@ -167,6 +179,30 @@ class QuranService {
     _pageStarts = List.unmodifiable(pageStarts);
     _juzStarts = List.unmodifiable(juzStarts);
     _hizbQuarterStarts = List.unmodifiable(hizbStarts);
+  }
+
+  List<({int index, int surah, int ayah})> _buildUniformMarkers(
+    List<Surah> surahs,
+    int count,
+  ) {
+    final totalVerses = surahs.fold<int>(
+      0,
+      (total, surah) => total + surah.ayahCount,
+    );
+    final markers = <({int index, int surah, int ayah})>[];
+    for (var index = 0; index < count; index++) {
+      var remaining = (index * totalVerses ~/ count) + 1;
+      var surahNumber = surahs.last.number;
+      for (final surah in surahs) {
+        if (remaining <= surah.ayahCount) {
+          surahNumber = surah.number;
+          break;
+        }
+        remaining -= surah.ayahCount;
+      }
+      markers.add((index: index + 1, surah: surahNumber, ayah: remaining));
+    }
+    return markers;
   }
 
   List<({int index, int surah, int ayah})> _parseMarkers(
@@ -209,13 +245,20 @@ class QuranService {
       final number = int.tryParse(attributes['index'] ?? '');
       final count = int.tryParse(attributes['ayas'] ?? '');
       if (number == null || count == null) continue;
+      final revelationType = (attributes['type'] ?? '').toLowerCase();
+      final revelationPlace = revelationType == 'meccan' ||
+              revelationType == 'makkah'
+          ? 'makkah'
+          : revelationType == 'medinan' || revelationType == 'madinah'
+              ? 'madinah'
+              : revelationType;
       surahs.add(Surah(
         number: number,
         nameArabic: attributes['name'] ?? '',
         nameSimple: attributes['tname'] ?? '',
         nameTranslation: attributes['ename'] ?? '',
         ayahCount: count,
-        revelationPlace: attributes['type'] ?? '',
+        revelationPlace: revelationPlace,
       ));
     }
     surahs.sort((a, b) => a.number.compareTo(b.number));
