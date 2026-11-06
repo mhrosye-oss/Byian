@@ -1,6 +1,5 @@
 import '../khatmah/screens/group_khatmah_screen.dart';
 import '../hifz/screens/group_hifz_screen.dart';
-import '../mushaf/my_simple_mushaf.dart';
 import 'package:flutter/material.dart';
 import '../../core/localization/app_localizations.dart';
 import 'widgets/custom_drawer.dart';
@@ -18,6 +17,7 @@ import '../calendar/screens/hijri_calendar_screen.dart';
 import '../hadiths/screens/hadiths_screen.dart';
 import '../khatmah/screens/khatmah_screen.dart';
 import '../mushaf/mushaf_screen.dart';
+import '../mushaf/mushaf_page_screen.dart';
 import '../prayer/screens/prayer_times_screen.dart';
 import '../qibla/screens/qibla_screen.dart';
 import '../quran/models/ayah.dart';
@@ -43,7 +43,7 @@ class HomeScreen extends StatelessWidget {
     final Widget page;
     switch (route) {
       case 'footer_quran': page = const SurahBrowserScreen(); break;
-      case 'my_mushaf': page = const MySimpleMushaf(); break;
+      case 'my_mushaf': page = const MushafPageScreen(startPage: 1); break;
       case 'prayer': page = const PrayerTimesScreen(); break;
       case 'qibla': page = const QiblaScreen(); break;
       case 'recitation':
