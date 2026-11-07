@@ -65,7 +65,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isLastPage = _currentPage == 2;
 
     return Scaffold(
@@ -699,7 +698,7 @@ class _OpenBookPainter extends CustomPainter {
       ..strokeWidth = 1.2;
 
     for (int i = 0; i < 5; i++) {
-      final y = 34 + (i * 18);
+      final y = 34.0 + (i * 18.0);
       canvas.drawLine(
         Offset(32, y),
         Offset(size.width * 0.38, y),
