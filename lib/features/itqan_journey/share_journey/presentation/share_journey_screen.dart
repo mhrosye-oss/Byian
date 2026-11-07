@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
-class ShareJourneyScreen extends StatefulWidget {
+import '../../application/itqan_journey_provider.dart';
+
+class ShareJourneyScreen extends ConsumerStatefulWidget {
   const ShareJourneyScreen({super.key});
 
   @override
-  State<ShareJourneyScreen> createState() => _ShareJourneyScreenState();
+  ConsumerState<ShareJourneyScreen> createState() => _ShareJourneyScreenState();
 }
 
-class _ShareJourneyScreenState extends State<ShareJourneyScreen> {
+class _ShareJourneyScreenState extends ConsumerState<ShareJourneyScreen> {
+  static const _appLink =
+      'https://play.google.com/store/apps/details?id=com.itqan.itqan';
   final _message = TextEditingController();
   bool _sending = false;
 
@@ -30,39 +34,63 @@ class _ShareJourneyScreenState extends State<ShareJourneyScreen> {
     return text;
   }
 
-  Future<void> _copy() async {
+  Future<void> _shareContent() async {
     final text = await _validatedText();
     if (text == null) return;
-    await Clipboard.setData(ClipboardData(text: text));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('تم نسخ النص. لا يُحتسب النسخ مشاركة مؤكدة.')),
-      );
-    }
+    await _share(text);
   }
 
-  Future<void> _shareByEmail() async {
-    final text = await _validatedText();
-    if (text == null) return;
+  Future<void> _shareApplication() async {
+    await _share('تعرّف على تطبيق إتقان للقرآن والعبادات اليومية:\n$_appLink');
+  }
+
+  Future<void> _share(String text) async {
+    if (_sending) return;
     setState(() => _sending = true);
     try {
-      final uri = Uri(scheme: 'mailto', queryParameters: {'body': text});
-      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!opened) throw StateError('تعذر فتح تطبيق البريد');
-      if (mounted) {
+      final result = await Share.share(text);
+      if (!mounted) return;
+      if (result.status != ShareResultStatus.success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'فُتح تطبيق البريد؛ لا يمكن تأكيد الإرسال، لذلك لم يُسجّل إنجاز.',
-            ),
+            content: Text('لم يؤكد النظام اكتمال المشاركة؛ لم يُسجّل نشاط.'),
+          ),
+        );
+        return;
+      }
+
+      try {
+        final activity =
+            await ref.read(itqanJourneyProvider.notifier).recordActivity(
+                  'share',
+                  sourceType: 'share',
+                );
+        if (!mounted) return;
+        final data = activity['data'];
+        final duplicate = activity['duplicate'] == true;
+        final xp = data is Map ? data['xp_earned'] ?? 0 : 0;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(duplicate
+                ? 'المشاركة مسجلة مسبقاً.'
+                : 'أكد الخادم تسجيل المشاركة • $xp XP'),
+          ),
+        );
+      } catch (error) {
+        if (!mounted) return;
+        final queued = error is ItqanJourneyException && error.queued;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(queued
+                ? 'اكتملت المشاركة وحُفظ نشاطها للمزامنة؛ لا تُمنح نقاط حتى يؤكدها الخادم.'
+                : 'اكتملت المشاركة، لكن تعذر تسجيل النشاط: $error'),
           ),
         );
       }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذرت المشاركة: $error')),
+          SnackBar(content: Text('تعذرت مشاركة المحتوى: $error')),
         );
       }
     } finally {
@@ -77,8 +105,14 @@ class _ShareJourneyScreenState extends State<ShareJourneyScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('اكتب فائدة أو ذكراً أو دعاءً موثوقاً لمشاركته.'),
+          const Text('شارك تطبيق إتقان أو فائدة أو ذكراً أو دعاءً موثوقاً.'),
           const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: _sending ? null : _shareApplication,
+            icon: const Icon(Icons.ios_share_outlined),
+            label: const Text('مشاركة رابط التطبيق'),
+          ),
+          const SizedBox(height: 16),
           TextField(
             controller: _message,
             minLines: 4,
@@ -91,19 +125,13 @@ class _ShareJourneyScreenState extends State<ShareJourneyScreen> {
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
-            onPressed: _sending ? null : _shareByEmail,
-            icon: const Icon(Icons.email_outlined),
-            label:
-                Text(_sending ? 'جارٍ فتح تطبيق البريد' : 'مشاركة عبر البريد'),
-          ),
-          OutlinedButton.icon(
-            onPressed: _sending ? null : _copy,
-            icon: const Icon(Icons.copy_outlined),
-            label: const Text('نسخ النص'),
+            onPressed: _sending ? null : _shareContent,
+            icon: const Icon(Icons.share_outlined),
+            label: Text(_sending ? 'جارٍ فتح المشاركة…' : 'مشاركة المحتوى'),
           ),
           const SizedBox(height: 8),
           Text(
-            'فتح تطبيق خارجي أو نسخ النص لا يؤكد إرساله؛ لن تُمنح نقاط من هذه الواجهة.',
+            'يُسجّل النشاط فقط إذا أعادت واجهة المشاركة نتيجة نجاح. لا يعني ذلك أن المستلم استلم المحتوى أو فتحه.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

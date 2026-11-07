@@ -94,7 +94,10 @@ class _DuaJourneyScreenState extends ConsumerState<DuaJourneyScreen> {
     setState(() => _submitting.add(index));
     try {
       final result =
-          await ref.read(itqanJourneyProvider.notifier).recordActivity('dua');
+          await ref.read(itqanJourneyProvider.notifier).recordActivity(
+                'dua',
+                sourceType: 'dua',
+              );
       if (mounted) setState(() => _completed.add(index));
       await _saveProgress();
       if (!mounted) return;
@@ -105,9 +108,21 @@ class _DuaJourneyScreenState extends ConsumerState<DuaJourneyScreen> {
       );
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر تأكيد القراءة: $error')),
-        );
+        if (error is ItqanJourneyException && error.queued) {
+          setState(() => _completed.add(index));
+          await _saveProgress();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'حُفظ الدعاء للمزامنة؛ لن تُمنح نقاط حتى يؤكد الخادم تسجيله.'),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('تعذر تأكيد القراءة: $error')),
+          );
+        }
       }
     } finally {
       if (mounted) setState(() => _submitting.remove(index));

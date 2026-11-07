@@ -26,9 +26,11 @@ class _JourneyAchievementsScreenState
     final state = ref.watch(itqanJourneyProvider);
     final raw = state.achievements?['achievements'];
     final rows = raw is List ? raw : const <dynamic>[];
-    final earned = rows
-        .where((entry) => entry is Map && entry['is_earned'] == true)
-        .toList();
+    final earnedCount = state.achievements?['earned'] ??
+        rows
+            .where((entry) => entry is Map && entry['is_earned'] == true)
+            .length;
+    final totalCount = state.achievements?['total'] ?? rows.length;
 
     return Scaffold(
       appBar: AppBar(title: const Text('الإنجازات والأوسمة')),
@@ -47,20 +49,32 @@ class _JourneyAchievementsScreenState
                 ],
               ),
             )
-          : earned.isEmpty
-              ? const Center(child: Text('لم تحصل على أوسمة بعد'))
+          : rows.isEmpty
+              ? const Center(child: Text('لا توجد إنجازات متاحة حالياً.'))
               : ListView(
-                  children: earned.map((entry) {
-                    final achievement = Map<String, dynamic>.from(entry as Map);
-                    return ListTile(
-                      leading: const Icon(Icons.military_tech),
-                      title: Text('${achievement['title'] ?? ''}'),
-                      subtitle: Text(
-                        '${achievement['description'] ?? ''}\n'
-                        '${achievement['earned_at'] ?? ''}',
-                      ),
-                    );
-                  }).toList(),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text('المكتسب: $earnedCount / $totalCount'),
+                    ),
+                    ...rows.whereType<Map>().map((entry) {
+                      final achievement = Map<String, dynamic>.from(entry);
+                      final isEarned = achievement['is_earned'] == true;
+                      return ListTile(
+                        leading: Icon(
+                          isEarned ? Icons.military_tech : Icons.lock_outline,
+                          color: isEarned
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).disabledColor,
+                        ),
+                        title: Text('${achievement['title'] ?? ''}'),
+                        subtitle: Text(
+                          '${achievement['description'] ?? ''}\n'
+                          '${isEarned ? achievement['earned_at'] ?? 'مكتسب' : 'لم يُكتسب بعد'}',
+                        ),
+                      );
+                    }),
+                  ],
                 ),
     );
   }

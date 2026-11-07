@@ -23,6 +23,7 @@ class AuthService {
     await prefs.setString(_keyName, name);
     await prefs.setString(_keyEmail, email);
     if (userId != null) await prefs.setInt(_keyId, userId);
+    if (userId == null) await prefs.remove(_keyId);
   }
 
   static Future<String?> getToken() => _secureStorage.read(key: _tokenKey);
@@ -41,6 +42,11 @@ class AuthService {
     final email = prefs.getString(_keyEmail);
     if (name != null && email != null) return {'name': name, 'email': email};
     return null;
+  }
+
+  static Future<int?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_keyId);
   }
 
   static Future<void> logout() async {

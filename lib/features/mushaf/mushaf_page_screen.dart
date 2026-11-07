@@ -52,12 +52,10 @@ class MushafPageScreen extends ConsumerStatefulWidget {
   ConsumerState<MushafPageScreen> createState() => _MushafPageScreenState();
 }
 
-class _MushafPageScreenState extends ConsumerState<MushafPageScreen>
-    with WidgetsBindingObserver {
+class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
   late int _currentPage;
-  final Set<int> _visitedPages = {};
-  DateTime? _activeSince;
-  Duration _activeDuration = Duration.zero;
+  final Map<int, bool> _completionPending = {};
+  final Set<int> _submittingPages = {};
   bool _closing = false;
   bool _allowPop = false;
   final ScrollController _scrollController = ScrollController();
@@ -69,10 +67,7 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _activeSince = DateTime.now();
     _currentPage = widget.startPage.clamp(1, 604);
-    _visitedPages.add(_currentPage);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _saveReadingPosition(_currentPage);
     });
@@ -80,51 +75,15 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _dismissAyahMenu();
     _scrollController.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _activeSince ??= DateTime.now();
-    } else {
-      _pauseActiveClock();
-    }
-  }
-
-  void _pauseActiveClock() {
-    final started = _activeSince;
-    if (started == null) return;
-    _activeDuration += DateTime.now().difference(started);
-    _activeSince = null;
-  }
-
   Future<void> _closeReader() async {
     if (_closing) return;
     _closing = true;
-    _pauseActiveClock();
-    final seconds = _activeDuration.inSeconds;
-    if (_visitedPages.length >= 2 && seconds >= 30) {
-      try {
-        await ref.read(itqanJourneyProvider.notifier).recordActivity(
-          'quran.reading',
-          metadata: {
-            'pages_read': _visitedPages.length,
-            'duration_seconds': seconds,
-          },
-        );
-      } catch (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('تعذر تأكيد جلسة القراءة: $error')),
-          );
-        }
-      }
-    }
     if (mounted) {
       setState(() => _allowPop = true);
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -133,12 +92,47 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen>
     }
   }
 
+  Future<void> _completeCurrentPage() async {
+    final page = _currentPage;
+    if (_completionPending.containsKey(page) || _submittingPages.contains(page)) return;
+    setState(() => _submittingPages.add(page));
+    try {
+      final result = await ref.read(itqanJourneyProvider.notifier).recordActivity(
+        'quran.reading',
+        metadata: const {'pages': 1},
+        sourceType: 'quran',
+        sourceId: page,
+      );
+      if (!mounted) return;
+      setState(() => _completionPending[page] = false);
+      final rawData = result['data'];
+      final data = rawData is Map ? rawData : const <String, dynamic>{};
+      final message = result['duplicate'] == true
+          ? 'هذه الصفحة مسجلة مسبقاً.'
+          : 'تم تأكيد إكمال الصفحة • ${data['xp_earned'] ?? 0} XP';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } catch (error) {
+      if (!mounted) return;
+      if (error is ItqanJourneyException && error.queued) {
+        setState(() => _completionPending[page] = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('حُفظ إكمال الصفحة للمزامنة؛ لن تُمنح نقاط حتى يؤكده الخادم.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذر تسجيل إكمال الصفحة: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submittingPages.remove(page));
+    }
+  }
+
   void _goToPage(int page) {
     if (page < 1 || page > 604 || page == _currentPage) return;
     setState(() {
       _currentPage = page;
       _autoScroll = false;
-      _visitedPages.add(page);
     });
     if (_scrollController.hasClients) _scrollController.jumpTo(0);
     _saveReadingPosition(page);
@@ -490,6 +484,9 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen>
               onTranslation: () => setState(() => _showTranslation = !_showTranslation),
               onBookmark: () { if (firstVerse != null) _toggleBookmark(firstVerse); },
               onMore: _showPagePicker,
+              completionPending: _completionPending[_currentPage],
+              isSubmitting: _submittingPages.contains(_currentPage),
+              onCompletePage: _completeCurrentPage,
             ),
           ],
         ),
@@ -613,7 +610,7 @@ class _AyahCard extends ConsumerWidget {
 }
 
 class _ReaderBottomBar extends StatelessWidget {
-  const _ReaderBottomBar({required this.autoScroll, required this.onListen, required this.onTafsir, required this.onAutoScroll, required this.onShare, required this.onTranslation, required this.onBookmark, required this.onMore});
+  const _ReaderBottomBar({required this.autoScroll, required this.onListen, required this.onTafsir, required this.onAutoScroll, required this.onShare, required this.onTranslation, required this.onBookmark, required this.onMore, required this.completionPending, required this.isSubmitting, required this.onCompletePage});
 
   final bool autoScroll;
   final VoidCallback onListen;
@@ -623,6 +620,9 @@ class _ReaderBottomBar extends StatelessWidget {
   final VoidCallback onTranslation;
   final VoidCallback onBookmark;
   final VoidCallback onMore;
+  final bool? completionPending;
+  final bool isSubmitting;
+  final VoidCallback onCompletePage;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -630,15 +630,38 @@ class _ReaderBottomBar extends StatelessWidget {
         decoration: const BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Color(0x12000000), blurRadius: 12, offset: Offset(0, -3))]),
         child: SafeArea(
           top: false,
-          child: Row(children: [
-            _BottomAction(icon: Icons.headphones_rounded, label: 'سماع', onTap: onListen),
-            _BottomAction(icon: Icons.menu_book_rounded, label: 'المراجع', onTap: onTafsir),
-            _BottomAction(icon: autoScroll ? Icons.pause_circle_outline_rounded : Icons.slow_motion_video_rounded, label: 'لف تلقائي', onTap: onAutoScroll, selected: autoScroll),
-            _BottomAction(icon: Icons.share_rounded, label: 'مشاركة', onTap: onShare),
-            _BottomAction(icon: Icons.translate_rounded, label: 'الترجمة', onTap: onTranslation),
-            _BottomAction(icon: Icons.bookmark_add_outlined, label: 'الحفظ', onTap: onBookmark),
-            _BottomAction(icon: Icons.more_horiz_rounded, label: 'مزيد', onTap: onMore),
-          ]),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: completionPending != null || isSubmitting ? null : onCompletePage,
+                  icon: Icon(completionPending == true
+                      ? Icons.cloud_upload_outlined
+                      : completionPending == false
+                          ? Icons.check_circle_outline
+                          : Icons.done_all),
+                  label: Text(isSubmitting
+                      ? 'جارٍ تسجيل إكمال الصفحة…'
+                      : completionPending == true
+                          ? 'حُفظت للمزامنة'
+                          : completionPending == false
+                              ? 'تم إكمال الصفحة'
+                              : 'أكملت قراءة الصفحة'),
+                ),
+              ),
+              Row(children: [
+                _BottomAction(icon: Icons.headphones_rounded, label: 'سماع', onTap: onListen),
+                _BottomAction(icon: Icons.menu_book_rounded, label: 'المراجع', onTap: onTafsir),
+                _BottomAction(icon: autoScroll ? Icons.pause_circle_outline_rounded : Icons.slow_motion_video_rounded, label: 'لف تلقائي', onTap: onAutoScroll, selected: autoScroll),
+                _BottomAction(icon: Icons.share_rounded, label: 'مشاركة', onTap: onShare),
+                _BottomAction(icon: Icons.translate_rounded, label: 'الترجمة', onTap: onTranslation),
+                _BottomAction(icon: Icons.bookmark_add_outlined, label: 'الحفظ', onTap: onBookmark),
+                _BottomAction(icon: Icons.more_horiz_rounded, label: 'مزيد', onTap: onMore),
+              ]),
+            ],
+          ),
         ),
       );
 }

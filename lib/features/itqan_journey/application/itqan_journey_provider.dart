@@ -68,15 +68,24 @@ class ItqanJourneyException implements Exception {
     this.message, {
     this.code,
     this.retryAfter,
+    this.queued = false,
+    this.validationErrors,
   });
 
   final int status;
   final String message;
   final String? code;
   final int? retryAfter;
+  final bool queued;
+  final Map<String, dynamic>? validationErrors;
 
   @override
-  String toString() => message;
+  String toString() {
+    final fields = validationErrors?.entries
+        .map((entry) => '${entry.key}: ${entry.value}')
+        .join(' • ');
+    return fields == null || fields.isEmpty ? message : '$message • $fields';
+  }
 }
 
 class ItqanJourneyRepository {
@@ -94,6 +103,7 @@ class ItqanJourneyRepository {
   static const Uuid _uuid = Uuid();
   final http.Client _client;
   final String _base;
+  Future<void>? _pendingSync;
 
   Future<Map<String, dynamic>> get(String endpoint) async =>
       _data(await _request('GET', endpoint));
@@ -101,34 +111,47 @@ class ItqanJourneyRepository {
   Future<Map<String, dynamic>> record(
     String type, {
     Map<String, dynamic>? metadata,
+    String? sourceType,
+    int? sourceId,
   }) async {
     final idempotencyKey = _uuid.v4();
     final body = <String, dynamic>{
       'activity_type': type,
       'idempotency_key': idempotencyKey,
       if (metadata != null) 'metadata': metadata,
+      if (sourceType != null) 'source_type': sourceType,
+      if (sourceId != null) 'source_id': sourceId,
     };
-    final ownerEmail = (await AuthService.getUser())?['email'];
+    final ownerEmail = (await AuthService.getUser())?['email'] ?? '';
+    final ownerId = await AuthService.getUserId();
     final outbox = await _openOutbox();
-    if (ownerEmail != null && ownerEmail.isNotEmpty) {
-      await outbox.put(idempotencyKey, {
-        'owner_email': ownerEmail,
-        'body': body,
-      });
-    }
+    await outbox.put(idempotencyKey, {
+      'owner_email': ownerEmail,
+      'owner_identity': ownerId == null
+          ? (ownerEmail.trim().isEmpty
+              ? ''
+              : 'email:${ownerEmail.toLowerCase()}')
+          : 'id:$ownerId',
+      'body': body,
+    });
 
     try {
       final result = await _request('POST', 'gamification/activities', body);
       await outbox.delete(idempotencyKey);
       return result;
     } on ItqanJourneyException catch (error) {
-      // Validation/client errors cannot succeed on an identical retry.
-      if (error.status >= 400 &&
-          error.status < 500 &&
-          error.status != 401 &&
-          error.status != 408 &&
-          error.status != 429) {
-        await outbox.delete(idempotencyKey);
+      if (!_isRetryable(error)) {
+        await _markBlocked(outbox, idempotencyKey, error);
+      } else {
+        await _scheduleRetry(outbox, idempotencyKey, error);
+        throw ItqanJourneyException(
+          error.status,
+          error.message,
+          code: error.code,
+          retryAfter: error.retryAfter,
+          queued: true,
+          validationErrors: error.validationErrors,
+        );
       }
       rethrow;
     }
@@ -136,33 +159,93 @@ class ItqanJourneyRepository {
 
   /// Retries queued events with the exact same idempotency key. The backend
   /// remains the sole source of rewards; queued events do not change balances.
-  Future<void> syncPendingActivities() async {
+  Future<void> syncPendingActivities() {
+    final active = _pendingSync;
+    if (active != null) return active;
+    late final Future<void> shared;
+    shared = _drainPendingActivities().whenComplete(() {
+      if (identical(_pendingSync, shared)) _pendingSync = null;
+    });
+    _pendingSync = shared;
+    return shared;
+  }
+
+  Future<void> _drainPendingActivities() async {
     final currentEmail = (await AuthService.getUser())?['email'];
-    if (currentEmail == null || currentEmail.isEmpty) return;
+    final currentUserId = await AuthService.getUserId();
+    final identity = currentUserId != null
+        ? 'id:$currentUserId'
+        : currentEmail == null || currentEmail.trim().isEmpty
+            ? ''
+            : 'email:${currentEmail.toLowerCase()}';
+    if (identity.isEmpty) return;
 
     final outbox = await _openOutbox();
     for (final key in outbox.keys.toList()) {
       final raw = outbox.get(key);
       if (raw is! Map) continue;
       final entry = Map<String, dynamic>.from(raw);
-      if (entry['owner_email'] != currentEmail || entry['body'] is! Map) {
-        continue;
-      }
+      final storedIdentity = entry['owner_identity']?.toString();
+      final matchesUser = storedIdentity != null
+          ? storedIdentity == identity
+          : entry['owner_email'] == currentEmail;
+      if (!matchesUser || entry['body'] is! Map) continue;
+      if (entry['blocked_error'] != null) continue;
+      final retryAt = DateTime.tryParse('${entry['retry_after_at'] ?? ''}');
+      if (retryAt != null && retryAt.isAfter(DateTime.now())) continue;
       final body = Map<String, dynamic>.from(entry['body'] as Map);
       try {
         await _request('POST', 'gamification/activities', body);
         await outbox.delete(key);
       } on ItqanJourneyException catch (error) {
-        if (error.status >= 400 &&
-            error.status < 500 &&
-            error.status != 401 &&
-            error.status != 408 &&
-            error.status != 429) {
-          await outbox.delete(key);
+        if (!_isRetryable(error)) {
+          await _markBlocked(outbox, key, error);
+          continue;
         }
-        rethrow;
+        await _scheduleRetry(outbox, key, error);
+        // Avoid hammering the service after a transient failure or rate limit.
+        break;
       }
     }
+  }
+
+  bool _isRetryable(ItqanJourneyException error) =>
+      error.status == 0 ||
+      error.status == 401 ||
+      error.status == 408 ||
+      error.status == 429 ||
+      error.status >= 500;
+
+  Future<void> _scheduleRetry(
+    Box<dynamic> outbox,
+    dynamic key,
+    ItqanJourneyException error,
+  ) async {
+    final raw = outbox.get(key);
+    if (raw is! Map) return;
+    final entry = Map<String, dynamic>.from(raw);
+    final delay = error.retryAfter ?? 30;
+    if (error.status == 429 || error.retryAfter != null) {
+      entry['retry_after_at'] =
+          DateTime.now().add(Duration(seconds: delay)).toIso8601String();
+    }
+    await outbox.put(key, entry);
+  }
+
+  Future<void> _markBlocked(
+    Box<dynamic> outbox,
+    dynamic key,
+    ItqanJourneyException error,
+  ) async {
+    final raw = outbox.get(key);
+    if (raw is! Map) return;
+    final entry = Map<String, dynamic>.from(raw);
+    entry['blocked_error'] = error.message;
+    entry['blocked_status'] = error.status;
+    if (error.validationErrors != null) {
+      entry['validation_errors'] = error.validationErrors;
+    }
+    await outbox.put(key, entry);
   }
 
   Future<Box<dynamic>> _openOutbox() async {
@@ -233,6 +316,11 @@ class ItqanJourneyRepository {
         retryAfter: error['retry_after'] is num
             ? (error['retry_after'] as num).toInt()
             : null,
+        validationErrors: error['errors'] is Map
+            ? Map<String, dynamic>.from(error['errors'] as Map)
+            : decoded['errors'] is Map
+                ? Map<String, dynamic>.from(decoded['errors'] as Map)
+                : null,
       );
     }
     return decoded;
@@ -246,8 +334,20 @@ class ItqanJourneyNotifier extends StateNotifier<ItqanJourneyState> {
   ItqanJourneyNotifier(this.repository) : super(const ItqanJourneyState());
 
   final ItqanJourneyRepository repository;
+  Future<void>? _loadAllTask;
 
-  Future<void> loadAll() async {
+  Future<void> loadAll() {
+    final active = _loadAllTask;
+    if (active != null) return active;
+    late final Future<void> shared;
+    shared = _performLoadAll().whenComplete(() {
+      if (identical(_loadAllTask, shared)) _loadAllTask = null;
+    });
+    _loadAllTask = shared;
+    return shared;
+  }
+
+  Future<void> _performLoadAll() async {
     state = state.copyWith(loading: true, clearError: true);
     try {
       await repository.syncPendingActivities();
@@ -275,8 +375,15 @@ class ItqanJourneyNotifier extends StateNotifier<ItqanJourneyState> {
   Future<Map<String, dynamic>> recordActivity(
     String type, {
     Map<String, dynamic>? metadata,
+    String? sourceType,
+    int? sourceId,
   }) async {
-    final result = await repository.record(type, metadata: metadata);
+    final result = await repository.record(
+      type,
+      metadata: metadata,
+      sourceType: sourceType,
+      sourceId: sourceId,
+    );
     final rawData = result['data'];
     final data = rawData is Map ? Map<String, dynamic>.from(rawData) : result;
     state = state.copyWith(lastActivity: data, clearError: true);

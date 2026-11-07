@@ -55,7 +55,7 @@ class _AdhkarJourneyScreenState extends ConsumerState<AdhkarJourneyScreen> {
                 count is num &&
                 index >= 0 &&
                 index < rows.length) {
-              counts[index] = count.toInt().clamp(0, 100000);
+              counts[index] = count.toInt().clamp(0, 1000);
             }
           }
         }
@@ -102,7 +102,7 @@ class _AdhkarJourneyScreenState extends ConsumerState<AdhkarJourneyScreen> {
 
   void _setCount(int index, int value) {
     final rawTarget = _items[index]['count'];
-    final target = rawTarget is num ? rawTarget.toInt().clamp(1, 100000) : 1;
+    final target = rawTarget is num ? rawTarget.toInt().clamp(1, 1000) : 1;
     final next = value.clamp(0, target);
     setState(() => _counts[index] = next);
     _saveProgress();
@@ -113,9 +113,10 @@ class _AdhkarJourneyScreenState extends ConsumerState<AdhkarJourneyScreen> {
     try {
       final result =
           await ref.read(itqanJourneyProvider.notifier).recordActivity(
-        'adhkar',
-        metadata: {'count': count},
-      );
+                'adhkar',
+                metadata: {'count': count},
+                sourceType: 'adhkar',
+              );
       if (mounted) setState(() => _completed.add(index));
       await _saveProgress();
       if (!mounted) return;
@@ -126,10 +127,23 @@ class _AdhkarJourneyScreenState extends ConsumerState<AdhkarJourneyScreen> {
       );
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('تعذر تأكيد الذكر. يمكنك إعادة المحاولة: $error')),
-        );
+        if (error is ItqanJourneyException && error.queued) {
+          setState(() => _completed.add(index));
+          await _saveProgress();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'حُفظ النشاط للمزامنة، وسيُعاد إرساله بالمعرّف نفسه دون منح نقاط قبل تأكيد الخادم.'),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content:
+                    Text('تعذر تأكيد الذكر. يمكنك إعادة المحاولة: $error')),
+          );
+        }
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -175,7 +189,7 @@ class _AdhkarJourneyScreenState extends ConsumerState<AdhkarJourneyScreen> {
                       final item = _items[index];
                       final rawTarget = item['count'];
                       final target = rawTarget is num
-                          ? rawTarget.toInt().clamp(1, 100000)
+                          ? rawTarget.toInt().clamp(1, 1000)
                           : 1;
                       final count = _counts[index] ?? 0;
                       final done = _completed.contains(index);

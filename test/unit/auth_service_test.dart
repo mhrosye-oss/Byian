@@ -45,4 +45,21 @@ void main() {
       'new-secret',
     );
   });
+
+  test('stores and clears the account id with its session', () async {
+    await AuthService.saveSession(
+      name: 'Reader',
+      email: '',
+      token: 'session-token',
+      userId: 42,
+    );
+    expect(await AuthService.getUserId(), 42);
+
+    await AuthService.saveSession(
+      name: 'Reader without id',
+      email: '',
+      token: 'new-session-token',
+    );
+    expect(await AuthService.getUserId(), isNull);
+  });
 }
