@@ -1,10 +1,32 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Stores authentication secrets separately from non-sensitive profile labels.
 class AuthService {
   static const String _keyName = 'user_name';
   static const String _keyEmail = 'user_email';
+  static const String _keyId = 'user_id';
   static const String _keySavedEmail = 'saved_email';
   static const String _keySavedPass = 'saved_pass';
+  static const String _tokenKey = 'itqan_bearer_token';
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+
+  static Future<void> saveSession({
+    required String name,
+    required String email,
+    required String token,
+    int? userId,
+  }) async {
+    await _secureStorage.write(key: _tokenKey, value: token);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyName, name);
+    await prefs.setString(_keyEmail, email);
+    if (userId != null) await prefs.setInt(_keyId, userId);
+  }
+
+  static Future<String?> getToken() => _secureStorage.read(key: _tokenKey);
+
+  static Future<void> clearToken() => _secureStorage.delete(key: _tokenKey);
 
   static Future<void> saveUser(String name, String email) async {
     final prefs = await SharedPreferences.getInstance();
@@ -21,9 +43,11 @@ class AuthService {
   }
 
   static Future<void> logout() async {
+    await clearToken();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyName);
     await prefs.remove(_keyEmail);
+    await prefs.remove(_keyId);
   }
 
   static Future<void> saveCredentials(String email, String pass) async {
