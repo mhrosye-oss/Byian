@@ -1,41 +1,28 @@
-# Itqan gamification implementation notes
+# Independent Itqan Journey feature
 
-## Architecture
-Feature-first layers live under `lib/features/gamification`: JSON models, a repository contract, HTTP API/repository implementation, a Riverpod `StateNotifier`, and presentation widgets/screens. The repository uses the existing `http` and `flutter_riverpod` dependencies.
+The new product surface is isolated under `lib/features/itqan_journey/`: journey dashboard, Quran journey, adhkar journey, dua journey, share journey and backend-backed gamification state. Legacy Quran, adhkar and dua screens remain intact; the feature reuses only licensed content assets and the existing QuranService, AuthService, Hive, Riverpod, HTTP and url_launcher APIs. Quran text is rendered verbatim from the bundled Tanzil source and no religious content was authored here.
 
-## SDK and dependencies
-The existing workflow pins Flutter 3.24.0 (stable). The repository pubspec has Dart `>=3.0.0 <4.0.0`, `http ^1.2.0`, and `flutter_riverpod ^2.4.9`. `flutter_secure_storage ^9.2.4` was added for bearer token storage. Flutter/Dart executables were not available in the editing session; exact installed versions and solver compatibility remain unverified. No `pubspec.lock` was present at the inspected branch root. The previously observed CI solver conflict between SDK `integration_test` and `flutter_timezone 5.1.1` was not changed; current pubspec pins flutter_timezone `^4.1.0`.
+## Layers
+- `data/journey_content_repository.dart`: feature-owned access to existing bundled text assets and an independent `itqan_journey_quran` Hive box.
+- `application/itqan_journey_provider.dart`: HTTP repository, API exception, Riverpod state and activity engine.
+- `presentation/journey_dashboard_screen.dart`: journey, earned achievements and leaderboard surfaces.
+- `quran_journey`, `adhkar_journey`, `dua_journey`, `share_journey`: standalone task experiences.
+- `core`, `domain`, `shared`: focused implementation contracts/services are hosted at feature root until additional domain types are needed; no empty placeholder files are added.
 
-## API/source table
-| Feature | Endpoint | Source |
-|---|---|---|
-| Profile | GET `/api/v1/gamification/profile` | API response |
-| Journey | GET `/api/v1/gamification/journey` | API response |
-| Tasks | GET `/api/v1/gamification/tasks` | API response |
-| Streak | GET `/api/v1/gamification/streak` | API response |
-| Achievements | GET `/api/v1/gamification/achievements` | API response |
-| Leaderboard | GET `/api/v1/gamification/leaderboard?limit=10` | API response |
-| Activity | POST `/api/v1/gamification/activities` | API response |
+## Existing dependencies and additions
+Existing: `http ^1.2.0`, `flutter_riverpod ^2.4.9`, `hive_flutter ^1.1.0`, `url_launcher ^6.2.5`, Flutter Material and project Quran service. Added `uuid ^4.5.1` for RFC4122 v4 idempotency keys; no graphics, sharing or navigation packages added. No pubspec.lock was present in the branch root inspection. Flutter/Dart executables were unavailable here, therefore package resolution and pub get/analyze/test are unverified. The CI log previously showed integration_test / flutter_timezone 5.1.1 meta incompatibility; this branch's pubspec has flutter_timezone ^4.1.0. No dependency override or timezone change was made.
 
-## Design tokens
-Widgets use the active Material `Theme.of(context)` color scheme/text theme, 16–20px rounded cards, regular 8/12/16px spacing, and RTL-friendly Flutter layout. Existing app palette is preserved. No new font or image dependency is used.
+## API contract
+The feature uses only the supplied endpoints: GET profile, tasks, journey, streak, achievements, leaderboard?limit=10 and POST activities. All requests use bearer auth. Server result data drives visible balances/rewards; client creates a unique UUID and never calculates XP. A 401 clears token and stored session identity; error responses retain status/code/retry_after. Live endpoint behavior has not been tested in this authoring session.
 
-## Idempotency and error handling
-Each `recordActivity` call creates an RFC 4122 version-4 key from `Random.secure()` bytes. Activity result reward/balance values are parsed from the server; the client does not calculate XP or coins. Duplicate responses retain server-returned balances. HTTP 401 clears token and stored user identity and raises a session-expired exception; 422/429/5xx/network errors are surfaced with server message/status, and rate-limit `retry_after` is retained. A global navigation redirect is not yet wired.
+## Limitations
+HomeScreen and auth login/register still require integration with the new independent entry point/session contract. The existing Drawer now opens the journey surfaces, but its profile entry currently points to the dashboard (there is no dedicated profile screen implementation here). Share uses the platform SMS app via existing url_launcher; launch success is not proof of sending, so the backend remains responsible for reward validation. Quran progress stores a private last position; the read-completion action currently records one page, because no reliable page count is derived from user's reading session. Adhkar sends one activity per completed item; backend acceptance controls rewards. Daily completion summary and loading/errors are server data only.
 
-## Storage
-Bearer token is held in `flutter_secure_storage`; name/email labels remain in existing SharedPreferences integration. XP, coins, level, achievements, streak and leaderboard are fetched from server and never persisted as local authority.
-
-## Contract coverage and gaps
-Model and API fields follow the supplied contract. API requests use `/api/v1/` paths and bearer authorization. The current task screen route uses existing Quran, adhkar and dua screens. Activity submission has not yet been connected to task completion interactions; neither login/register UI nor the existing HomeScreen/ProfileScreen/Drawer integration has been changed in this commit. No live endpoint calls were made, so no 404/500 result is known. Leaderboard period remains server-provided (`all_time` per contract); no period selector is provided.
-
-## E2E checklist
-- [ ] Login response token persisted from login screen
-- [ ] Home JourneyBanner loaded from backend
-- [ ] Activity POST accepted and server balance displayed
-- [ ] Journey refreshed after activity
-- [ ] Profile extended with server stats
-- [ ] Leaderboard reachable from existing Drawer
-- [ ] All Drawer links operational
-- [ ] RTL verified on target devices
-- [ ] `flutter test` and `flutter analyze` run in Flutter-enabled environment
+## Manual verification checklist
+- [ ] flutter pub get / analyze / test on Flutter 3.24 environment
+- [ ] Login endpoint stores token and protected endpoints read it
+- [ ] Quran position survives route reopening; bundled Tanzil text is unchanged
+- [ ] Adhkar/dua/share action returns server acceptance before reward shown
+- [ ] API 401 clears session; rate limit and validation errors are presented
+- [ ] Drawer destinations navigate; four bottom destinations are unchanged
+- [ ] Verify RTL on device and run legacy test suite
