@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../application/itqan_journey_provider.dart';
 
 class ShareJourneyScreen extends ConsumerStatefulWidget { const ShareJourneyScreen({super.key}); @override ConsumerState<ShareJourneyScreen> createState()=>_ShareJourneyScreenState(); }
 class _ShareJourneyScreenState extends ConsumerState<ShareJourneyScreen> {

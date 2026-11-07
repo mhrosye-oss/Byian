@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/itqan_journey_provider.dart';
 import '../../data/journey_content_repository.dart';
-import '../../quran/models/ayah.dart';
-import '../../quran/services/quran_service.dart';
+import '../../../quran/models/ayah.dart';
 
 class QuranJourneyScreen extends ConsumerStatefulWidget { const QuranJourneyScreen({super.key}); @override ConsumerState<QuranJourneyScreen> createState()=>_QuranJourneyScreenState(); }
 class _QuranJourneyScreenState extends ConsumerState<QuranJourneyScreen> {

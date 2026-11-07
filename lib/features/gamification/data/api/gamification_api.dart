@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../core/services/auth_service.dart';
+import '../../../../core/services/auth_service.dart';
 
 class GamificationApiException implements Exception {
   const GamificationApiException(this.statusCode, this.message, {this.code, this.retryAfter});

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../application/gamification_provider.dart';
 import '../../domain/models/gamification_models.dart';
-import '../../widgets/placeholder.dart';
 import '../widgets/task_card.dart';
 import '../../../adhkar/screens/new_adhkar_screen.dart';
 import '../../../adhkar/screens/duas_screen.dart';

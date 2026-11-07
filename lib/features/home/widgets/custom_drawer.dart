@@ -12,9 +12,132 @@ import 'package:itqan/features/kids/screens/kids_mode_screen.dart';
 import 'package:itqan/features/contributors/screens/hall_of_fame_screen.dart';
 import 'package:itqan/features/itqan_journey/presentation/journey_dashboard_screen.dart';
 import 'package:itqan/features/itqan_journey/presentation/profile_screen.dart';
-import 'package:itqan/features/itqan_journey/application/itqan_journey_provider.dart';
 
-class CustomDrawer extends ConsumerStatefulWidget {const CustomDrawer({super.key});@override ConsumerState<CustomDrawer> createState()=>_CustomDrawerState();}
-class _CustomDrawerState extends ConsumerState<CustomDrawer>{Map<String,String>? _user;bool _isLoading=true;static const _languages={'ar':'العربية','en':'English','fr':'Français'};@override void initState(){super.initState();_loadUser();}Future<void> _loadUser()async{final user=await AuthService.getUser();if(mounted)setState((){_user=user;_isLoading=false;});}Future<void> _logout()async{await AuthService.logout();if(mounted)setState(()=>_user=null);}Future<void> _selectLanguage()async{final selected=await showDialog<Locale>(context:context,builder:(c)=>SimpleDialog(title:const Text('اختر اللغة'),children:_languages.entries.map((e)=>SimpleDialogOption(onPressed:()=>Navigator.pop(c,Locale(e.key)),child:Text(e.value))).toList()));if(selected==null||!mounted)return;try{await AppSettingsScope.of(context).setLocale(selected);if(!mounted)return;final name=switch(selected.languageCode){'en'=>'english','fr'=>'french',_=>'arabic'};await ref.read(settingsProvider.notifier).update(ref.read(settingsProvider).copyWith(language:name));}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('تعذر تغيير اللغة: $e')));}}
-void _open(Widget page){Navigator.pop(context);Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>page));}Future<void> _login()async{final result=await Navigator.push<bool>(context,MaterialPageRoute<bool>(builder:(_)=>const LoginScreen()));if(result==true)_loadUser();}
-@override Widget build(BuildContext context){final theme=Theme.of(context);return Drawer(backgroundColor:theme.scaffoldBackgroundColor,child:SafeArea(child:ListView(padding:EdgeInsets.zero,children:[Container(color:theme.colorScheme.primary,padding:const EdgeInsets.all(20),child:_isLoading?const Center(child:CircularProgressIndicator(color:Colors.white)):Column(crossAxisAlignment:CrossAxisAlignment.start,children:[CircleAvatar(child:Icon(_user==null?Icons.person_outline:Icons.person)),const SizedBox(height:12),Text(_user?['name']??'مرحباً بك',style:theme.textTheme.titleLarge?.copyWith(color:Colors.white)),if(_user!=null)Text(_user?['email']??'',style:const TextStyle(color:Colors.white70)),if(_user==null)TextButton(onPressed:_login,child:const Text('تسجيل الدخول',style:TextStyle(color:Colors.white))),if(_user!=null)TextButton(onPressed:_logout,child:const Text('تسجيل الخروج',style:TextStyle(color:Colors.white)))])),const Divider(),ListTile(leading:const Icon(Icons.home),title:const Text('الرئيسية'),onTap:()=>Navigator.pop(context)),ListTile(leading:const Icon(Icons.explore),title:const Text('رحلتي'),onTap:()=>_open(const JourneyDashboardScreen())),ListTile(leading:const Icon(Icons.person),title:const Text('ملفي الشخصي'),onTap:()=>_open(const JourneyProfileScreen())),ListTile(leading:const Icon(Icons.leaderboard),title:const Text('العشرة الأوائل'),onTap:()=>_open(const JourneyLeaderboardScreen())),ListTile(leading:const Icon(Icons.military_tech),title:const Text('الإنجازات'),onTap:()=>_open(const JourneyAchievementsScreen())),ListTile(leading:const Icon(Icons.settings),title:const Text('الإعدادات'),onTap:()=>_open(const SettingsScreen())),const Divider(),ListTile(leading:const Icon(Icons.dark_mode_outlined),title:const Text('الوضع الداكن'),trailing:Switch(value:theme.brightness==Brightness.dark,onChanged:(_){ })),ListTile(leading:const Icon(Icons.language),title:const Text('اللغة'),subtitle:Text(_languages[Localizations.localeOf(context).languageCode]??'العربية'),onTap:_selectLanguage),ListTile(leading:const Icon(Icons.smart_toy),title:const Text('المساعد الذكي'),onTap:()=>_open(const AiChatScreen())),ListTile(leading:const Icon(Icons.child_care),title:const Text('وضع الأطفال'),onTap:()=>_open(const KidsModeScreen())),ListTile(leading:const Icon(Icons.volunteer_activism),title:const Text('الصدقة الجارية'),onTap:()=>_open(const WaqfScreen())),ListTile(leading:const Icon(Icons.diversity_3),title:const Text('شكراً لمساهمينا'),onTap:()=>_open(const HallOfFameScreen())),ListTile(leading:const Icon(Icons.info_outline),title:const Text('من نحن'),onTap:()=>_open(const AboutScreen()))])));}}
+class CustomDrawer extends ConsumerStatefulWidget {
+  const CustomDrawer({super.key});
+
+  @override
+  ConsumerState<CustomDrawer> createState() => _CustomDrawerState();
+}
+
+class _CustomDrawerState extends ConsumerState<CustomDrawer> {
+  Map<String, String>? _user;
+  bool _isLoading = true;
+  static const _languages = {'ar': 'العربية', 'en': 'English', 'fr': 'Français'};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = await AuthService.getUser();
+    if (mounted) setState(() { _user = user; _isLoading = false; });
+  }
+
+  Future<void> _logout() async {
+    await AuthService.logout();
+    if (mounted) setState(() => _user = null);
+  }
+
+  Future<void> _selectLanguage() async {
+    final selected = await showDialog<Locale>(
+      context: context,
+      builder: (c) => SimpleDialog(
+        title: const Text('اختر اللغة'),
+        children: _languages.entries.map((e) => SimpleDialogOption(
+          onPressed: () => Navigator.pop(c, Locale(e.key)),
+          child: Text(e.value),
+        )).toList(),
+      ),
+    );
+    if (selected == null || !mounted) return;
+    try {
+      await AppSettingsScope.of(context).setLocale(selected);
+      if (!mounted) return;
+      final name = switch (selected.languageCode) {
+        'en' => 'english',
+        'fr' => 'french',
+        _ => 'arabic',
+      };
+      await ref.read(settingsProvider.notifier).update(
+            ref.read(settingsProvider).copyWith(language: name),
+          );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذر تغيير اللغة: $e')),
+        );
+      }
+    }
+  }
+
+  void _open(Widget page) {
+    Navigator.pop(context);
+    Navigator.push(context, MaterialPageRoute<void>(builder: (_) => page));
+  }
+
+  Future<void> _login() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute<bool>(builder: (_) => const LoginScreen()),
+    );
+    if (result == true) _loadUser();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final settings = AppSettingsScope.of(context);
+    return Drawer(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      child: SafeArea(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            Container(
+              color: theme.colorScheme.primary,
+              padding: const EdgeInsets.all(20),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(child: Icon(_user == null ? Icons.person_outline : Icons.person)),
+                        const SizedBox(height: 12),
+                        Text(_user?['name'] ?? 'مرحباً بك', style: theme.textTheme.titleLarge?.copyWith(color: Colors.white)),
+                        if (_user != null) Text(_user?['email'] ?? '', style: const TextStyle(color: Colors.white70)),
+                        if (_user == null) TextButton(onPressed: _login, child: const Text('تسجيل الدخول', style: TextStyle(color: Colors.white))),
+                        if (_user != null) TextButton(onPressed: _logout, child: const Text('تسجيل الخروج', style: TextStyle(color: Colors.white))),
+                      ],
+                    ),
+            ),
+            const Divider(),
+            ListTile(leading: const Icon(Icons.home), title: const Text('الرئيسية'), onTap: () => Navigator.pop(context)),
+            ListTile(leading: const Icon(Icons.explore), title: const Text('رحلتي'), onTap: () => _open(const JourneyDashboardScreen())),
+            ListTile(leading: const Icon(Icons.person), title: const Text('ملفي الشخصي'), onTap: () => _open(const JourneyProfileScreen())),
+            ListTile(leading: const Icon(Icons.leaderboard), title: const Text('العشرة الأوائل'), onTap: () => _open(const JourneyLeaderboardScreen())),
+            ListTile(leading: const Icon(Icons.military_tech), title: const Text('الإنجازات'), onTap: () => _open(const JourneyAchievementsScreen())),
+            ListTile(leading: const Icon(Icons.settings), title: const Text('الإعدادات'), onTap: () => _open(const SettingsScreen())),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.dark_mode_outlined),
+              title: const Text('الوضع الداكن'),
+              trailing: Switch(
+                value: settings.isDarkMode,
+                onChanged: settings.setDarkMode,
+              ),
+            ),
+            ListTile(leading: const Icon(Icons.language), title: const Text('اللغة'), subtitle: Text(_languages[Localizations.localeOf(context).languageCode] ?? 'العربية'), onTap: _selectLanguage),
+            ListTile(leading: const Icon(Icons.smart_toy), title: const Text('المساعد الذكي'), onTap: () => _open(const AiChatScreen())),
+            ListTile(leading: const Icon(Icons.child_care), title: const Text('وضع الأطفال'), onTap: () => _open(const KidsModeScreen())),
+            ListTile(leading: const Icon(Icons.volunteer_activism), title: const Text('الصدقة الجارية'), onTap: () => _open(const WaqfScreen())),
+            ListTile(leading: const Icon(Icons.diversity_3), title: const Text('شكراً لمساهمينا'), onTap: () => _open(const HallOfFameScreen())),
+            ListTile(leading: const Icon(Icons.info_outline), title: const Text('من نحن'), onTap: () => _open(const AboutScreen())),
+          ],
+        ),
+      ),
+    );
+  }
+}

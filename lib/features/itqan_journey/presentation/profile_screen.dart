@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../application/itqan_journey_provider.dart';
 import '../../../core/services/auth_service.dart';
+import 'journey_dashboard_screen.dart';
 
 class JourneyProfileScreen extends ConsumerStatefulWidget { const JourneyProfileScreen({super.key}); @override ConsumerState<JourneyProfileScreen> createState()=>_JourneyProfileScreenState(); }
 class _JourneyProfileScreenState extends ConsumerState<JourneyProfileScreen> {

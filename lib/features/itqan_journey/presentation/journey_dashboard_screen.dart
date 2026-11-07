@@ -40,10 +40,10 @@ class _JourneyDashboardScreenState extends ConsumerState<JourneyDashboardScreen>
                     const SizedBox(height: 12),
                     for (final module in _modules(context))
                       Card(child: ListTile(
-                        leading: Icon(module.$3, color: Theme.of(context).colorScheme.primary),
-                        title: Text(module.$1), subtitle: Text(module.$2),
+                        leading: Icon(module.icon, color: Theme.of(context).colorScheme.primary),
+                        title: Text(module.title), subtitle: Text(module.subtitle),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => module.$4)),
+                        onTap: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => module.page)),
                       )),
                     const SizedBox(height: 12),
                     if (state.tasks != null)
@@ -69,11 +69,11 @@ class _JourneyDashboardScreenState extends ConsumerState<JourneyDashboardScreen>
     );
   }
 
-  List<({String, String, IconData, Widget})> _modules(BuildContext context) => [
-    ('القرآن الكريم', 'اقرأ وردك اليومي', Icons.menu_book_rounded, const QuranJourneyScreen()),
-    ('الأذكار', 'حافظ على أذكارك اليومية', Icons.spa_rounded, const AdhkarJourneyScreen()),
-    ('الأدعية', 'اقرأ دعاء اليوم', Icons.volunteer_activism_rounded, const DuaJourneyScreen()),
-    ('مشاركة الخير', 'شارك فائدة أو ذكراً أو دعاءً', Icons.share_rounded, const ShareJourneyScreen()),
+  List<({String title, String subtitle, IconData icon, Widget page})> _modules(BuildContext context) => [
+    (title: 'القرآن الكريم', subtitle: 'اقرأ وردك اليومي', icon: Icons.menu_book_rounded, page: const QuranJourneyScreen()),
+    (title: 'الأذكار', subtitle: 'حافظ على أذكارك اليومية', icon: Icons.spa_rounded, page: const AdhkarJourneyScreen()),
+    (title: 'الأدعية', subtitle: 'اقرأ دعاء اليوم', icon: Icons.volunteer_activism_rounded, page: const DuaJourneyScreen()),
+    (title: 'مشاركة الخير', subtitle: 'شارك فائدة أو ذكراً أو دعاءً', icon: Icons.share_rounded, page: const ShareJourneyScreen()),
   ];
 }
 

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../quran/models/ayah.dart';
-import '../quran/services/quran_service.dart';
+import '../../quran/models/ayah.dart';
+import '../../quran/services/quran_service.dart';
 
 /// Feature-owned progress repository reusing only the project's verified
 /// Tanzil-backed QuranService. The Quran source assets remain unchanged.
