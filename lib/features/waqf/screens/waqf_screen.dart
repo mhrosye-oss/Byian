@@ -33,6 +33,7 @@ class _WaqfScreenState extends State<WaqfScreen> {
         body: jsonEncode({'action': 'get_waqf_stats'}),
       );
       var data = jsonDecode(response.body);
+      if (!mounted) return;
       if (data['status'] == 'success' && data['data'] != null) {
         setState(() {
           _ayahsRead = data['data']['ayahs_read'];
@@ -41,9 +42,10 @@ class _WaqfScreenState extends State<WaqfScreen> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خطأ في جلب البيانات')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -54,8 +56,9 @@ class _WaqfScreenState extends State<WaqfScreen> {
         headers: {'Authorization': 'Bearer $apiToken', 'Content-Type': 'application/json'},
         body: jsonEncode({'action': 'add_waqf_activity', 'type': type}),
       );
-      _fetchStats();
+      if (mounted) _fetchStats();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خطأ في الاتصال')));
     }
   }

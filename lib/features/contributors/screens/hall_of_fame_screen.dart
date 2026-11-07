@@ -29,13 +29,15 @@ class _HallOfFameScreenState extends State<HallOfFameScreen> {
         body: jsonEncode({'action': 'get_contributors'}),
       );
       var data = jsonDecode(response.body);
+      if (!mounted) return;
       if (data['status'] == 'success') {
         setState(() => _contributors = data['data']);
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خطأ في الاتصال')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

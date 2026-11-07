@@ -79,6 +79,7 @@ class _GroupHifzScreenState extends State<GroupHifzScreen> {
       );
 
       var data = jsonDecode(response.body);
+      if (!mounted) return;
       if (data['status'] == 'success') {
         setState(() {
           _resultMembers = data['members'];
@@ -88,9 +89,10 @@ class _GroupHifzScreenState extends State<GroupHifzScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? 'حدث خطأ')));
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في الاتصال: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -105,6 +107,7 @@ class _GroupHifzScreenState extends State<GroupHifzScreen> {
       );
 
       var data = jsonDecode(response.body);
+      if (!mounted) return;
       if (data['status'] == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('مرحباً ${data['data']['member_name']}، مهمتك حفظ: ${data['data']['assigned_surah']}')));
         setState(() => _currentView = HifzView.intro);
@@ -112,9 +115,10 @@ class _GroupHifzScreenState extends State<GroupHifzScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? 'الكود غير صحيح')));
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في الاتصال: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -198,8 +202,11 @@ class _GroupHifzScreenState extends State<GroupHifzScreen> {
                 selected: isSelected,
                 onSelected: (val) {
                   setState(() {
-                    if (val) _selectedSurahs.add(surah);
-                    else _selectedSurahs.remove(surah);
+                    if (val) {
+                      _selectedSurahs.add(surah);
+                    } else {
+                      _selectedSurahs.remove(surah);
+                    }
                   });
                 },
               );

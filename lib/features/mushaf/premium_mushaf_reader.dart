@@ -68,6 +68,7 @@ class _PremiumMushafReaderState extends State<PremiumMushafReader> {
 
   Future<void> _loadBookmarkStatus() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _isBookmarked = prefs.getBool('bookmark_surah_1') ?? false;
     });
@@ -75,6 +76,7 @@ class _PremiumMushafReaderState extends State<PremiumMushafReader> {
 
   Future<void> _toggleBookmark() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _isBookmarked = !_isBookmarked;
       prefs.setBool('bookmark_surah_1', _isBookmarked);
@@ -256,8 +258,8 @@ class _PremiumMushafReaderState extends State<PremiumMushafReader> {
                     const SizedBox(height: 10),
                     ..._ayahs.map((ayah) {
                       int index = int.tryParse(ayah.ayahNumber.toString()) ?? 1;
-                      String trans = (ayah.translation != null && ayah.translation!.isNotEmpty) 
-                          ? ayah.translation! 
+                      String trans = ayah.translation.isNotEmpty
+                          ? ayah.translation
                           : (index <= _fallbackTranslations.length ? _fallbackTranslations[index - 1] : '');
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12.0),
@@ -268,7 +270,7 @@ class _PremiumMushafReaderState extends State<PremiumMushafReader> {
                           style: TextStyle(fontSize: 16, color: subTextColor, height: 1.5),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ]
                 ],
               ),

@@ -73,6 +73,7 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
       );
 
       var data = jsonDecode(response.body);
+      if (!mounted) return;
       if (data['status'] == 'success') {
         setState(() {
           _groupCode = data['group_code'];
@@ -83,9 +84,10 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? 'حدث خطأ')));
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في الاتصال: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -101,6 +103,7 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
       );
 
       var data = jsonDecode(response.body);
+      if (!mounted) return;
       if (data['status'] == 'success') {
         // الانتقال لصفحة المهام الخاصة بالشخص
         Navigator.push(
@@ -117,9 +120,10 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? 'الكود غير صحيح')));
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في الاتصال: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

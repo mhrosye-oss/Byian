@@ -87,24 +87,21 @@ class _RecitationScreenState extends ConsumerState<RecitationScreen> {
             // ملاحظة: هنا نفترض أن getAyahs تجلب السورة كاملة، ثم نختار الآية المطلوبة
             final surahAyahs = await quranService.getAyahs(widget.ayah.surahNumber);
             final nextAyah = surahAyahs.firstWhere((a) => a.ayahNumber == nextAyahNum);
-            
-            if (mounted) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => RecitationScreen(
-                    ayah: nextAyah,
-                    surahName: widget.surahName,
-                  ),
+            if (!context.mounted) return;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => RecitationScreen(
+                  ayah: nextAyah,
+                  surahName: widget.surahName,
                 ),
-              );
-            }
+              ),
+            );
           } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('هذه هي آخر آية في السورة أو حدث خطأ في التحميل')),
-              );
-            }
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('هذه هي آخر آية في السورة أو حدث خطأ في التحميل')),
+            );
           }
         },
       ),

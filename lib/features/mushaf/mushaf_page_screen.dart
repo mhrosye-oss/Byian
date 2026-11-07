@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
-import '../../core/theme/colors.dart';
 import '../../core/theme/typography.dart';
 import '../quran/models/ayah.dart';
 import '../quran/services/quran_service.dart';
@@ -15,12 +12,6 @@ import '../tajweed/tajweed_data.dart';
 import 'mushaf_screen.dart';
 import 'providers/reading_position_provider.dart';
 import 'services/reading_position_service.dart';
-
-import 'package:flutter/services.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../ai/screens/ai_chat_screen.dart';
-import 'dart:async';
 
 
 final _pageDataProvider = FutureProvider.family<PageData, int>((ref, page) async {
@@ -61,18 +52,10 @@ class MushafPageScreen extends ConsumerStatefulWidget {
 }
 
 class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
-  final AudioPlayer _player = AudioPlayer();
-  bool _isPlaying = false;
-  bool _isBookmarked = false;
-  Timer? _autoScrollTimer;
-  int _scrollSpeedMs = 100; // سرعة اللف الافتراضية
-  bool _isAutoScrolling = false;
-
   late int _currentPage;
   final ScrollController _scrollController = ScrollController();
   final AudioPlayer _audioPlayer = AudioPlayer();
   OverlayEntry? _ayahMenuEntry;
-  VerseOnPage? _menuVerse;
   bool _showTranslation = true;
   bool _autoScroll = false;
 
@@ -217,7 +200,6 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
     const menuHeight = 68.0;
     final left = (local.dx - menuWidth / 2).clamp(8.0, overlayBox.size.width - menuWidth - 8.0);
     final top = (local.dy - menuHeight - 12).clamp(8.0, overlayBox.size.height - menuHeight - 8.0);
-    _menuVerse = verse;
 
     _ayahMenuEntry = OverlayEntry(
       builder: (overlayContext) => Stack(
@@ -259,7 +241,6 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
   void _dismissAyahMenu() {
     _ayahMenuEntry?.remove();
     _ayahMenuEntry = null;
-    _menuVerse = null;
   }
 
   void _toggleAutoScroll() {
@@ -331,45 +312,6 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
   }
 
   @override
-  
-  
-
-  void _startAutoScroll(int speedMs) {
-    _scrollSpeedMs = speedMs;
-    setState(() => _isAutoScrolling = true);
-    _autoScrollTimer = Timer.periodic(Duration(milliseconds: _scrollSpeedMs), (timer) {
-      // ملاحظة: نفترض وجود _scrollController أو نقوم بإنشائه إذا لم يكن موجوداً
-      // إذا كانت الشاشة تستخدم PageView سنحتاج لتعديل هذا الجزء لاحقاً
-      if (mounted) {
-        // كود محاكاة اللف (سيتم تعديله بناءً على البنية الفعلية للملف)
-      }
-    });
-  }
-
-  Future<void> _toggleAudio() async {
-    try {
-      if (_isPlaying) {
-        await _player.pause();
-        setState(() => _isPlaying = false);
-      } else {
-        if (_player.audioSource == null) {
-          await _player.setUrl('https://server8.mp3quran.net/afs/001.mp3');
-        }
-        await _player.play();
-        setState(() => _isPlaying = true);
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
-    }
-  }
-
-  void _shareCurrentPage() {
-    Clipboard.setData(const ClipboardData(text: 'تم نسخ الصفحة من تطبيق إتقان'));
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ الصفحة')));
-  }
-
-  
-
   Widget build(BuildContext context) {
     final pageAsync = ref.watch(_pageDataProvider(_currentPage));
     final settings = ref.watch(settingsProvider);
