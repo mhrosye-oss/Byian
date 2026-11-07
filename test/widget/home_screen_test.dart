@@ -30,4 +30,19 @@ void main() {
     expect(find.text('خدمات إتقان'), findsOneWidget);
     expect(find.text('خطوة صغيرة كل يوم تصنع أثرًا كبيرًا'), findsOneWidget);
   });
+
+  testWidgets('guest can start the journey and is taken to registration',
+      (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: HomeScreen())),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('ابدأ رحلتك'), findsOneWidget);
+    expect(find.text('تعذر تحميل رحلتك'), findsNothing);
+
+    await tester.tap(find.text('ابدأ رحلتك'));
+    await tester.pumpAndSettle();
+    expect(find.text('إنشاء حساب'), findsOneWidget);
+  });
 }

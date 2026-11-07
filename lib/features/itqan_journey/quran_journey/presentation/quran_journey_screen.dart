@@ -30,7 +30,10 @@ class QuranJourneyScreen extends ConsumerWidget {
                 onPressed: () => Navigator.pushReplacement(
                   context,
                   MaterialPageRoute<void>(
-                    builder: (_) => const MushafPageScreen(startPage: 1),
+                    builder: (_) => const MushafPageScreen(
+                      startPage: 1,
+                      trackJourneyProgress: true,
+                    ),
                   ),
                 ),
                 child: const Text('ابدأ من أول صفحة'),
@@ -41,6 +44,7 @@ class QuranJourneyScreen extends ConsumerWidget {
       ),
       data: (saved) => MushafPageScreen(
         startPage: (saved?.pageNumber ?? 1).clamp(1, 604),
+        trackJourneyProgress: true,
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:itqan/core/services/auth_service.dart';
+import 'package:itqan/features/auth/screens/register_screen.dart';
 import '../../../itqan_journey/application/itqan_journey_provider.dart';
 import '../../../itqan_journey/presentation/journey_dashboard_screen.dart';
 
@@ -13,11 +15,15 @@ class JourneyBanner extends ConsumerStatefulWidget {
 
 class _JourneyBannerState extends ConsumerState<JourneyBanner>
     with WidgetsBindingObserver {
+  bool _authChecked = false;
+  bool _isGuest = true;
+  bool _checkingSession = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    Future.microtask(() => ref.read(itqanJourneyProvider.notifier).loadAll());
+    Future.microtask(_refreshSessionAndJourney);
   }
 
   @override
@@ -29,14 +35,93 @@ class _JourneyBannerState extends ConsumerState<JourneyBanner>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      ref.read(itqanJourneyProvider.notifier).loadAll();
+      _refreshSessionAndJourney();
     }
   }
+
+  Future<void> _refreshSessionAndJourney() async {
+    if (_checkingSession) return;
+    _checkingSession = true;
+    try {
+      final token = await AuthService.getToken();
+      final authenticated = token != null && token.trim().isNotEmpty;
+      if (!mounted) return;
+      setState(() {
+        _authChecked = true;
+        _isGuest = !authenticated;
+      });
+      if (!authenticated) return;
+
+      await ref.read(itqanJourneyProvider.notifier).loadAll();
+      final refreshedToken = await AuthService.getToken();
+      if (mounted && (refreshedToken == null || refreshedToken.trim().isEmpty)) {
+        setState(() => _isGuest = true);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _authChecked = true;
+          _isGuest = true;
+        });
+      }
+    } finally {
+      _checkingSession = false;
+    }
+  }
+
+  Future<void> _openRegistration() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const RegisterScreen()),
+    );
+    if (mounted) await _refreshSessionAndJourney();
+  }
+
+  Widget _guestCard(BuildContext context) => Card(
+        clipBehavior: Clip.antiAlias,
+        color: Theme.of(context).colorScheme.primary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: InkWell(
+          onTap: _openRegistration,
+          child: const Padding(
+            padding: EdgeInsets.all(18),
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Row(
+                children: [
+                  Icon(Icons.auto_stories_rounded, color: Colors.white, size: 32),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('ابدأ رحلتك', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 4),
+                        Text('أنشئ حساباً لحفظ تقدمك ومتابعة مهامك', style: TextStyle(color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Icon(Icons.chevron_left, color: Colors.white),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(itqanJourneyProvider);
     final profile = state.profile;
+    if (!_authChecked) {
+      return const Card(
+        child: SizedBox(
+          height: 118,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (_isGuest) return _guestCard(context);
     if (state.loading && profile == null) {
       return const Card(
         child: SizedBox(

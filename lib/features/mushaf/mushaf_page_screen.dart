@@ -50,8 +50,13 @@ final _surahTajweedProvider = FutureProvider.family<Map<int, String>, int>((
 /// using its selected surah's starting page; the Surah Index is not changed.
 class MushafPageScreen extends ConsumerStatefulWidget {
   final int startPage;
+  final bool trackJourneyProgress;
 
-  const MushafPageScreen({super.key, this.startPage = 1});
+  const MushafPageScreen({
+    super.key,
+    this.startPage = 1,
+    this.trackJourneyProgress = false,
+  });
 
   @override
   ConsumerState<MushafPageScreen> createState() => _MushafPageScreenState();
@@ -80,7 +85,7 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
     _currentPage = widget.startPage.clamp(1, 604);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _saveReadingPosition(_currentPage);
-      if (mounted) _loadJourneyProgress();
+      if (mounted && widget.trackJourneyProgress) _loadJourneyProgress();
     });
   }
 
@@ -664,6 +669,7 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
                 onToggleTranslation: () =>
                     setState(() => _showTranslation = !_showTranslation),
               ),
+              if (widget.trackJourneyProgress)
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 7, 14, 5),
                 child: Column(
@@ -767,6 +773,7 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
               ),
               _ReaderBottomBar(
                 autoScroll: _autoScroll,
+                showPageCompletion: widget.trackJourneyProgress,
                 onListen: () {
                   if (firstVerse != null) _playVerse(firstVerse);
                 },
@@ -1037,6 +1044,7 @@ class _AyahCard extends ConsumerWidget {
 class _ReaderBottomBar extends StatelessWidget {
   const _ReaderBottomBar({
     required this.autoScroll,
+    required this.showPageCompletion,
     required this.onListen,
     required this.onTafsir,
     required this.onAutoScroll,
@@ -1050,6 +1058,7 @@ class _ReaderBottomBar extends StatelessWidget {
   });
 
   final bool autoScroll;
+  final bool showPageCompletion;
   final VoidCallback onListen;
   final VoidCallback onTafsir;
   final VoidCallback onAutoScroll;
@@ -1079,6 +1088,7 @@ class _ReaderBottomBar extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (showPageCompletion)
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
