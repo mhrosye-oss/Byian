@@ -7,7 +7,8 @@ class AuthService {
   static const String _keyEmail = 'user_email';
   static const String _keyId = 'user_id';
   static const String _keySavedEmail = 'saved_email';
-  static const String _keySavedPass = 'saved_pass';
+  static const String _legacySavedPass = 'saved_pass';
+  static const String _savedPassKey = 'saved_pass_secure';
   static const String _tokenKey = 'itqan_bearer_token';
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
@@ -53,13 +54,22 @@ class AuthService {
   static Future<void> saveCredentials(String email, String pass) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keySavedEmail, email);
-    await prefs.setString(_keySavedPass, pass);
+    await _secureStorage.write(key: _savedPassKey, value: pass);
+    await prefs.remove(_legacySavedPass);
   }
 
   static Future<Map<String, String>?> getSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     final email = prefs.getString(_keySavedEmail);
-    final pass = prefs.getString(_keySavedPass);
+    var pass = await _secureStorage.read(key: _savedPassKey);
+    if (pass == null) {
+      // Migrate credentials saved by older app versions out of plaintext storage.
+      pass = prefs.getString(_legacySavedPass);
+      if (pass != null) {
+        await _secureStorage.write(key: _savedPassKey, value: pass);
+        await prefs.remove(_legacySavedPass);
+      }
+    }
     if (email != null && pass != null) return {'email': email, 'pass': pass};
     return null;
   }
@@ -67,6 +77,7 @@ class AuthService {
   static Future<void> clearCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keySavedEmail);
-    await prefs.remove(_keySavedPass);
+    await prefs.remove(_legacySavedPass);
+    await _secureStorage.delete(key: _savedPassKey);
   }
 }

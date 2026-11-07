@@ -11,8 +11,8 @@ import 'package:itqan/features/waqf/screens/waqf_screen.dart';
 import 'package:itqan/features/kids/screens/kids_mode_screen.dart';
 import 'package:itqan/features/contributors/screens/hall_of_fame_screen.dart';
 import 'package:itqan/features/itqan_journey/presentation/journey_dashboard_screen.dart';
+import 'package:itqan/features/itqan_journey/presentation/achievements_screen.dart';
 import 'package:itqan/features/itqan_journey/presentation/profile_screen.dart';
-import 'package:itqan/features/itqan_journey/application/itqan_journey_provider.dart';
 
 class CustomDrawer extends ConsumerStatefulWidget {const CustomDrawer({super.key});@override ConsumerState<CustomDrawer> createState()=>_CustomDrawerState();}
 class _CustomDrawerState extends ConsumerState<CustomDrawer>{Map<String,String>? _user;bool _isLoading=true;static const _languages={'ar':'العربية','en':'English','fr':'Français'};@override void initState(){super.initState();_loadUser();}Future<void> _loadUser()async{final user=await AuthService.getUser();if(mounted)setState((){_user=user;_isLoading=false;});}Future<void> _logout()async{await AuthService.logout();if(mounted)setState(()=>_user=null);}Future<void> _selectLanguage()async{final selected=await showDialog<Locale>(context:context,builder:(c)=>SimpleDialog(title:const Text('اختر اللغة'),children:_languages.entries.map((e)=>SimpleDialogOption(onPressed:()=>Navigator.pop(c,Locale(e.key)),child:Text(e.value))).toList()));if(selected==null||!mounted)return;try{await AppSettingsScope.of(context).setLocale(selected);if(!mounted)return;final name=switch(selected.languageCode){'en'=>'english','fr'=>'french',_=>'arabic'};await ref.read(settingsProvider.notifier).update(ref.read(settingsProvider).copyWith(language:name));}catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('تعذر تغيير اللغة: $e')));}}

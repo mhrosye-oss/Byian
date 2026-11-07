@@ -1,28 +1,34 @@
-# Independent Itqan Journey feature
+# Itqan Journey feature
 
-The new product surface is isolated under `lib/features/itqan_journey/`: journey dashboard, Quran journey, adhkar journey, dua journey, share journey and backend-backed gamification state. Legacy Quran, adhkar and dua screens remain intact; the feature reuses only licensed content assets and the existing QuranService, AuthService, Hive, Riverpod, HTTP and url_launcher APIs. Quran text is rendered verbatim from the bundled Tanzil source and no religious content was authored here.
+The journey product surface is under `lib/features/itqan_journey/`. It uses the existing `AuthService`, Riverpod, Hive, HTTP client, local Quran data and reader, prayer/notification services, and `url_launcher`. Bundled Uthmani text is displayed verbatim from the licensed Tanzil source; the existing Tanzil metadata provides the page, juz and hizb-quarter boundaries. Existing Quran, adhkar and dua screens remain available.
 
-## Layers
-- `data/journey_content_repository.dart`: feature-owned access to existing bundled text assets and an independent `itqan_journey_quran` Hive box.
-- `application/itqan_journey_provider.dart`: HTTP repository, API exception, Riverpod state and activity engine.
-- `presentation/journey_dashboard_screen.dart`: journey, earned achievements and leaderboard surfaces.
-- `quran_journey`, `adhkar_journey`, `dua_journey`, `share_journey`: standalone task experiences.
-- `core`, `domain`, `shared`: focused implementation contracts/services are hosted at feature root until additional domain types are needed; no empty placeholder files are added.
+## Layers and user flows
 
-## Existing dependencies and additions
-Existing: `http ^1.2.0`, `flutter_riverpod ^2.4.9`, `hive_flutter ^1.1.0`, `url_launcher ^6.2.5`, Flutter Material and project Quran service. Added `uuid ^4.5.1` for RFC4122 v4 idempotency keys; no graphics, sharing or navigation packages added. No pubspec.lock was present in the branch root inspection. Flutter/Dart executables were unavailable here, therefore package resolution and pub get/analyze/test are unverified. The CI log previously showed integration_test / flutter_timezone 5.1.1 meta incompatibility; this branch's pubspec has flutter_timezone ^4.1.0. No dependency override or timezone change was made.
+- `data/journey_content_repository.dart` reads bundled dua/adhkar text and retains the feature-local Quran position store.
+- `application/itqan_journey_provider.dart` owns the protected API calls, typed API failures, Riverpod state, idempotent activity requests, and a local pending-activity outbox.
+- `presentation/journey_dashboard_screen.dart` displays backend profile/task data and links the Quran, adhkar, dua, sharing, achievement, leaderboard and profile surfaces.
+- `presentation/achievements_screen.dart` is shared by the dashboard, profile and drawer. `profile_screen.dart` shows server-reported XP, Coins, level, streak, task and achievement summaries.
+- The Quran journey opens the existing 604-page reader at the last locally saved page. A reading session is only submitted after active foreground time and unique-page thresholds; the server remains authoritative for acceptance and rewards.
+- Adhkar counts and dua favorites/read confirmations persist locally by local calendar day. These local values do not award XP or Coins. The server acceptance response is the only reward source.
+- Share-by-email and copy are best-effort user actions. Opening another app or copying text does not prove that content was sent, so the current screen explicitly does not award a share activity.
 
-## API contract
-The feature uses only the supplied endpoints: GET profile, tasks, journey, streak, achievements, leaderboard?limit=10 and POST activities. All requests use bearer auth. Server result data drives visible balances/rewards; client creates a unique UUID and never calculates XP. A 401 clears token and stored session identity; error responses retain status/code/retry_after. Live endpoint behavior has not been tested in this authoring session.
+## API and data integrity
 
-## Limitations
-HomeScreen and auth login/register still require integration with the new independent entry point/session contract. The existing Drawer now opens the journey surfaces, but its profile entry currently points to the dashboard (there is no dedicated profile screen implementation here). Share uses the platform SMS app via existing url_launcher; launch success is not proof of sending, so the backend remains responsible for reward validation. Quran progress stores a private last position; the read-completion action currently records one page, because no reliable page count is derived from user's reading session. Adhkar sends one activity per completed item; backend acceptance controls rewards. Daily completion summary and loading/errors are server data only.
+All journey requests use bearer authentication and the existing `/api/v1/` endpoints. Activity requests use UUID idempotency keys. Network/server failures retain queued events in Hive for later retry with the same key; queued events are scoped to the saved account email and do not affect displayed balances. Permanent client validation errors are removed from the outbox. A 401 clears the active token and identity. Live endpoint behavior and the exact server-side metadata validation have not been exercised in this authoring session.
 
-## Manual verification checklist
-- [ ] flutter pub get / analyze / test on Flutter 3.24 environment
-- [ ] Login endpoint stores token and protected endpoints read it
-- [ ] Quran position survives route reopening; bundled Tanzil text is unchanged
-- [ ] Adhkar/dua/share action returns server acceptance before reward shown
-- [ ] API 401 clears session; rate limit and validation errors are presented
-- [ ] Drawer destinations navigate; four bottom destinations are unchanged
-- [ ] Verify RTL on device and run legacy test suite
+The runtime packages already include Hive, secure storage, local notifications, timezone, HTTP and URL launcher. `uuid ^4.5.1` is now declared directly because the journey code imports it; resolution in this environment selected a compatible 4.x release. No other runtime package was added. The repository initially had no `pubspec.lock`.
+
+## Validation completed
+
+- `flutter pub get` completed on Flutter 3.47.9 / Dart 3.13.7 in the isolated work copy.
+- `flutter analyze --no-pub` reported 75 informational lint/deprecation findings, 0 warnings and 0 errors (Flutter exits non-zero when informational findings are present). The full Flutter test suite passed: 143 tests.
+- The full Flutter test suite and targeted secure-storage/outbox tests pass in the isolated work copy.
+- No APK/AAB build, device test, release signing, deployment or repository push was performed.
+
+## Remaining external/manual work
+
+- Verify login, all protected API response shapes, activities, rate limits, 401 handling, and queued-event idempotency against the live backend and its current metadata validator.
+- Test RTL, Android back behavior, permission flows, notification scheduling, and reader active-time behavior on physical devices.
+- The legacy contributor registration screen still contains a client-side bearer credential. A client-embedded credential cannot be made secret; rotate it and move that operation behind a server-side endpoint before production use. The backend is not present in this Flutter repository, and no contribution/payment flow was altered here.
+- Share delivery cannot be independently verified through the current URL launcher flow; rewards must remain disabled until a verifiable server-mediated flow exists.
+- Release build remains intentionally unrun pending explicit user approval.

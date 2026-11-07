@@ -128,9 +128,8 @@ class QuranService {
     final surahs = _parseSurahs(metadata);
     final text = await rootBundle.loadString(_quranTextAsset);
     final ayahsBySurah = _parseAyahs(text);
-    // Tanzil's bundled metadata contains surah data but no page/juz/hizb
-    // sections. Build deterministic ordinal fallbacks instead of rejecting
-    // the complete local Quran when those optional markers are absent.
+    // Prefer the bundled Tanzil page, juz and hizb-quarter boundaries. Keep
+    // deterministic fallbacks for alternate metadata assets that omit them.
     final parsedPageStarts = _parseMarkers(metadata, 'pages', 'page');
     final parsedJuzStarts = _parseMarkers(metadata, 'juzs', 'juz');
     final parsedHizbStarts = _parseMarkers(metadata, 'hizbs', 'quarter');

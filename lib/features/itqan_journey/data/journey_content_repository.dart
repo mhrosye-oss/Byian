@@ -1,20 +1,23 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../quran/models/ayah.dart';
-import '../quran/services/quran_service.dart';
+import '../../quran/models/ayah.dart';
+import '../../quran/services/quran_service.dart';
 
 /// Feature-owned progress repository reusing only the project's verified
 /// Tanzil-backed QuranService. The Quran source assets remain unchanged.
 class JourneyQuranRepository {
-  JourneyQuranRepository({QuranService? service}) : _service = service ?? QuranService();
+  JourneyQuranRepository({QuranService? service})
+      : _service = service ?? QuranService();
   final QuranService _service;
   static const _boxName = 'itqan_journey_quran';
 
   Future<List<Surah>> surahs() => _service.getSurahs();
   Future<List<Ayah>> ayahs(int surah) => _service.getAyahs(surah);
-  Future<int> lastSurah() async => (await _box()).get('last_surah', defaultValue: 1) as int;
-  Future<int> lastAyah() async => (await _box()).get('last_ayah', defaultValue: 1) as int;
+  Future<int> lastSurah() async =>
+      (await _box()).get('last_surah', defaultValue: 1) as int;
+  Future<int> lastAyah() async =>
+      (await _box()).get('last_ayah', defaultValue: 1) as int;
   Future<void> savePosition(int surah, int ayah) async {
     final box = await _box();
     await box.put('last_surah', surah);

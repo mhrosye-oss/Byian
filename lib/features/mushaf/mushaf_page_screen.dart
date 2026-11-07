@@ -12,6 +12,7 @@ import '../tajweed/tajweed_data.dart';
 import 'mushaf_screen.dart';
 import 'providers/reading_position_provider.dart';
 import 'services/reading_position_service.dart';
+import '../itqan_journey/application/itqan_journey_provider.dart';
 
 
 final _pageDataProvider = FutureProvider.family<PageData, int>((ref, page) async {
@@ -51,8 +52,14 @@ class MushafPageScreen extends ConsumerStatefulWidget {
   ConsumerState<MushafPageScreen> createState() => _MushafPageScreenState();
 }
 
-class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
+class _MushafPageScreenState extends ConsumerState<MushafPageScreen>
+    with WidgetsBindingObserver {
   late int _currentPage;
+  final Set<int> _visitedPages = {};
+  DateTime? _activeSince;
+  Duration _activeDuration = Duration.zero;
+  bool _closing = false;
+  bool _allowPop = false;
   final ScrollController _scrollController = ScrollController();
   final AudioPlayer _audioPlayer = AudioPlayer();
   OverlayEntry? _ayahMenuEntry;
@@ -62,7 +69,10 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _activeSince = DateTime.now();
     _currentPage = widget.startPage.clamp(1, 604);
+    _visitedPages.add(_currentPage);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _saveReadingPosition(_currentPage);
     });
@@ -70,10 +80,57 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _dismissAyahMenu();
     _scrollController.dispose();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _activeSince ??= DateTime.now();
+    } else {
+      _pauseActiveClock();
+    }
+  }
+
+  void _pauseActiveClock() {
+    final started = _activeSince;
+    if (started == null) return;
+    _activeDuration += DateTime.now().difference(started);
+    _activeSince = null;
+  }
+
+  Future<void> _closeReader() async {
+    if (_closing) return;
+    _closing = true;
+    _pauseActiveClock();
+    final seconds = _activeDuration.inSeconds;
+    if (_visitedPages.length >= 2 && seconds >= 30) {
+      try {
+        await ref.read(itqanJourneyProvider.notifier).recordActivity(
+          'quran.reading',
+          metadata: {
+            'pages_read': _visitedPages.length,
+            'duration_seconds': seconds,
+          },
+        );
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('تعذر تأكيد جلسة القراءة: $error')),
+          );
+        }
+      }
+    }
+    if (mounted) {
+      setState(() => _allowPop = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).pop();
+      });
+    }
   }
 
   void _goToPage(int page) {
@@ -81,6 +138,7 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
     setState(() {
       _currentPage = page;
       _autoScroll = false;
+      _visitedPages.add(page);
     });
     if (_scrollController.hasClients) _scrollController.jumpTo(0);
     _saveReadingPosition(page);
@@ -369,7 +427,12 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
               orElse: () => 'سورة القرآن',
             );
 
-    return Scaffold(
+    return PopScope<void>(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeReader();
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFFF9F6F0),
 
       body: SafeArea(
@@ -430,6 +493,7 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
