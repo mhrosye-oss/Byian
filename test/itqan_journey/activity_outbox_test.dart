@@ -41,10 +41,7 @@ void main() {
       if (requestBodies.length == 1) {
         return http.Response('{"message":"temporary failure"}', 503);
       }
-      return http.Response(
-        '{"success":true,"data":{"xp_earned":5}}',
-        200,
-      );
+      return http.Response('{"success":true,"data":{"xp_earned":5}}', 200);
     });
     final repository = ItqanJourneyRepository(
       client: client,
@@ -63,8 +60,10 @@ void main() {
     await repository.syncPendingActivities();
 
     expect(requestBodies, hasLength(2));
-    expect(requestBodies[1]['idempotency_key'],
-        requestBodies[0]['idempotency_key']);
+    expect(
+      requestBodies[1]['idempotency_key'],
+      requestBodies[0]['idempotency_key'],
+    );
     expect(requestBodies[1]['metadata'], {'count': 10});
     expect(await Hive.openBox('itqan_activity_outbox'), isEmpty);
   });
@@ -96,88 +95,127 @@ void main() {
     expect((await Hive.openBox('itqan_activity_outbox')).length, 1);
   });
 
-  test('honors retry_after and retries a rate-limited activity with its UUID',
-      () async {
-    final requestBodies = <Map<String, dynamic>>[];
-    final client = MockClient((request) async {
-      requestBodies
-          .add(Map<String, dynamic>.from(jsonDecode(request.body) as Map));
-      if (requestBodies.length == 1) {
-        return http.Response(
-          '{"code":"ACTIVITY_RATE_LIMIT","retry_after":120}',
-          429,
+  test(
+    'honors retry_after and retries a rate-limited activity with its UUID',
+    () async {
+      final requestBodies = <Map<String, dynamic>>[];
+      final client = MockClient((request) async {
+        requestBodies.add(
+          Map<String, dynamic>.from(jsonDecode(request.body) as Map),
         );
-      }
-      return http.Response(
-        '{"success":true,"duplicate":true,"data":{"xp_earned":0,"coins_earned":0}}',
-        200,
+        if (requestBodies.length == 1) {
+          return http.Response(
+            '{"code":"ACTIVITY_RATE_LIMIT","retry_after":120}',
+            429,
+          );
+        }
+        return http.Response(
+          '{"success":true,"duplicate":true,"data":{"xp_earned":0,"coins_earned":0}}',
+          200,
+        );
+      });
+      final repository = ItqanJourneyRepository(
+        client: client,
+        baseUrl: 'https://example.test',
       );
-    });
+
+      try {
+        await repository.record('share', sourceType: 'share');
+        fail('A rate-limited activity must remain pending.');
+      } on ItqanJourneyException catch (error) {
+        expect(error.queued, isTrue);
+        expect(error.retryAfter, 120);
+      }
+
+      final outbox = await Hive.openBox('itqan_activity_outbox');
+      expect(outbox.length, 1);
+      final key = outbox.keys.single;
+      final entry = Map<String, dynamic>.from(outbox.get(key) as Map);
+      expect(entry['retry_after_at'], isNotNull);
+      expect(requestBodies.single['source_type'], 'share');
+
+      await repository.syncPendingActivities();
+      expect(requestBodies, hasLength(1));
+
+      entry['retry_after_at'] = DateTime.now()
+          .subtract(const Duration(seconds: 1))
+          .toIso8601String();
+      await outbox.put(key, entry);
+      await repository.syncPendingActivities();
+
+      expect(requestBodies, hasLength(2));
+      expect(
+        requestBodies.last['idempotency_key'],
+        requestBodies.first['idempotency_key'],
+      );
+      expect(outbox, isEmpty);
+    },
+  );
+
+  test(
+    'keeps a rejected 422 item for inspection without retrying it blindly',
+    () async {
+      var requestCount = 0;
+      final client = MockClient((request) async {
+        requestCount++;
+        return http.Response(
+          '{"message":"Validation failed","errors":{"activity_type":["invalid"]}}',
+          422,
+        );
+      });
+      final repository = ItqanJourneyRepository(
+        client: client,
+        baseUrl: 'https://example.test',
+      );
+
+      await expectLater(
+        repository.record('unknown'),
+        throwsA(
+          isA<ItqanJourneyException>().having(
+            (error) => error.validationErrors?['activity_type'],
+            'validation errors',
+            ['invalid'],
+          ),
+        ),
+      );
+      final outbox = await Hive.openBox('itqan_activity_outbox');
+      expect(outbox.length, 1);
+      expect((outbox.get(outbox.keys.single) as Map)['blocked_status'], 422);
+
+      await repository.syncPendingActivities();
+      expect(requestCount, 1);
+      expect(outbox.length, 1);
+    },
+  );
+
+  test('exposes the same queued UUID for a pending Quran page', () async {
     final repository = ItqanJourneyRepository(
-      client: client,
+      client: MockClient(
+        (request) async =>
+            http.Response('{"message":"temporary failure"}', 503),
+      ),
       baseUrl: 'https://example.test',
     );
 
+    ItqanJourneyException? queuedError;
     try {
-      await repository.record('share', sourceType: 'share');
-      fail('A rate-limited activity must remain pending.');
+      await repository.record(
+        'quran.reading',
+        metadata: const {'pages': 1},
+        sourceType: 'quran',
+        sourceId: 18,
+      );
     } on ItqanJourneyException catch (error) {
-      expect(error.queued, isTrue);
-      expect(error.retryAfter, 120);
+      queuedError = error;
     }
 
-    final outbox = await Hive.openBox('itqan_activity_outbox');
-    expect(outbox.length, 1);
-    final key = outbox.keys.single;
-    final entry = Map<String, dynamic>.from(outbox.get(key) as Map);
-    expect(entry['retry_after_at'], isNotNull);
-    expect(requestBodies.single['source_type'], 'share');
-
-    await repository.syncPendingActivities();
-    expect(requestBodies, hasLength(1));
-
-    entry['retry_after_at'] =
-        DateTime.now().subtract(const Duration(seconds: 1)).toIso8601String();
-    await outbox.put(key, entry);
-    await repository.syncPendingActivities();
-
-    expect(requestBodies, hasLength(2));
-    expect(requestBodies.last['idempotency_key'],
-        requestBodies.first['idempotency_key']);
-    expect(outbox, isEmpty);
-  });
-
-  test('keeps a rejected 422 item for inspection without retrying it blindly',
-      () async {
-    var requestCount = 0;
-    final client = MockClient((request) async {
-      requestCount++;
-      return http.Response(
-        '{"message":"Validation failed","errors":{"activity_type":["invalid"]}}',
-        422,
-      );
-    });
-    final repository = ItqanJourneyRepository(
-      client: client,
-      baseUrl: 'https://example.test',
+    expect(queuedError?.queued, isTrue);
+    expect(queuedError?.idempotencyKey, isNotEmpty);
+    final pending = await repository.pendingQuranPageActivities();
+    expect(pending, {18: queuedError!.idempotencyKey});
+    expect(
+      await repository.hasPendingActivity(queuedError.idempotencyKey!),
+      isTrue,
     );
-
-    await expectLater(
-      repository.record('unknown'),
-      throwsA(
-        isA<ItqanJourneyException>().having(
-          (error) => error.validationErrors?['activity_type'],
-          'validation errors',
-          ['invalid'],
-        ),
-      ),
-    );
-    final outbox = await Hive.openBox('itqan_activity_outbox');
-    expect(outbox.length, 1);
-    expect((outbox.get(outbox.keys.single) as Map)['blocked_status'], 422);
-
-    await repository.syncPendingActivities();
-    expect(requestCount, 1);
-    expect(outbox.length, 1);
   });
 }

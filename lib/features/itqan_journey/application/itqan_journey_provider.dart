@@ -7,12 +7,13 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/services/auth_service.dart';
 
-final itqanJourneyRepositoryProvider =
-    Provider<ItqanJourneyRepository>((ref) => ItqanJourneyRepository());
+final itqanJourneyRepositoryProvider = Provider<ItqanJourneyRepository>(
+  (ref) => ItqanJourneyRepository(),
+);
 final itqanJourneyProvider =
     StateNotifierProvider<ItqanJourneyNotifier, ItqanJourneyState>(
-  (ref) => ItqanJourneyNotifier(ref.read(itqanJourneyRepositoryProvider)),
-);
+      (ref) => ItqanJourneyNotifier(ref.read(itqanJourneyRepositoryProvider)),
+    );
 
 class ItqanJourneyState {
   const ItqanJourneyState({
@@ -48,18 +49,17 @@ class ItqanJourneyState {
     Map<String, dynamic>? achievements,
     Map<String, dynamic>? leaderboard,
     Map<String, dynamic>? lastActivity,
-  }) =>
-      ItqanJourneyState(
-        loading: loading ?? this.loading,
-        error: clearError ? null : (error ?? this.error),
-        profile: profile ?? this.profile,
-        tasks: tasks ?? this.tasks,
-        journey: journey ?? this.journey,
-        streak: streak ?? this.streak,
-        achievements: achievements ?? this.achievements,
-        leaderboard: leaderboard ?? this.leaderboard,
-        lastActivity: lastActivity ?? this.lastActivity,
-      );
+  }) => ItqanJourneyState(
+    loading: loading ?? this.loading,
+    error: clearError ? null : (error ?? this.error),
+    profile: profile ?? this.profile,
+    tasks: tasks ?? this.tasks,
+    journey: journey ?? this.journey,
+    streak: streak ?? this.streak,
+    achievements: achievements ?? this.achievements,
+    leaderboard: leaderboard ?? this.leaderboard,
+    lastActivity: lastActivity ?? this.lastActivity,
+  );
 }
 
 class ItqanJourneyException implements Exception {
@@ -70,6 +70,7 @@ class ItqanJourneyException implements Exception {
     this.retryAfter,
     this.queued = false,
     this.validationErrors,
+    this.idempotencyKey,
   });
 
   final int status;
@@ -78,6 +79,7 @@ class ItqanJourneyException implements Exception {
   final int? retryAfter;
   final bool queued;
   final Map<String, dynamic>? validationErrors;
+  final String? idempotencyKey;
 
   @override
   String toString() {
@@ -90,14 +92,15 @@ class ItqanJourneyException implements Exception {
 
 class ItqanJourneyRepository {
   ItqanJourneyRepository({http.Client? client, String? baseUrl})
-      : _client = client ?? http.Client(),
-        _base = (baseUrl ??
-                const String.fromEnvironment(
-                  'API_BASE_URL',
-                  defaultValue:
-                      'https://blueviolet-viper-439935.hostingersite.com',
-                ))
-            .replaceAll(RegExp(r'/$'), '');
+    : _client = client ?? http.Client(),
+      _base =
+          (baseUrl ??
+                  const String.fromEnvironment(
+                    'API_BASE_URL',
+                    defaultValue:
+                        'https://blueviolet-viper-439935.hostingersite.com',
+                  ))
+              .replaceAll(RegExp(r'/$'), '');
 
   static const String _outboxName = 'itqan_activity_outbox';
   static const Uuid _uuid = Uuid();
@@ -129,8 +132,8 @@ class ItqanJourneyRepository {
       'owner_email': ownerEmail,
       'owner_identity': ownerId == null
           ? (ownerEmail.trim().isEmpty
-              ? ''
-              : 'email:${ownerEmail.toLowerCase()}')
+                ? ''
+                : 'email:${ownerEmail.toLowerCase()}')
           : 'id:$ownerId',
       'body': body,
     });
@@ -142,18 +145,25 @@ class ItqanJourneyRepository {
     } on ItqanJourneyException catch (error) {
       if (!_isRetryable(error)) {
         await _markBlocked(outbox, idempotencyKey, error);
-      } else {
-        await _scheduleRetry(outbox, idempotencyKey, error);
         throw ItqanJourneyException(
           error.status,
           error.message,
           code: error.code,
           retryAfter: error.retryAfter,
-          queued: true,
           validationErrors: error.validationErrors,
+          idempotencyKey: idempotencyKey,
         );
       }
-      rethrow;
+      await _scheduleRetry(outbox, idempotencyKey, error);
+      throw ItqanJourneyException(
+        error.status,
+        error.message,
+        code: error.code,
+        retryAfter: error.retryAfter,
+        queued: true,
+        validationErrors: error.validationErrors,
+        idempotencyKey: idempotencyKey,
+      );
     }
   }
 
@@ -170,14 +180,53 @@ class ItqanJourneyRepository {
     return shared;
   }
 
+  Future<bool> hasPendingActivity(String idempotencyKey) async =>
+      (await _openOutbox()).containsKey(idempotencyKey);
+
+  Future<Map<int, String>> pendingQuranPageActivities() async {
+    final user = await AuthService.getUser();
+    final userId = await AuthService.getUserId();
+    final email = user?['email']?.toString();
+    final identity = userId != null
+        ? 'id:$userId'
+        : email == null || email.trim().isEmpty
+        ? ''
+        : 'email:${email.toLowerCase()}';
+    if (identity.isEmpty) return {};
+
+    final outbox = await _openOutbox();
+    final pages = <int, String>{};
+    for (final key in outbox.keys) {
+      final raw = outbox.get(key);
+      if (raw is! Map || raw['body'] is! Map) continue;
+      final entry = Map<String, dynamic>.from(raw);
+      final body = Map<String, dynamic>.from(entry['body'] as Map);
+      final storedIdentity = entry['owner_identity']?.toString();
+      final matchesUser = storedIdentity != null
+          ? storedIdentity == identity
+          : entry['owner_email'] == email;
+      final page = body['source_id'];
+      if (!matchesUser ||
+          body['activity_type'] != 'quran.reading' ||
+          body['source_type'] != 'quran' ||
+          page is! num ||
+          page.toInt() < 1 ||
+          page.toInt() > 604) {
+        continue;
+      }
+      pages[page.toInt()] = '$key';
+    }
+    return pages;
+  }
+
   Future<void> _drainPendingActivities() async {
     final currentEmail = (await AuthService.getUser())?['email'];
     final currentUserId = await AuthService.getUserId();
     final identity = currentUserId != null
         ? 'id:$currentUserId'
         : currentEmail == null || currentEmail.trim().isEmpty
-            ? ''
-            : 'email:${currentEmail.toLowerCase()}';
+        ? ''
+        : 'email:${currentEmail.toLowerCase()}';
     if (identity.isEmpty) return;
 
     final outbox = await _openOutbox();
@@ -226,8 +275,9 @@ class ItqanJourneyRepository {
     final entry = Map<String, dynamic>.from(raw);
     final delay = error.retryAfter ?? 30;
     if (error.status == 429 || error.retryAfter != null) {
-      entry['retry_after_at'] =
-          DateTime.now().add(Duration(seconds: delay)).toIso8601String();
+      entry['retry_after_at'] = DateTime.now()
+          .add(Duration(seconds: delay))
+          .toIso8601String();
     }
     await outbox.put(key, entry);
   }
@@ -276,11 +326,11 @@ class ItqanJourneyRepository {
       };
       response = method == 'GET'
           ? await _client
-              .get(uri, headers: headers)
-              .timeout(const Duration(seconds: 15))
+                .get(uri, headers: headers)
+                .timeout(const Duration(seconds: 15))
           : await _client
-              .post(uri, headers: headers, body: jsonEncode(body))
-              .timeout(const Duration(seconds: 15));
+                .post(uri, headers: headers, body: jsonEncode(body))
+                .timeout(const Duration(seconds: 15));
     } catch (error) {
       throw ItqanJourneyException(0, 'تعذر الاتصال: $error');
     }
@@ -319,8 +369,8 @@ class ItqanJourneyRepository {
         validationErrors: error['errors'] is Map
             ? Map<String, dynamic>.from(error['errors'] as Map)
             : decoded['errors'] is Map
-                ? Map<String, dynamic>.from(decoded['errors'] as Map)
-                : null,
+            ? Map<String, dynamic>.from(decoded['errors'] as Map)
+            : null,
       );
     }
     return decoded;
@@ -406,8 +456,10 @@ class ItqanJourneyNotifier extends StateNotifier<ItqanJourneyState> {
       state = switch (key) {
         'profile' => state.copyWith(profile: result, clearError: true),
         'journey' => state.copyWith(journey: result, clearError: true),
-        'achievements' =>
-          state.copyWith(achievements: result, clearError: true),
+        'achievements' => state.copyWith(
+          achievements: result,
+          clearError: true,
+        ),
         _ => state.copyWith(leaderboard: result, clearError: true),
       };
     } catch (error) {

@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+
 import '../../quran/models/ayah.dart';
 import '../../quran/services/quran_service.dart';
 
@@ -8,9 +10,11 @@ import '../../quran/services/quran_service.dart';
 /// Tanzil-backed QuranService. The Quran source assets remain unchanged.
 class JourneyQuranRepository {
   JourneyQuranRepository({QuranService? service})
-      : _service = service ?? QuranService();
+    : _service = service ?? QuranService();
   final QuranService _service;
   static const _boxName = 'itqan_journey_quran';
+  static const _completedPagesKey = 'backend_confirmed_pages';
+  static const _pendingPagesKey = 'pending_page_activities';
 
   Future<List<Surah>> surahs() => _service.getSurahs();
   Future<List<Ayah>> ayahs(int surah) => _service.getAyahs(surah);
@@ -22,6 +26,52 @@ class JourneyQuranRepository {
     final box = await _box();
     await box.put('last_surah', surah);
     await box.put('last_ayah', ayah);
+  }
+
+  Future<Set<int>> completedPages() async {
+    final raw = (await _box()).get(_completedPagesKey, defaultValue: const []);
+    if (raw is! List) return {};
+    return raw
+        .whereType<num>()
+        .map((page) => page.toInt())
+        .where((page) => page >= 1 && page <= 604)
+        .toSet();
+  }
+
+  Future<Map<int, String>> pendingPages() async {
+    final raw = (await _box()).get(_pendingPagesKey);
+    if (raw is! Map) return {};
+    final result = <int, String>{};
+    for (final entry in raw.entries) {
+      final page = int.tryParse('${entry.key}');
+      if (page == null || page < 1 || page > 604) continue;
+      result[page] = '${entry.value}';
+    }
+    return result;
+  }
+
+  Future<void> markPagePending(int page, String idempotencyKey) async {
+    if (page < 1 || page > 604 || idempotencyKey.isEmpty) return;
+    final box = await _box();
+    if ((await completedPages()).contains(page)) return;
+    final pending = await pendingPages();
+    pending[page] = idempotencyKey;
+    await box.put(_pendingPagesKey, {
+      for (final entry in pending.entries) '${entry.key}': entry.value,
+    });
+  }
+
+  Future<void> markPageCompleted(int page) async {
+    if (page < 1 || page > 604) return;
+    final box = await _box();
+    final pages = await completedPages();
+    pages.add(page);
+    final pending = await pendingPages();
+    pending.remove(page);
+    await box.put(_completedPagesKey, pages.toList()..sort());
+    await box.put(_pendingPagesKey, {
+      for (final entry in pending.entries) '${entry.key}': entry.value,
+    });
   }
 
   Future<Box> _box() async {

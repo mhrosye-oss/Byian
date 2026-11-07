@@ -18,6 +18,17 @@ class _ShareJourneyScreenState extends ConsumerState<ShareJourneyScreen> {
   bool _sending = false;
 
   @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      final state = ref.read(itqanJourneyProvider);
+      if (state.tasks == null && !state.loading) {
+        ref.read(itqanJourneyProvider.notifier).loadAll();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _message.dispose();
     super.dispose();
@@ -60,20 +71,20 @@ class _ShareJourneyScreenState extends ConsumerState<ShareJourneyScreen> {
       }
 
       try {
-        final activity =
-            await ref.read(itqanJourneyProvider.notifier).recordActivity(
-                  'share',
-                  sourceType: 'share',
-                );
+        final activity = await ref
+            .read(itqanJourneyProvider.notifier)
+            .recordActivity('share', sourceType: 'share');
         if (!mounted) return;
         final data = activity['data'];
         final duplicate = activity['duplicate'] == true;
         final xp = data is Map ? data['xp_earned'] ?? 0 : 0;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(duplicate
-                ? 'المشاركة مسجلة مسبقاً.'
-                : 'أكد الخادم تسجيل المشاركة • $xp XP'),
+            content: Text(
+              duplicate
+                  ? 'المشاركة مسجلة مسبقاً.'
+                  : 'أكد الخادم تسجيل المشاركة • $xp XP',
+            ),
           ),
         );
       } catch (error) {
@@ -81,31 +92,124 @@ class _ShareJourneyScreenState extends ConsumerState<ShareJourneyScreen> {
         final queued = error is ItqanJourneyException && error.queued;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(queued
-                ? 'اكتملت المشاركة وحُفظ نشاطها للمزامنة؛ لا تُمنح نقاط حتى يؤكدها الخادم.'
-                : 'اكتملت المشاركة، لكن تعذر تسجيل النشاط: $error'),
+            content: Text(
+              queued
+                  ? 'اكتملت المشاركة وحُفظ نشاطها للمزامنة؛ لا تُمنح نقاط حتى يؤكدها الخادم.'
+                  : 'اكتملت المشاركة، لكن تعذر تسجيل النشاط: $error',
+            ),
           ),
         );
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذرت مشاركة المحتوى: $error')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('تعذرت مشاركة المحتوى: $error')));
       }
     } finally {
       if (mounted) setState(() => _sending = false);
     }
   }
 
+  Widget _shareTaskProgress(ItqanJourneyState state) {
+    if (state.tasks == null) {
+      final loading = state.loading || state.error == null;
+      return Card(
+        child: ListTile(
+          title: const Text('تقدم مهمة المشاركة'),
+          subtitle: Text(
+            loading
+                ? 'جارٍ تحميل الهدف من الخادم…'
+                : state.error ?? 'تعذر تحميل تقدم المهمة.',
+          ),
+          trailing: loading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : IconButton(
+                  tooltip: 'إعادة تحميل المهام',
+                  onPressed: () =>
+                      ref.read(itqanJourneyProvider.notifier).loadAll(),
+                  icon: const Icon(Icons.refresh),
+                ),
+        ),
+      );
+    }
+
+    final rows = state.tasks?['tasks'];
+    Map? task;
+    if (rows is List) {
+      for (final row in rows) {
+        if (row is! Map) continue;
+        final pillar = '${row['pillar'] ?? ''}'.toLowerCase();
+        final key = '${row['task_key'] ?? ''}'.toLowerCase();
+        final title = '${row['title'] ?? ''}'.toLowerCase();
+        if (pillar == 'share' ||
+            pillar == 'sharing' ||
+            key.contains('share') ||
+            title.contains('مشاركة') ||
+            title.contains('share')) {
+          task = row;
+          break;
+        }
+      }
+    }
+    if (task == null) {
+      return const Card(
+        child: ListTile(
+          title: Text('تقدم مهمة المشاركة'),
+          subtitle: Text('لا تتضمن استجابة المهام هدف مشاركة قابلاً للعرض.'),
+        ),
+      );
+    }
+
+    final progress = task['progress'];
+    final target = task['target'];
+    final hasProgress = progress is num && target is num && target > 0;
+    final ratio = hasProgress
+        ? (progress / target).toDouble().clamp(0.0, 1.0)
+        : null;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '${task['title'] ?? 'هدف المشاركة'}',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            if ('${task['description'] ?? ''}'.isNotEmpty)
+              Text('${task['description']}'),
+            if (ratio != null) ...[
+              const SizedBox(height: 8),
+              LinearProgressIndicator(value: ratio),
+              Text('$progress / $target'),
+            ] else
+              const Text('لم يحدد الخادم مقدار التقدم والهدف.'),
+            if (task['status'] != null) Text('الحالة: ${task['status']}'),
+            Text(
+              'المكافأة عند اعتماد الخادم: ${task['xp_reward'] ?? '—'} XP • ${task['coin_reward'] ?? '—'} Coins',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final journeyState = ref.watch(itqanJourneyProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('مشاركة الخير')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('شارك تطبيق إتقان أو فائدة أو ذكراً أو دعاءً موثوقاً.'),
+          const Text('شارك تطبيق إتقان أو فائدة أو دعاءً موثوقاً.'),
+          const SizedBox(height: 12),
+          _shareTaskProgress(journeyState),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: _sending ? null : _shareApplication,
