@@ -43,7 +43,9 @@ final surahTranslationsProvider =
 });
 
 class MushafScreen extends ConsumerWidget {
-  const MushafScreen({super.key});
+  final bool tajweedMode;
+
+  const MushafScreen({super.key, this.tajweedMode = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -52,7 +54,10 @@ class MushafScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: ItqanColors.void_,
       appBar: AppBar(
-        title: const Text('فهرس القرآن', style: ItqanTypography.heading2),
+        title: Text(
+          tajweedMode ? 'التجويد' : 'فهرس القرآن',
+          style: ItqanTypography.heading2,
+        ),
         backgroundColor: ItqanColors.void_,
         actions: [
           IconButton(
@@ -99,7 +104,10 @@ class MushafScreen extends ConsumerWidget {
           ),
           itemCount: surahs.length,
           separatorBuilder: (_, __) => const SizedBox(height: ItqanSpacing.xs),
-          itemBuilder: (context, index) => _SurahTile(surah: surahs[index]),
+          itemBuilder: (context, index) => _SurahTile(
+            surah: surahs[index],
+            tajweedMode: tajweedMode,
+          ),
         ),
       ),
     );
@@ -108,7 +116,9 @@ class MushafScreen extends ConsumerWidget {
 
 class _SurahTile extends StatelessWidget {
   final Surah surah;
-  const _SurahTile({required this.surah});
+  final bool tajweedMode;
+
+  const _SurahTile({required this.surah, this.tajweedMode = false});
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +129,12 @@ class _SurahTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(ItqanRadius.md),
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => _AyahListScreen(surah: surah)),
+          MaterialPageRoute(
+            builder: (_) => _AyahListScreen(
+              surah: surah,
+              tajweedMode: tajweedMode,
+            ),
+          ),
         ),
         child: Container(
           padding: const EdgeInsets.symmetric(
@@ -190,7 +205,9 @@ class _SurahTile extends StatelessWidget {
 
 class _AyahListScreen extends ConsumerStatefulWidget {
   final Surah surah;
-  const _AyahListScreen({required this.surah});
+  final bool tajweedMode;
+
+  const _AyahListScreen({required this.surah, this.tajweedMode = false});
 
   @override
   ConsumerState<_AyahListScreen> createState() => _AyahListScreenState();
@@ -198,6 +215,12 @@ class _AyahListScreen extends ConsumerStatefulWidget {
 
 class _AyahListScreenState extends ConsumerState<_AyahListScreen> {
   bool _tajweedEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tajweedEnabled = widget.tajweedMode;
+  }
 
   Future<void> _showTafsirSheet(Ayah ayah, {String? translation}) async {
     final service = ref.read(quranServiceProvider);
