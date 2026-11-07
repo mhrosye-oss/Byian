@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/colors.dart';
 import '../../core/theme/spacing.dart';
 import '../../core/theme/typography.dart';
+import '../../core/settings/app_settings_provider.dart';
 import 'settings_service.dart';
 import '../mushaf/bookmarks_screen.dart';
 import '../prayer/services/prayer_notification_service.dart';
@@ -34,6 +35,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   void _update(AppSettings s) => ref.read(settingsProvider.notifier).update(s);
+
+  Future<void> _changeLanguage(String language) async {
+    const localeCodes = {
+      'arabic': 'ar',
+      'english': 'en',
+      'french': 'fr',
+    };
+    final code = localeCodes[language];
+    if (code == null) return;
+
+    await ref.read(settingsProvider.notifier).update(
+          ref.read(settingsProvider).copyWith(language: language),
+        );
+    if (!mounted) return;
+    await AppSettingsScope.of(context).setLocale(Locale(code));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +257,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 'english': 'English',
                 'french': 'Français'
               },
-              onChanged: (v) => _update(s.copyWith(language: v)),
+              onChanged: _changeLanguage,
             ),
             const SizedBox(height: ItqanSpacing.sm),
             _SwitchRow(

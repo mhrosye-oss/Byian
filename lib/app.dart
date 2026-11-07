@@ -77,7 +77,9 @@ class _ItqanAppState extends State<ItqanApp> {
     return AnimatedBuilder(
       animation: _settings,
       builder: (context, child) {
-        return MaterialApp(
+        return AppSettingsScope(
+          settings: _settings,
+          child: MaterialApp(
           title: 'Itqan',
           debugShowCheckedModeBanner: false,
           themeMode: _settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
@@ -111,6 +113,7 @@ class _ItqanAppState extends State<ItqanApp> {
             GlobalCupertinoLocalizations.delegate,
           ],
           home: _showOnboarding ? const OnboardingScreen() : const HomeScreen(),
+          ),
         );
       },
     );
