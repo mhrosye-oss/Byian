@@ -10,7 +10,7 @@ The new product surface is isolated under `lib/features/itqan_journey/`: journey
 - `core`, `domain`, `shared`: focused implementation contracts/services are hosted at feature root until additional domain types are needed; no empty placeholder files are added.
 
 ## Existing dependencies and additions
-Existing: `http ^1.2.0`, `flutter_riverpod ^2.4.9`, `hive_flutter ^1.1.0`, `url_launcher ^6.2.5`, Flutter Material and project Quran service. Added `uuid ^4.5.1` for RFC4122 v4 idempotency keys; no graphics, sharing or navigation packages added. No pubspec.lock was present in the branch root inspection. Flutter/Dart executables were unavailable here, therefore package resolution and pub get/analyze/test are unverified. The CI log previously showed integration_test / flutter_timezone 5.1.1 meta incompatibility; this branch's pubspec has flutter_timezone ^4.1.0. No dependency override or timezone change was made.
+Existing: `http ^1.2.0`, `flutter_riverpod ^2.4.9`, `hive_flutter ^1.1.0`, `url_launcher ^6.2.5`, Flutter Material and project Quran service. Added `uuid ^4.5.1` for RFC4122 v4 idempotency keys; no graphics, sharing or navigation packages added. `pubspec.lock` is committed. Flutter 3.24.0 resolves the dependencies and passes analysis/tests locally; GitHub Actions validates the same toolchain with Java 17 and Android SDK. The branch uses `flutter_timezone ^4.1.0` and does not change the existing record/speech-to-text overrides.
 
 ## API contract
 The feature uses only the supplied endpoints: GET profile, tasks, journey, streak, achievements, leaderboard?limit=10 and POST activities. All requests use bearer auth. Server result data drives visible balances/rewards; client creates a unique UUID and never calculates XP. A 401 clears token and stored session identity; error responses retain status/code/retry_after. Live endpoint behavior has not been tested in this authoring session.
@@ -18,8 +18,10 @@ The feature uses only the supplied endpoints: GET profile, tasks, journey, strea
 ## Limitations
 HomeScreen and auth login/register still require integration with the new independent entry point/session contract. The existing Drawer now opens the journey surfaces, but its profile entry currently points to the dashboard (there is no dedicated profile screen implementation here). Share uses the platform SMS app via existing url_launcher; launch success is not proof of sending, so the backend remains responsible for reward validation. Quran progress stores a private last position; the read-completion action currently records one page, because no reliable page count is derived from user's reading session. Adhkar sends one activity per completed item; backend acceptance controls rewards. Daily completion summary and loading/errors are server data only.
 
-## Manual verification checklist
-- [ ] flutter pub get / analyze / test on Flutter 3.24 environment
+## Verification status
+- [x] flutter pub get / analyze / test on Flutter 3.24 environment
+- [x] Mock Contract tests cover bearer auth, activity payloads, UUID idempotency and HTTP 429 retry metadata
+- [x] GitHub Actions validates Android debug and release APK compilation on an Android SDK runner
 - [ ] Login endpoint stores token and protected endpoints read it
 - [ ] Quran position survives route reopening; bundled Tanzil text is unchanged
 - [ ] Adhkar/dua/share action returns server acceptance before reward shown
