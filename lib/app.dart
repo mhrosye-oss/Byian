@@ -82,7 +82,9 @@ class _ItqanAppState extends State<ItqanApp> {
           child: MaterialApp(
           title: 'Itqan',
           debugShowCheckedModeBanner: false,
-          themeMode: _settings.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          // The current screens use the light-only brand palette. Do not let
+          // a stale persisted dark-mode flag turn them into a grey/dark view.
+          themeMode: ThemeMode.light,
           theme: ThemeData(
             brightness: Brightness.light,
             primaryColor: const Color(0xFF1B5E20),

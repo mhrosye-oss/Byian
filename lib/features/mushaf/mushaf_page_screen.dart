@@ -86,6 +86,43 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
     _saveReadingPosition(page);
   }
 
+  Future<void> _openVerseRecitation(
+    BuildContext context,
+    VerseOnPage verse,
+    String surahName,
+  ) async {
+    final service = ref.read(quranServiceProvider);
+    try {
+      await service.init();
+      final ayahs = await service.getAyahs(verse.surahNumber);
+      final ayah = ayahs.firstWhere(
+        (item) => item.ayahNumber == verse.ayahNumber,
+        orElse: () => Ayah(
+          surahNumber: verse.surahNumber,
+          ayahNumber: verse.ayahNumber,
+          textUthmani: verse.textUthmani,
+          words: const [],
+          translation: verse.translation,
+        ),
+      );
+      if (!context.mounted) return;
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => RecitationScreen(
+            ayah: ayah,
+            surahName: surahName,
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر فتح الآية: $error')),
+      );
+    }
+  }
+
   Future<void> _saveReadingPosition(int page) async {
     try {
       final pageData = await ref.read(_pageDataProvider(page).future);
@@ -371,14 +408,10 @@ class _MushafPageScreenState extends ConsumerState<MushafPageScreen> {
                             translation: translation[verse.verseKey] ?? verse.translation,
                             showTranslation: _showTranslation,
                             onLongPress: (position) => _showAyahMenu(verse, position),
-                            onTap: () => Navigator.push<void>(
+                            onTap: () => _openVerseRecitation(
                               context,
-                              MaterialPageRoute<void>(
-                                builder: (_) => RecitationScreen(
-                                  ayah: Ayah(surahNumber: verse.surahNumber, ayahNumber: verse.ayahNumber, textUthmani: verse.textUthmani, words: const [], translation: verse.translation),
-                                  surahName: surah?.nameSimple ?? 'القرآن الكريم',
-                                ),
-                              ),
+                              verse,
+                              surah?.nameSimple ?? 'القرآن الكريم',
                             ),
                           );
                         },

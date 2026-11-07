@@ -15,8 +15,14 @@ import 'widgets/word_token.dart';
 class RecitationScreen extends ConsumerStatefulWidget {
   final Ayah ayah;
   final String surahName;
+  final bool tajweedMode;
 
-  const RecitationScreen({super.key, required this.ayah, required this.surahName});
+  const RecitationScreen({
+    super.key,
+    required this.ayah,
+    required this.surahName,
+    this.tajweedMode = false,
+  });
 
   @override
   ConsumerState<RecitationScreen> createState() => _RecitationScreenState();

@@ -394,8 +394,11 @@ class _AyahListScreenState extends ConsumerState<_AyahListScreen> {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) =>
-                      RecitationScreen(ayah: ayah, surahName: surah.nameSimple),
+                  builder: (_) => RecitationScreen(
+                    ayah: ayah,
+                    surahName: surah.nameSimple,
+                    tajweedMode: widget.tajweedMode,
+                  ),
                 ),
               ),
               child: Container(
