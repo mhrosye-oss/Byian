@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:itqan/core/services/auth_service.dart';
+import 'package:itqan/core/settings/app_settings_provider.dart';
 import 'package:itqan/features/auth/screens/login_screen.dart';
 import 'package:itqan/features/about/screens/about_screen.dart';
 import 'package:itqan/features/ai/screens/ai_chat_screen.dart';
+import 'package:itqan/features/settings/settings_service.dart';
 import 'package:itqan/features/waqf/screens/waqf_screen.dart';
 import 'package:itqan/features/kids/screens/kids_mode_screen.dart';
 import 'package:itqan/features/contributors/screens/hall_of_fame_screen.dart';
 
-class CustomDrawer extends StatefulWidget {
+class CustomDrawer extends ConsumerStatefulWidget {
   const CustomDrawer({super.key});
   @override
-  State<CustomDrawer> createState() => _CustomDrawerState();
+  ConsumerState<CustomDrawer> createState() => _CustomDrawerState();
 }
 
-class _CustomDrawerState extends State<CustomDrawer> {
+class _CustomDrawerState extends ConsumerState<CustomDrawer> {
   Map<String, String>? _user;
   bool _isLoading = true;
+  static const _languages = <String, String>{
+    'ar': 'العربية',
+    'en': 'English',
+    'fr': 'Français',
+  };
 
   @override
   void initState() {
@@ -40,6 +48,48 @@ class _CustomDrawerState extends State<CustomDrawer> {
     }
   }
 
+  Future<void> _selectLanguage() async {
+    final currentCode = Localizations.localeOf(context).languageCode;
+    final selectedLocale = await showDialog<Locale>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('اختر اللغة', textDirection: TextDirection.rtl),
+        children: _languages.entries.map((entry) {
+          return SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogContext, Locale(entry.key)),
+            child: Row(
+              children: [
+                Expanded(child: Text(entry.value)),
+                if (entry.key == currentCode)
+                  const Icon(Icons.check_rounded, color: Color(0xFF1B5E20)),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+    if (selectedLocale == null || !mounted) return;
+
+    try {
+      final appSettings = AppSettingsScope.of(context);
+      await appSettings.setLocale(selectedLocale);
+      if (!mounted) return;
+      final languageName = switch (selectedLocale.languageCode) {
+        'en' => 'english',
+        'fr' => 'french',
+        _ => 'arabic',
+      };
+      await ref.read(settingsProvider.notifier).update(
+            ref.read(settingsProvider).copyWith(language: languageName),
+          );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر تغيير اللغة: $error')),
+      );
+    }
+  }
+
   void _goToLogin() async {
     final result = await Navigator.push(
       context,
@@ -54,6 +104,9 @@ class _CustomDrawerState extends State<CustomDrawer> {
   Widget build(BuildContext context) {
     const Color green = Color(0xFF1B5E20);
     final theme = Theme.of(context);
+    final selectedLanguage =
+        _languages[Localizations.localeOf(context).languageCode] ??
+            _languages['ar']!;
 
     return Drawer(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -128,7 +181,8 @@ class _CustomDrawerState extends State<CustomDrawer> {
             _buildDrawerItem(
               icon: Icons.language_rounded,
               title: 'اللغة',
-              subtitle: 'العربية', 
+              subtitle: selectedLanguage,
+              onTap: _selectLanguage,
             ),
             
             const Divider(),
