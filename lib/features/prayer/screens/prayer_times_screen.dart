@@ -243,7 +243,7 @@ class _LocationCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'حُسبت عبر Awqat اعتمادًا على GPS · $date',
+                  'حُسبت حسب GPS والمنطقة الزمنية على الجهاز · $date',
                   style: ItqanTypography.caption,
                   textDirection: TextDirection.rtl,
                 ),

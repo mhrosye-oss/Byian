@@ -8,6 +8,7 @@ void main() {
       final prayers = await PrayerTimesService.getTodayPrayerTimes(
         latitude: 21.4225,
         longitude: 39.8262,
+        timeZoneId: 'Asia/Riyadh',
       );
 
       expect(prayers, hasLength(5));
@@ -21,6 +22,21 @@ void main() {
       for (var index = 0; index < prayers.length - 1; index++) {
         expect(prayers[index].time.isBefore(prayers[index + 1].time), isTrue);
       }
+    });
+
+    test('uses country-specific calculation parameters', () async {
+      final makkah = await PrayerTimesService.getTodayPrayerTimes(
+        latitude: 21.4225,
+        longitude: 39.8262,
+        timeZoneId: 'Asia/Riyadh',
+      );
+      final cairo = await PrayerTimesService.getTodayPrayerTimes(
+        latitude: 21.4225,
+        longitude: 39.8262,
+        timeZoneId: 'Africa/Cairo',
+      );
+
+      expect(makkah.last.time, isNot(cairo.last.time));
     });
   });
 }

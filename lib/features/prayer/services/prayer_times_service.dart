@@ -1,4 +1,5 @@
 import 'package:adhan/adhan.dart' as adhan;
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -59,6 +60,7 @@ class PrayerTimesService {
   static Future<List<PrayerTime>> getTodayPrayerTimes({
     double? latitude,
     double? longitude,
+    String? timeZoneId,
   }) async {
     if ((latitude == null) != (longitude == null)) {
       throw ArgumentError('latitude and longitude must be supplied together.');
@@ -77,7 +79,10 @@ class PrayerTimesService {
       await _saveCoordinates(position.latitude, position.longitude);
     }
 
-    return _prayersForDate(coordinates, DateTime.now());
+    final parameters = _parametersForTimeZone(
+      timeZoneId ?? await _getDeviceTimeZone(),
+    );
+    return _prayersForDate(coordinates, DateTime.now(), parameters);
   }
 
   /// Used by the Home banner without requesting location permission on app
@@ -90,10 +95,11 @@ class PrayerTimesService {
     if (latitude == null || longitude == null) return null;
 
     final coordinates = adhan.Coordinates(latitude, longitude, validate: true);
+    final parameters = _parametersForTimeZone(await _getDeviceTimeZone());
     final now = DateTime.now();
     for (var dayOffset = 0; dayOffset <= 1; dayOffset++) {
       final day = DateTime(now.year, now.month, now.day + dayOffset);
-      for (final prayer in _prayersForDate(coordinates, day)) {
+      for (final prayer in _prayersForDate(coordinates, day, parameters)) {
         if (prayer.time.isAfter(now)) return prayer;
       }
     }
@@ -116,6 +122,7 @@ class PrayerTimesService {
       position.longitude,
       validate: true,
     );
+    final parameters = _parametersForTimeZone(await _getDeviceTimeZone());
 
     final permissionGranted = await _notifications.requestPermissions();
     if (!permissionGranted) {
@@ -128,7 +135,7 @@ class PrayerTimesService {
     final now = DateTime.now();
     for (var dayOffset = 0; dayOffset < days; dayOffset++) {
       final day = DateTime(now.year, now.month, now.day + dayOffset);
-      final prayers = _prayersForDate(coordinates, day);
+      final prayers = _prayersForDate(coordinates, day, parameters);
 
       for (var index = 0; index < prayers.length; index++) {
         final prayer = prayers[index];
@@ -160,10 +167,8 @@ class PrayerTimesService {
   static List<PrayerTime> _prayersForDate(
     adhan.Coordinates coordinates,
     DateTime date,
+    adhan.CalculationParameters parameters,
   ) {
-    final parameters = adhan.CalculationMethod.muslim_world_league
-        .getParameters()
-      ..madhab = adhan.Madhab.shafi;
     final times = adhan.PrayerTimes(
       coordinates,
       adhan.DateComponents.from(date),
@@ -178,6 +183,62 @@ class PrayerTimesService {
           name: PrayerName.maghrib, time: times.maghrib, labelAr: 'المغرب'),
       PrayerTime(name: PrayerName.isha, time: times.isha, labelAr: 'العشاء'),
     ];
+  }
+
+  static Future<String> _getDeviceTimeZone() async {
+    try {
+      return await FlutterTimezone.getLocalTimezone();
+    } catch (_) {
+      // Prayer calculations can still use the system-local time if the
+      // timezone plugin is unavailable; country-specific defaults then fall
+      // back to Muslim World League.
+      return DateTime.now().timeZoneName;
+    }
+  }
+
+  static adhan.CalculationParameters _parametersForTimeZone(String timeZoneId) {
+    final zone = timeZoneId.trim().toLowerCase();
+    var method = adhan.CalculationMethod.muslim_world_league;
+    var madhab = adhan.Madhab.shafi;
+
+    if (zone == 'asia/riyadh') {
+      method = adhan.CalculationMethod.umm_al_qura;
+    } else if (zone == 'africa/cairo') {
+      method = adhan.CalculationMethod.egyptian;
+    } else if (zone == 'asia/dubai') {
+      method = adhan.CalculationMethod.dubai;
+    } else if (zone == 'asia/qatar') {
+      method = adhan.CalculationMethod.qatar;
+    } else if (zone == 'asia/kuwait') {
+      method = adhan.CalculationMethod.kuwait;
+    } else if (zone == 'asia/tehran') {
+      method = adhan.CalculationMethod.tehran;
+    } else if (zone == 'asia/karachi' ||
+        zone == 'asia/kolkata' ||
+        zone == 'asia/calcutta' ||
+        zone == 'asia/dhaka') {
+      method = adhan.CalculationMethod.karachi;
+      madhab = adhan.Madhab.hanafi;
+    } else if (zone == 'asia/singapore' ||
+        zone == 'asia/kuala_lumpur' ||
+        zone == 'asia/kuching' ||
+        zone == 'asia/jakarta' ||
+        zone == 'asia/pontianak' ||
+        zone == 'asia/makassar' ||
+        zone == 'asia/jayapura' ||
+        zone == 'asia/brunei') {
+      method = adhan.CalculationMethod.singapore;
+    } else if (zone == 'europe/istanbul') {
+      method = adhan.CalculationMethod.turkey;
+      madhab = adhan.Madhab.hanafi;
+    } else if (zone.startsWith('america/') ||
+        zone.startsWith('canada/') ||
+        zone == 'europe/london' ||
+        zone == 'europe/belfast') {
+      method = adhan.CalculationMethod.moon_sighting_committee;
+    }
+
+    return method.getParameters()..madhab = madhab;
   }
 
   static Future<void> _saveCoordinates(
