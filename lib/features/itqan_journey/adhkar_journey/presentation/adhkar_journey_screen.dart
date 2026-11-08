@@ -272,7 +272,7 @@ class _AdhkarJourneyScreenState extends ConsumerState<AdhkarJourneyScreen> {
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
                       child: DropdownButtonFormField<String>(
-                        initialValue: _category,
+                        value: _category,
                         decoration: const InputDecoration(
                           labelText: 'تصنيف الأذكار',
                           border: OutlineInputBorder(),

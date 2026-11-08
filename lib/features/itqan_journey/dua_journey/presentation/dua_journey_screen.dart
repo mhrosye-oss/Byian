@@ -271,7 +271,7 @@ class _DuaJourneyScreenState extends ConsumerState<DuaJourneyScreen> {
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                           child: DropdownButtonFormField<String>(
-                            initialValue: _selectedCategory ?? '__all__',
+                            value: _selectedCategory ?? '__all__',
                             decoration: const InputDecoration(
                               labelText: 'تصنيف الأدعية',
                               border: OutlineInputBorder(),
