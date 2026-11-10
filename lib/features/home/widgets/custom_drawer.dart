@@ -51,16 +51,14 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
   Future<void> _selectLanguage() async {
     final currentCode = Localizations.localeOf(context).languageCode;
     final appSettings = AppSettingsScope.of(context);
-    final rootNavigator = Navigator.of(context, rootNavigator: true);
-    final dialogContext = rootNavigator.context;
 
     // Close the drawer before rebuilding MaterialApp after a locale change.
-    rootNavigator.pop();
+    Navigator.of(context, rootNavigator: true).pop();
     await Future<void>.delayed(Duration.zero);
     if (!mounted) return;
 
     final selectedLocale = await showDialog<Locale>(
-      context: dialogContext,
+      context: Navigator.of(context, rootNavigator: true).context,
       useRootNavigator: true,
       builder: (dialogContext) => SimpleDialog(
         title: const Text('اختر اللغة', textDirection: TextDirection.rtl),
