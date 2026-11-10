@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/firebase_auth_api.dart';
+import '../../../core/services/firebase_messaging_service.dart';
+import '../../../core/services/google_firebase_auth_service.dart';
 import '../../itqan_journey/data/journey_auth_api.dart';
 import 'register_screen.dart';
 import '../../home/home_screen.dart';
@@ -17,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _busy = false;
   bool _remember = true;
   bool _obscure = true;
+  bool _googleBusy = false;
   late final JourneyAuthApi _api = JourneyAuthApi(client: http.Client());
   @override
   void initState() {
@@ -50,6 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _busy = true);
     try {
       await _api.login(_email.text.trim(), _password.text);
+      await _registerPushToken();
       if (_remember) {
         await AuthService.saveCredentials(_email.text.trim(), _password.text);
       } else {
@@ -65,6 +70,35 @@ class _LoginScreenState extends State<LoginScreen> {
       _message('$e');
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _registerPushToken() async {
+    try {
+      await FirebaseMessagingService.instance.registerAfterLogin();
+    } catch (_) {
+      // Notifications are optional and must not block authentication.
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    setState(() => _googleBusy = true);
+    try {
+      final idToken = await GoogleFirebaseAuthService.instance
+          .signInAndGetFirebaseIdToken();
+      await FirebaseAuthApi().exchangeFirebaseIdToken(idToken);
+      await _registerPushToken();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+          (_) => false,
+        );
+      }
+    } catch (error) {
+      if (mounted) _message('$error');
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
     }
   }
 
@@ -101,6 +135,18 @@ class _LoginScreenState extends State<LoginScreen> {
             onPressed: _busy ? null : _login,
             child:
                 _busy ? const CircularProgressIndicator() : const Text('دخول')),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _busy || _googleBusy ? null : _loginWithGoogle,
+          icon: const Icon(Icons.login_rounded),
+          label: _googleBusy
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('المتابعة باستخدام Google'),
+        ),
         TextButton(
             onPressed: () => Navigator.push(
                 context,
