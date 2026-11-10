@@ -33,6 +33,7 @@ import '../tafsir/screens/tafsir_screen.dart';
 import '../tajweed/tajweed_screen.dart';
 import '../tasbih/screens/smart_tasbih_screen.dart';
 import '../zakat/screens/zakat_calculator_screen.dart';
+import '../gamification/presentation/widgets/journey_banner.dart';
 import 'widgets/next_prayer_banner.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -95,6 +96,8 @@ class HomeScreen extends StatelessWidget {
                   _buildHeader(context),
                   const SizedBox(height: 22),
                   NextPrayerBanner(onOpenPrayerTimes: () => _open(context, 'prayer')),
+                  const SizedBox(height: 24),
+                  const JourneyBanner(),
                   const SizedBox(height: 24),
                   _sectionHeader('مساحتك اليومية', 'وصول سريع'),
                   const SizedBox(height: 13),

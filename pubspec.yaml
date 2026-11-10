@@ -8,13 +8,12 @@ environment:
 
 dependencies:
   url_launcher: ^6.2.5
+  share_plus: ^10.1.4
   http: ^1.2.0
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-
-  # Existing dependencies
   intl: 0.19.0
   just_audio: ^0.9.36
   record: 5.0.4
@@ -26,20 +25,24 @@ dependencies:
   shimmer: ^3.0.0
   path_provider: ^2.1.2
   cupertino_icons: ^1.0.8
-
-  # Quran and prayer services
+  flutter_secure_storage: ^9.2.4
   geolocator: ^14.0.0
   flutter_local_notifications: ^17.2.2
   timezone: ^0.9.4
   shared_preferences: ^2.2.2
+  uuid: ^4.5.1
   flutter_compass: ^0.8.0
   hijri: ^3.0.0
   adhan: ^2.0.0+1
   flutter_timezone: ^4.1.0
   speech_to_text: 7.0.0
-
-  # Quran and tafsir content
   quran_with_tafsir: ^1.0.0
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^5.2.0
+  firebase_core: ^5.1.0
+  firebase_auth: ^7.0.1
+  firebase_messaging: ^17.0.1
+  google_sign_in: ^7.2.0
 
 dependency_overrides:
   intl: 0.19.0
@@ -60,12 +63,10 @@ dev_dependencies:
 flutter:
   generate: true
   uses-material-design: true
-
   assets:
     - assets/fonts/
     - assets/data/
     - assets/audio/
-
   fonts:
     - family: NotoNaskhArabic
       fonts:

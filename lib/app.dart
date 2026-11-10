@@ -2,9 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/localization/app_localizations.dart';
+import 'l10n/app_localizations.dart' as generated_l10n;
 import 'core/settings/app_settings_provider.dart';
 import 'features/home/home_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
+
+const List<LocalizationsDelegate<dynamic>> itqanLocalizationsDelegates = [
+  _GeneratedFallbackLocalizationsDelegate(),
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+];
 
 class ItqanApp extends StatefulWidget {
   const ItqanApp({super.key});
@@ -108,16 +117,36 @@ class _ItqanAppState extends State<ItqanApp> {
             Locale('ar'), Locale('en'), Locale('fr'), Locale('es'), Locale('ur'), 
             Locale('id'), Locale('hi'), Locale('bn'), Locale('fa'), Locale('uz')
           ],
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
+          localizationsDelegates: itqanLocalizationsDelegates,
           home: _showOnboarding ? const OnboardingScreen() : const HomeScreen(),
           ),
         );
       },
     );
   }
+}
+
+class _GeneratedFallbackLocalizationsDelegate
+    extends LocalizationsDelegate<generated_l10n.AppLocalizations> {
+  const _GeneratedFallbackLocalizationsDelegate();
+
+  static const _supportedLanguageCodes = {
+    'ar', 'en', 'fr', 'es', 'ur', 'id', 'hi', 'bn', 'fa', 'uz'
+  };
+  static const _generatedLanguageCodes = {'ar', 'en', 'fr'};
+
+  @override
+  bool isSupported(Locale locale) =>
+      _supportedLanguageCodes.contains(locale.languageCode);
+
+  @override
+  Future<generated_l10n.AppLocalizations> load(Locale locale) {
+    final resolvedLocale = _generatedLanguageCodes.contains(locale.languageCode)
+        ? locale
+        : const Locale('ar');
+    return generated_l10n.AppLocalizations.delegate.load(resolvedLocale);
+  }
+
+  @override
+  bool shouldReload(_GeneratedFallbackLocalizationsDelegate old) => false;
 }

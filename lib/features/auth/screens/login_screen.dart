@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/firebase_auth_api.dart';
+import '../../../core/services/firebase_messaging_service.dart';
+import '../../../core/services/google_firebase_auth_service.dart';
+import '../../itqan_journey/data/journey_auth_api.dart';
 import 'register_screen.dart';
 import '../../home/home_screen.dart';
 
@@ -14,177 +17,147 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
-  bool _isLoading = false;
-  bool _obscurePassword = true;
-  bool _rememberMe = false;
-
+  bool _busy = false;
+  bool _remember = true;
+  bool _obscure = true;
+  bool _googleBusy = false;
+  late final JourneyAuthApi _api = JourneyAuthApi(client: http.Client());
   @override
   void initState() {
     super.initState();
-    _loadSavedCredentials();
+    _restoreSavedCredentials();
   }
 
-  Future<void> _loadSavedCredentials() async {
-    final creds = await AuthService.getSavedCredentials();
-    if (creds != null) {
-      setState(() {
-        _email.text = creds['email']!;
-        _password.text = creds['pass']!;
-        _rememberMe = true;
-      });
-    }
-  }
-
-  Future<void> _login() async {
-    if (_email.text.isEmpty || _password.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إدخال البريد وكلمة المرور')));
-      return;
-    }
-
-    setState(() => _isLoading = true);
+  Future<void> _restoreSavedCredentials() async {
     try {
-      var response = await http.post(
-        Uri.parse('https://blueviolet-viper-439935.hostingersite.com/api.php'),
-        headers: {'Authorization': 'Bearer MySecretToken123!', 'Content-Type': 'application/json'},
-        body: jsonEncode({'action': 'login', 'email': _email.text.trim(), 'password': _password.text}),
-      );
-
-      if (response.body.trim().startsWith('{')) {
-        var data = jsonDecode(response.body);
-        if (data['status'] == 'success') {
-          await AuthService.saveUser(data['user']['name'], data['user']['email']);
-          if (_rememberMe) {
-            await AuthService.saveCredentials(_email.text.trim(), _password.text);
-          } else {
-            await AuthService.clearCredentials();
-          }
-          if (mounted) {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-              (route) => false,
-            );
-          }
-        } else {
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'] ?? 'خطأ غير معروف')));
-        }
-      } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خطأ في السيرفر، يرجى المحاولة لاحقاً')));
-      }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خطأ في الاتصال: تأكد من الإنترنت')));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      final saved = await AuthService.getSavedCredentials();
+      if (!mounted || saved == null) return;
+      _email.text = saved['email'] ?? '';
+      _password.text = saved['pass'] ?? '';
+    } catch (_) {
+      if (mounted) _message('تعذر استعادة بيانات الدخول المحفوظة.');
     }
-  }
-
-  void _continueAsGuest() {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-      (route) => false,
-    );
   }
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('تسجيل الدخول', style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF1B5E20),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1B5E20).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.person_rounded, size: 60, color: Color(0xFF1B5E20)),
-            ),
-            const SizedBox(height: 30),
-            TextField(
-              controller: _email,
-              decoration: InputDecoration(
-                labelText: 'البريد الإلكتروني',
-                prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF1B5E20)),
-                filled: true,
-                fillColor: theme.cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _password,
-              decoration: InputDecoration(
-                labelText: 'كلمة المرور',
-                prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF1B5E20)),
-                suffixIcon: IconButton(
-                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.grey),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                ),
-                filled: true,
-                fillColor: theme.cardColor,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-              ),
-              obscureText: _obscurePassword,
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Checkbox(value: _rememberMe, activeColor: const Color(0xFF1B5E20), onChanged: (val) => setState(() => _rememberMe = val!)),
-                const Text('تذكرني', style: TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1B5E20),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('دخول', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('قريباً'))),
-              icon: const Icon(Icons.g_mobiledata, size: 30, color: Colors.red),
-              label: const Text('الدخول بواسطة Google', style: TextStyle(fontSize: 16, color: Colors.black87)),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                side: const BorderSide(color: Colors.grey),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
-              child: const Text('ليس لديك حساب؟ إنشاء حساب جديد', style: TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold)),
-            ),
-            const SizedBox(height: 16),
-            const Row(children: [Expanded(child: Divider()), Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('أو')), Expanded(child: Divider())]),
-            const SizedBox(height: 16),
-            TextButton.icon(
-              onPressed: _continueAsGuest,
-              icon: const Icon(Icons.person_outline, color: Colors.grey),
-              label: const Text('الدخول كضيف (تخطي)', style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      ),
-    );
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
   }
+
+  Future<void> _login() async {
+    if (_email.text.trim().isEmpty || _password.text.isEmpty) {
+      _message('أدخل البريد وكلمة المرور.');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await _api.login(_email.text.trim(), _password.text);
+      await _registerPushToken();
+      if (_remember) {
+        await AuthService.saveCredentials(_email.text.trim(), _password.text);
+      } else {
+        await AuthService.clearCredentials();
+      }
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+            (_) => false);
+      }
+    } catch (e) {
+      _message('$e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _registerPushToken() async {
+    try {
+      await FirebaseMessagingService.instance.registerAfterLogin();
+    } catch (_) {
+      // Notifications are optional and must not block authentication.
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    setState(() => _googleBusy = true);
+    try {
+      final idToken = await GoogleFirebaseAuthService.instance
+          .signInAndGetFirebaseIdToken();
+      await FirebaseAuthApi().exchangeFirebaseIdToken(idToken);
+      await _registerPushToken();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+          (_) => false,
+        );
+      }
+    } catch (error) {
+      if (mounted) _message('$error');
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
+    }
+  }
+
+  void _message(String value) => ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text(value)));
+  @override
+  Widget build(BuildContext context) => Scaffold(
+      appBar: AppBar(title: const Text('تسجيل الدخول')),
+      body: ListView(padding: const EdgeInsets.all(24), children: [
+        const Icon(Icons.auto_awesome, size: 64),
+        const SizedBox(height: 24),
+        TextField(
+            controller: _email,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+                labelText: 'البريد الإلكتروني', border: OutlineInputBorder())),
+        const SizedBox(height: 16),
+        TextField(
+            controller: _password,
+            obscureText: _obscure,
+            decoration: InputDecoration(
+                labelText: 'كلمة المرور',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                    icon: Icon(
+                        _obscure ? Icons.visibility : Icons.visibility_off)))),
+        CheckboxListTile(
+            value: _remember,
+            onChanged: (v) => setState(() => _remember = v ?? false),
+            title: const Text('تذكر بيانات الدخول'),
+            contentPadding: EdgeInsets.zero),
+        FilledButton(
+            onPressed: _busy ? null : _login,
+            child:
+                _busy ? const CircularProgressIndicator() : const Text('دخول')),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _busy || _googleBusy ? null : _loginWithGoogle,
+          icon: const Icon(Icons.login_rounded),
+          label: _googleBusy
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('المتابعة باستخدام Google'),
+        ),
+        TextButton(
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                    builder: (_) => const RegisterScreen())),
+            child: const Text('إنشاء حساب')),
+        TextButton(
+            onPressed: () => Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+                (_) => false),
+            child: const Text('المتابعة كضيف'))
+      ]));
 }

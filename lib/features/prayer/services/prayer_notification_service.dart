@@ -98,7 +98,6 @@ class PrayerNotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: playAzan,
-      
       audioAttributesUsage: AudioAttributesUsage.alarm,
     );
     final iosDetails = DarwinNotificationDetails(
@@ -119,5 +118,85 @@ class PrayerNotificationService {
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
     );
+  }
+
+  Future<bool> requestReminderPermissions() async {
+    await initialize();
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (android != null) {
+      return await android.requestNotificationsPermission() != false;
+    }
+    final ios = _plugin.resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>();
+    if (ios != null) {
+      return await ios.requestPermissions(
+            alert: true,
+            badge: false,
+            sound: true,
+          ) ??
+          false;
+    }
+    return false;
+  }
+
+  Future<void> scheduleJourneyReminder({
+    required int id,
+    required String title,
+    required String body,
+    required int hour,
+    required int minute,
+  }) async {
+    await initialize();
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduled = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour,
+      minute,
+    );
+    if (!scheduled.isAfter(now)) {
+      scheduled = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        now.day + 1,
+        hour,
+        minute,
+      );
+    }
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'journey_reminder_v1',
+        'تذكيرات الرحلة',
+        channelDescription:
+            'تذكيرات محلية اختيارية للقرآن والأذكار والأدعية والمهام',
+        importance: Importance.defaultImportance,
+        priority: Priority.defaultPriority,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: false,
+        presentSound: true,
+      ),
+    );
+    await _plugin.zonedSchedule(
+      id,
+      title,
+      body,
+      scheduled,
+      details,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
+  }
+
+  Future<void> cancelJourneyReminder(int id) async {
+    await initialize();
+    await _plugin.cancel(id);
   }
 }

@@ -32,7 +32,7 @@ class AppTheme {
         onError: ItqanColors.white,
       ),
       textTheme: textTheme,
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: ItqanColors.surface,
         elevation: 2,
         shadowColor: ItqanColors.ink.withOpacity(0.06),

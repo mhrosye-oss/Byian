@@ -32,6 +32,8 @@
 		<string>يستخدم إتقان التعرف الصوتي لتحويل بحثك المنطوق إلى كلمات والبحث عنها في القرآن.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>نستخدم موقعك لحساب مواقيت الصلاة في منطقتك.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>نحتاج الكاميرا لمسح كود دعوة الدائرة.</string>
 		<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
