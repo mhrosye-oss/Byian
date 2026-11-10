@@ -75,7 +75,7 @@ class _CircleProfileScreenState extends State<CircleProfileScreen> {
             const SizedBox(height: 16),
             CircleAvatar(
               radius: 42,
-              backgroundColor: ItqanColors.emerald.withValues(alpha: .10),
+              backgroundColor: ItqanColors.emerald.withOpacity(.10),
               foregroundColor: ItqanColors.emerald,
               child: Text(
                 widget.user.name.isEmpty

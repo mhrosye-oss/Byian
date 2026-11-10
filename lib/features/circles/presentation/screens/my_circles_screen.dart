@@ -195,7 +195,7 @@ class _CircleCard extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: ItqanColors.emerald.withValues(alpha: .10),
+                  backgroundColor: ItqanColors.emerald.withOpacity(.10),
                   foregroundColor: ItqanColors.emerald,
                   child: Icon(owner
                       ? Icons.workspace_premium_rounded
@@ -271,7 +271,7 @@ class _RoleBadge extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
         decoration: BoxDecoration(
           color: owner
-              ? ItqanColors.emerald.withValues(alpha: .10)
+              ? ItqanColors.emerald.withOpacity(.10)
               : ItqanColors.surfaceSoft,
           borderRadius: BorderRadius.circular(20),
         ),

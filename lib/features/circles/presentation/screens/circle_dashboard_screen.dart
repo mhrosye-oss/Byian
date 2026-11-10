@@ -447,7 +447,7 @@ class _MembersTab extends StatelessWidget {
               (member) => Card(
                 child: ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: ItqanColors.emerald.withValues(alpha: .10),
+                    backgroundColor: ItqanColors.emerald.withOpacity(.10),
                     foregroundColor: ItqanColors.emerald,
                     child: Text(
                       (member.name?.isNotEmpty ?? false)
@@ -695,7 +695,7 @@ Future<Map<String, dynamic>?> _taskPayloadDialog(BuildContext context) async {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                initialValue: priority,
+                value: priority,
                 decoration: const InputDecoration(labelText: 'الأولوية'),
                 items: const [
                   DropdownMenuItem(value: 'low', child: Text('منخفضة')),
@@ -824,7 +824,7 @@ class _RolePill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: isOwner
-            ? ItqanColors.emerald.withValues(alpha: .10)
+            ? ItqanColors.emerald.withOpacity(.10)
             : ItqanColors.surfaceSoft,
         borderRadius: BorderRadius.circular(20),
       ),
@@ -851,8 +851,8 @@ class _PriorityPill extends StatelessWidget {
     return Chip(
       label: Text(label, style: TextStyle(color: color, fontSize: 11)),
       visualDensity: VisualDensity.compact,
-      side: BorderSide(color: color.withValues(alpha: .25)),
-      backgroundColor: color.withValues(alpha: .08),
+      side: BorderSide(color: color.withOpacity(.25)),
+      backgroundColor: color.withOpacity(.08),
     );
   }
 }

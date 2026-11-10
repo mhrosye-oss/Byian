@@ -109,7 +109,7 @@ class _CreateCircleScreenState extends State<CreateCircleScreen> {
                   )
                 else
                   DropdownButtonFormField<int>(
-                    initialValue: _typeId,
+                    value: _typeId,
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'نوع الدائرة',

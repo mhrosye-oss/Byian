@@ -63,7 +63,7 @@ class _CirclesLoginScreenState extends State<CirclesLoginScreen> {
                     width: 92,
                     height: 92,
                     decoration: BoxDecoration(
-                      color: ItqanColors.emerald.withValues(alpha: .09),
+                      color: ItqanColors.emerald.withOpacity(.09),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: const Icon(

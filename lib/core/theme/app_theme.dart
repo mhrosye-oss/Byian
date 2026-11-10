@@ -32,10 +32,10 @@ class AppTheme {
         onError: ItqanColors.white,
       ),
       textTheme: textTheme,
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         color: ItqanColors.surface,
         elevation: 2,
-        shadowColor: ItqanColors.ink.withValues(alpha: 0.06),
+        shadowColor: ItqanColors.ink.withOpacity(0.06),
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -58,7 +58,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: ItqanColors.surface,
-        indicatorColor: ItqanColors.emerald.withValues(alpha: 0.10),
+        indicatorColor: ItqanColors.emerald.withOpacity(0.10),
         surfaceTintColor: Colors.transparent,
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
               fontFamily: GoogleFonts.cairo().fontFamily,
