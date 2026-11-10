@@ -8,7 +8,7 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData get light {
-    final baseText = GoogleFonts.tajawalTextTheme(ThemeData.light().textTheme);
+    final baseText = GoogleFonts.cairoTextTheme(ThemeData.light().textTheme);
     final textTheme = baseText.apply(
       bodyColor: ItqanColors.ink,
       displayColor: ItqanColors.ink,
@@ -32,10 +32,10 @@ class AppTheme {
         onError: ItqanColors.white,
       ),
       textTheme: textTheme,
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: ItqanColors.surface,
         elevation: 2,
-        shadowColor: ItqanColors.ink.withOpacity(0.06),
+        shadowColor: ItqanColors.ink.withValues(alpha: 0.06),
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -58,10 +58,10 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: ItqanColors.surface,
-        indicatorColor: ItqanColors.emerald.withOpacity(0.10),
+        indicatorColor: ItqanColors.emerald.withValues(alpha: 0.10),
         surfaceTintColor: Colors.transparent,
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
-              fontFamily: GoogleFonts.tajawal().fontFamily,
+              fontFamily: GoogleFonts.cairo().fontFamily,
               fontSize: 12,
               fontWeight: states.contains(WidgetState.selected)
                   ? FontWeight.w700
@@ -76,7 +76,7 @@ class AppTheme {
           backgroundColor: ItqanColors.emerald,
           foregroundColor: ItqanColors.white,
           textStyle: TextStyle(
-            fontFamily: GoogleFonts.tajawal().fontFamily,
+            fontFamily: GoogleFonts.cairo().fontFamily,
             fontWeight: FontWeight.w700,
           ),
           shape: RoundedRectangleBorder(
@@ -113,7 +113,7 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         backgroundColor: ItqanColors.emeraldDark,
         contentTextStyle: TextStyle(
-          fontFamily: GoogleFonts.tajawal().fontFamily,
+          fontFamily: GoogleFonts.cairo().fontFamily,
           color: ItqanColors.white,
         ),
         behavior: SnackBarBehavior.floating,

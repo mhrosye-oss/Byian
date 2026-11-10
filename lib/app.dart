@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:go_router/go_router.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/settings/app_settings_provider.dart';
+import 'core/theme/app_theme.dart';
 import 'features/home/home_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
+import 'features/circles/presentation/circles_entry_screen.dart';
 
 class ItqanApp extends StatefulWidget {
   const ItqanApp({super.key});
@@ -15,8 +17,23 @@ class ItqanApp extends StatefulWidget {
 
 class _ItqanAppState extends State<ItqanApp> {
   final AppSettingsProvider _settings = AppSettingsProvider();
+  late final GoRouter _router = GoRouter(
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const CirclesEntryScreen(),
+      ),
+      GoRoute(
+        path: '/itqan-home',
+        builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+    ],
+  );
   bool _isLoaded = false;
-  bool _showOnboarding = false;
 
   @override
   void initState() {
@@ -26,14 +43,17 @@ class _ItqanAppState extends State<ItqanApp> {
 
   Future<void> _loadSettings() async {
     await _settings.load();
-    final preferences = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
         _isLoaded = true;
-        _showOnboarding =
-            !(preferences.getBool('onboarding_completed') ?? false);
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
   }
 
   @override
@@ -79,30 +99,14 @@ class _ItqanAppState extends State<ItqanApp> {
       builder: (context, child) {
         return AppSettingsScope(
           settings: _settings,
-          child: MaterialApp(
+          child: MaterialApp.router(
           title: 'Itqan',
           debugShowCheckedModeBanner: false,
           // The current screens use the light-only brand palette. Do not let
           // a stale persisted dark-mode flag turn them into a grey/dark view.
           themeMode: ThemeMode.light,
-          theme: ThemeData(
-            brightness: Brightness.light,
-            primaryColor: const Color(0xFF1B5E20),
-            scaffoldBackgroundColor: const Color(0xFFF9F6F0),
-            cardColor: Colors.white,
-            dividerColor: Colors.grey.shade300,
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B5E20), brightness: Brightness.light),
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            brightness: Brightness.dark,
-            primaryColor: const Color(0xFF1B5E20),
-            scaffoldBackgroundColor: const Color(0xFF121212),
-            cardColor: const Color(0xFF1E1E1E),
-            dividerColor: Colors.grey.shade800,
-            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B5E20), brightness: Brightness.dark),
-            useMaterial3: true,
-          ),
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
           locale: _settings.locale,
           supportedLocales: const [
             Locale('ar'), Locale('en'), Locale('fr'), Locale('es'), Locale('ur'), 
@@ -114,7 +118,7 @@ class _ItqanAppState extends State<ItqanApp> {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          home: _showOnboarding ? const OnboardingScreen() : const HomeScreen(),
+          routerConfig: _router,
           ),
         );
       },
