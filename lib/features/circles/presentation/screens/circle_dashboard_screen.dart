@@ -24,6 +24,8 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
   late Future<_CircleBundle> _bundle;
   bool _leaving = false;
   bool _inviting = false;
+  bool _creatingTask = false;
+  bool _sendingWhisper = false;
 
   CircleApiClient get _api => ref.read(circleApiClientProvider);
 
@@ -165,6 +167,34 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
     }
   }
 
+  Future<void> _createTask(Map<String, dynamic> payload) async {
+    if (_creatingTask) return;
+    setState(() => _creatingTask = true);
+    try {
+      await _api.createTask(widget.circle.uuid, payload);
+      await _refresh();
+      if (mounted) _message('تمت إضافة المهمة.');
+    } on CircleApiException catch (error) {
+      _message(error.message, error: true);
+    } finally {
+      if (mounted) setState(() => _creatingTask = false);
+    }
+  }
+
+  Future<void> _sendWhisper(Map<String, dynamic> payload) async {
+    if (_sendingWhisper) return;
+    setState(() => _sendingWhisper = true);
+    try {
+      await _api.sendWhisper(widget.circle.uuid, payload);
+      await _refresh();
+      if (mounted) _message('تم إرسال الهمسة.');
+    } on CircleApiException catch (error) {
+      _message(error.message, error: true);
+    } finally {
+      if (mounted) setState(() => _sendingWhisper = false);
+    }
+  }
+
   void _message(String text, {bool error = false}) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -239,10 +269,16 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
                   tasks: data.taskJson,
                   currentUserId: userId,
                   onComplete: _completeTask,
+                  onCreate: _createTask,
+                  creating: _creatingTask,
                   owner: widget.circle.myRole == 'owner' ||
                       data.details['my_role'] == 'owner',
                 ),
-                _WhispersTab(whispers: data.whispers),
+                _WhispersTab(
+                  whispers: data.whispers,
+                  onSend: _sendWhisper,
+                  sending: _sendingWhisper,
+                ),
               ],
             );
           },
@@ -437,12 +473,16 @@ class _TasksTab extends StatelessWidget {
     required this.tasks,
     required this.currentUserId,
     required this.onComplete,
+    required this.onCreate,
+    required this.creating,
     required this.owner,
   });
 
   final List<Map<String, dynamic>> tasks;
   final int? currentUserId;
   final ValueChanged<Map<String, dynamic>> onComplete;
+  final ValueChanged<Map<String, dynamic>> onCreate;
+  final bool creating;
   final bool owner;
 
   @override
@@ -455,20 +495,22 @@ class _TasksTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Tooltip(
-                    message: 'يتطلب مخطط طلب إنشاء المهمة المؤكد من وثيقة API.',
-                    child: FilledButton.icon(
-                      onPressed: null,
-                      icon: Icon(Icons.add_task_rounded),
-                      label: Text('إضافة مهمة'),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'زر الإنشاء معطّل حتى يتوفر payload موثق من الخادم.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: ItqanColors.inkSoft,
-                        ),
+                  FilledButton.icon(
+                    onPressed: creating
+                        ? null
+                        : () async {
+                            final payload =
+                                await _taskPayloadDialog(context);
+                            if (payload != null) onCreate(payload);
+                          },
+                    icon: creating
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.add_task_rounded),
+                    label: Text(creating ? 'جارٍ الإضافة…' : 'إضافة مهمة'),
                   ),
                 ],
               ),
@@ -566,32 +608,39 @@ class _TasksTab extends StatelessWidget {
 }
 
 class _WhispersTab extends StatelessWidget {
-  const _WhispersTab({required this.whispers});
+  const _WhispersTab({
+    required this.whispers,
+    required this.onSend,
+    required this.sending,
+  });
   final List<CircleWhisper> whispers;
+  final ValueChanged<Map<String, dynamic>> onSend;
+  final bool sending;
 
   @override
   Widget build(BuildContext context) => ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Tooltip(
-            message: 'يتطلب مخطط طلب إرسال الهمسة المؤكد من وثيقة API.',
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: null,
-                icon: Icon(Icons.send_rounded),
-                label: Text('إرسال همسة'),
-              ),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: sending
+                  ? null
+                  : () async {
+                      final payload = await _whisperPayloadDialog(context);
+                      if (payload != null) onSend(payload);
+                    },
+              icon: sending
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send_rounded),
+              label: Text(sending ? 'جارٍ الإرسال…' : 'إرسال همسة'),
             ),
           ),
-          const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: Text(
-              'عرض الهمسات متاح، وإرسالها ينتظر مخطط الطلب المؤكد من الخادم.',
-              style: TextStyle(color: ItqanColors.inkSoft),
-            ),
-          ),
+          const SizedBox(height: 12),
           if (whispers.isEmpty)
             const _EmptyLine(text: 'لا توجد همسات بعد.')
           else
@@ -617,6 +666,123 @@ class _WhispersTab extends StatelessWidget {
     final local = value.toLocal();
     return '${local.day}/${local.month}/${local.year}';
   }
+}
+
+Future<Map<String, dynamic>?> _taskPayloadDialog(BuildContext context) async {
+  final title = TextEditingController();
+  final description = TextEditingController();
+  var priority = 'normal';
+  final payload = await showDialog<Map<String, dynamic>>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('إضافة مهمة'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: title,
+                autofocus: true,
+                decoration: const InputDecoration(labelText: 'عنوان المهمة'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: description,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(labelText: 'الوصف (اختياري)'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: priority,
+                decoration: const InputDecoration(labelText: 'الأولوية'),
+                items: const [
+                  DropdownMenuItem(value: 'low', child: Text('منخفضة')),
+                  DropdownMenuItem(value: 'normal', child: Text('عادية')),
+                  DropdownMenuItem(value: 'high', child: Text('مرتفعة')),
+                ],
+                onChanged: (value) => setState(() => priority = value ?? 'normal'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = title.text.trim();
+              if (value.isEmpty) return;
+              Navigator.pop(dialogContext, {
+                'title': value,
+                if (description.text.trim().isNotEmpty)
+                  'description': description.text.trim(),
+                'priority': priority,
+              });
+            },
+            child: const Text('إضافة'),
+          ),
+        ],
+      ),
+    ),
+  );
+  title.dispose();
+  description.dispose();
+  return payload;
+}
+
+Future<Map<String, dynamic>?> _whisperPayloadDialog(BuildContext context) async {
+  final message = TextEditingController();
+  var anonymous = false;
+  final payload = await showDialog<Map<String, dynamic>>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setState) => AlertDialog(
+        title: const Text('إرسال همسة'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: message,
+              autofocus: true,
+              minLines: 3,
+              maxLines: 5,
+              decoration: const InputDecoration(labelText: 'نص الهمسة'),
+            ),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: anonymous,
+              onChanged: (value) => setState(() => anonymous = value ?? false),
+              title: const Text('إرسال دون إظهار الاسم'),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = message.text.trim();
+              if (value.isEmpty) return;
+              Navigator.pop(dialogContext, {
+                'message_text': value,
+                'is_anonymous': anonymous,
+              });
+            },
+            child: const Text('إرسال'),
+          ),
+        ],
+      ),
+    ),
+  );
+  message.dispose();
+  return payload;
 }
 
 class _StatCard extends StatelessWidget {
