@@ -1,0 +1,27 @@
+# Flutter / Dart generated files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+coverage/
+
+# Local Flutter and Android configuration
+android/local.properties
+android/app/google-services.json
+android/app/*.keystore
+android/app/*.jks
+
+# Firebase platform configuration
+GoogleService-Info.plist
+firebase/**/google-services.json
+firebase/**/GoogleService-Info.plist
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.p12
+*.pem
+*.key
