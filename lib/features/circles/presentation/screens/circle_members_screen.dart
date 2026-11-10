@@ -39,15 +39,17 @@ class _CircleMembersScreenState extends ConsumerState<CircleMembersScreen> {
         body: FutureBuilder<List<CircleMember>>(
           future: _members,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting)
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
-            if (snapshot.hasError)
+            }
+            if (snapshot.hasError) {
               return Center(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Text('تعذر تحميل الأعضاء: ${snapshot.error}'),
                 TextButton(
                     onPressed: _refresh, child: const Text('إعادة المحاولة'))
               ]));
+            }
             final members = snapshot.data ?? const <CircleMember>[];
             return RefreshIndicator(
                 onRefresh: _refresh,

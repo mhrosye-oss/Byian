@@ -44,11 +44,12 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
         _typeError = _types.isEmpty ? 'لا تتوفر أنواع للدوائر حاليًا.' : null;
       });
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _loadingTypes = false;
           _typeError = '$error';
         });
+      }
     }
   }
 
@@ -64,9 +65,10 @@ class _CreateCircleScreenState extends ConsumerState<CreateCircleScreen> {
       ref.invalidate(myCirclesProvider);
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('تعذر إنشاء الدائرة: $error')));
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
