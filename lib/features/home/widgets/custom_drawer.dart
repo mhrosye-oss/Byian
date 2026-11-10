@@ -9,6 +9,7 @@ import 'package:itqan/features/settings/settings_service.dart';
 import 'package:itqan/features/waqf/screens/waqf_screen.dart';
 import 'package:itqan/features/kids/screens/kids_mode_screen.dart';
 import 'package:itqan/features/contributors/screens/hall_of_fame_screen.dart';
+import 'package:itqan/features/circles/presentation/circles_entry_screen.dart';
 
 class CustomDrawer extends ConsumerStatefulWidget {
   const CustomDrawer({super.key});
@@ -193,7 +194,12 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
             ),
             
             const Divider(),
-            
+            _buildDrawerItem(
+              icon: Icons.diversity_3_rounded,
+              title: 'دوائر إتقان',
+              subtitle: 'الدوائر والمهام والانضمام بدعوة',
+              onTap: () => _openPage(context, const CirclesEntryScreen()),
+            ),
             _buildDrawerItem(
               icon: Icons.smart_toy_rounded,
               title: 'المساعد الذكي',

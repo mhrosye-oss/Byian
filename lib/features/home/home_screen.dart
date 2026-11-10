@@ -34,6 +34,7 @@ import '../tajweed/tajweed_screen.dart';
 import '../tasbih/screens/smart_tasbih_screen.dart';
 import '../zakat/screens/zakat_calculator_screen.dart';
 import 'widgets/next_prayer_banner.dart';
+import '../circles/presentation/circles_entry_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -76,6 +77,7 @@ class HomeScreen extends StatelessWidget {
       case 'sacred_places': page = const SacredPlacesScreen(); break;
       case 'waqf': page = const WaqfScreen(); break;
       case 'kids_mode': page = const KidsModeScreen(); break;
+      case 'circles': page = const CirclesEntryScreen(); break;
       default: return;
     }
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
@@ -180,6 +182,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildMoreServices(BuildContext context) {
     final services = <({String title, String route, IconData icon})>[
+      (title: 'دوائر إتقان', route: 'circles', icon: Icons.diversity_3_rounded),
       (title: 'التقويم الهجري', route: 'calendar', icon: Icons.calendar_month_rounded),
       (title: 'الأحاديث', route: 'hadith', icon: Icons.format_quote_rounded),
       (title: 'أسماء الله', route: 'asma', icon: Icons.local_florist_rounded),

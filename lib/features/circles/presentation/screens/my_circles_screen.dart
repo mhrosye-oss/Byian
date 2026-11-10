@@ -39,6 +39,15 @@ class MyCirclesScreen extends ConsumerWidget {
             onPressed: () => ref.invalidate(myCirclesProvider),
             icon: const Icon(Icons.refresh_rounded),
           ),
+          IconButton(
+            tooltip: 'الانضمام بكود دعوة',
+            onPressed: () => _openForm(
+              context,
+              const JoinCircleScreen(),
+              ref,
+            ),
+            icon: const Icon(Icons.key_rounded),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -54,6 +63,11 @@ class MyCirclesScreen extends ConsumerWidget {
           error: (error, _) => _ErrorState(
             message: 'تعذر تحميل الدوائر: $error',
             onRetry: () => ref.invalidate(myCirclesProvider),
+            onJoin: () => _openForm(
+              context,
+              const JoinCircleScreen(),
+              ref,
+            ),
           ),
           data: (items) => RefreshIndicator(
             onRefresh: () async => ref.invalidate(myCirclesProvider),
@@ -330,9 +344,14 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
+  const _ErrorState({
+    required this.message,
+    required this.onRetry,
+    required this.onJoin,
+  });
   final String message;
   final VoidCallback onRetry;
+  final VoidCallback onJoin;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -345,11 +364,22 @@ class _ErrorState extends StatelessWidget {
           const SizedBox(height: 14),
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 14),
-          Center(
-              child: OutlinedButton.icon(
-                  onPressed: onRetry,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('إعادة المحاولة'))),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              OutlinedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('إعادة المحاولة'),
+              ),
+              const SizedBox(width: 10),
+              FilledButton.icon(
+                onPressed: onJoin,
+                icon: const Icon(Icons.key_rounded),
+                label: const Text('الانضمام بدعوة'),
+              ),
+            ],
+          ),
         ],
       );
 }

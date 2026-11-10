@@ -64,6 +64,7 @@ class Circle {
     this.membersCount = 0,
     this.myRole,
     this.myRelationship,
+    this.isOwnerFromApi = false,
     this.createdAt,
   });
 
@@ -77,12 +78,27 @@ class Circle {
   final int membersCount;
   final String? myRole;
   final String? myRelationship;
+  final bool isOwnerFromApi;
   final DateTime? createdAt;
 
-  bool get isOwner => myRole == 'owner';
+  bool get isOwner =>
+      isOwnerFromApi || _isOwnerRole(myRole) || _isOwnerRole(myRelationship);
 
   factory Circle.fromJson(Map<String, dynamic> json) {
     final rawType = json['type'];
+    final membership =
+        _map(json['membership'] ?? json['member'] ?? json['my_membership']);
+    final rawRole = json['my_role'] ??
+        json['myRole'] ??
+        json['role'] ??
+        membership?['role'];
+    final rawRelationship = json['my_relationship'] ??
+        json['myRelationship'] ??
+        membership?['relationship'];
+    final isOwner = _bool(json['is_owner'] ??
+        json['isOwner'] ??
+        membership?['is_owner'] ??
+        membership?['isOwner']);
     return Circle(
       id: _int(json['id']),
       uuid: _string(json['uuid']),
@@ -94,12 +110,25 @@ class Circle {
           ? CircleType.fromJson(Map<String, dynamic>.from(rawType))
           : null,
       membersCount: _int(json['members_count'] ?? json['membersCount']),
-      myRole: (json['my_role'] ?? json['myRole'])?.toString(),
-      myRelationship:
-          (json['my_relationship'] ?? json['myRelationship'])?.toString(),
+      myRole: rawRole?.toString(),
+      myRelationship: rawRelationship?.toString(),
+      isOwnerFromApi: isOwner,
       createdAt: _date(json['created_at'] ?? json['createdAt']),
     );
   }
+}
+
+bool _isOwnerRole(String? value) {
+  final normalized = value?.trim().toLowerCase();
+  return normalized == 'owner' ||
+      normalized == 'leader' ||
+      normalized == 'قائد';
+}
+
+bool _bool(dynamic value) {
+  if (value is bool) return value;
+  final normalized = value?.toString().trim().toLowerCase();
+  return normalized == 'true' || normalized == '1' || normalized == 'yes';
 }
 
 class CircleMember {
