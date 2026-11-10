@@ -9,6 +9,13 @@ import 'circle_api_client.dart';
 import 'circle_auth_service.dart';
 import 'circle_firebase_options.dart';
 
+const _circleUpdatesChannel = AndroidNotificationChannel(
+  'itqan_circle_updates',
+  'إشعارات الدوائر',
+  description: 'تنبيهات المهام والدوائر والهمسات',
+  importance: Importance.high,
+);
+
 @pragma('vm:entry-point')
 Future<void> circleFirebaseBackgroundHandler(RemoteMessage message) async {
   if (Firebase.apps.isEmpty &&
@@ -16,18 +23,55 @@ Future<void> circleFirebaseBackgroundHandler(RemoteMessage message) async {
     await Firebase.initializeApp(
         options: CircleFirebaseOptions.currentPlatform);
   }
+
+  // رسائل notification يعرضها Android تلقائيًا أثناء الخلفية. نعرض محليًا
+  // فقط رسائل data-only حتى لا يظهر الإشعار مرتين.
+  if (message.notification == null && message.data.isNotEmpty) {
+    await _showBackgroundLocalNotification(message);
+  }
 }
+
+Future<void> _showBackgroundLocalNotification(RemoteMessage message) async {
+  final title = message.data['title']?.toString() ??
+      message.data['notification_title']?.toString() ??
+      'إتقان';
+  final body = message.data['body']?.toString() ??
+      message.data['notification_body']?.toString() ??
+      'لديك تحديث جديد في دوائرك.';
+  final plugin = FlutterLocalNotificationsPlugin();
+  const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+  await plugin.initialize(
+    const InitializationSettings(android: androidSettings),
+  );
+  await plugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(_circleUpdatesChannel);
+  await plugin.show(
+    _notificationId(message),
+    title,
+    body,
+    const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'itqan_circle_updates',
+        'إشعارات الدوائر',
+        channelDescription: 'تنبيهات المهام والدوائر والهمسات',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+    ),
+    payload: message.data['template']?.toString(),
+  );
+}
+
+int _notificationId(RemoteMessage message) =>
+    message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch;
 
 class CircleFcmService {
   CircleFcmService._();
 
   static final CircleFcmService instance = CircleFcmService._();
-  static const _channel = AndroidNotificationChannel(
-    'itqan_circle_updates',
-    'إشعارات الدوائر',
-    description: 'تنبيهات المهام والدوائر والهمسات',
-    importance: Importance.high,
-  );
+  static const _channel = _circleUpdatesChannel;
 
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -164,13 +208,20 @@ class CircleFcmService {
 
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     final notification = message.notification;
-    if (notification == null) return;
-    final notificationId = notification.hashCode;
+    final title = notification?.title ??
+        message.data['title']?.toString() ??
+        message.data['notification_title']?.toString() ??
+        'إتقان';
+    final body = notification?.body ??
+        message.data['body']?.toString() ??
+        message.data['notification_body']?.toString();
+    if (body == null || body.isEmpty) return;
+    final notificationId = _notificationId(message);
     _localMessageById[notificationId] = message;
     await _localNotifications.show(
       notificationId,
-      notification.title ?? 'إتقان',
-      notification.body,
+      title,
+      body,
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'itqan_circle_updates',
