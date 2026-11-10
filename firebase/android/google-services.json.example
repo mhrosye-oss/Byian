@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "<FIREBASE_MESSAGING_SENDER_ID>",
+    "project_id": "<FIREBASE_PROJECT_ID>",
+    "storage_bucket": "<FIREBASE_STORAGE_BUCKET>"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "<FIREBASE_ANDROID_APP_ID>",
+        "android_client_info": {
+          "package_name": "com.itqan.itqan"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "<FIREBASE_ANDROID_OAUTH_CLIENT_ID>",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.itqan.itqan",
+            "certificate_hash": "<SHA1_CERTIFICATE_HASH>"
+          }
+        },
+        {
+          "client_id": "<FIREBASE_WEB_SERVER_CLIENT_ID>",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "<FIREBASE_API_KEY>"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "<FIREBASE_WEB_SERVER_CLIENT_ID>",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

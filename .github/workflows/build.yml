@@ -45,13 +45,13 @@ jobs:
       - name: Run Flutter tests
         run: flutter test
 
-      - name: Build release APKs
-        run: flutter build apk --release --split-per-abi
+      - name: Build universal release APK
+        run: flutter build apk --release
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: itqan-android-release-${{ github.sha }}
-          path: build/app/outputs/flutter-apk/*.apk
+          name: itqan-android-latest-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 14
