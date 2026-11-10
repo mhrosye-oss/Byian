@@ -39,6 +39,14 @@ class CircleApiService {
   Future<Map<String, dynamic>> getDashboard(String uuid) async =>
       _map(await _request('GET', 'circles/$uuid/dashboard'));
 
+  Future<void> completeTask(String taskId) async {
+    await _request('POST', 'circle-tasks/$taskId/complete');
+  }
+
+  Future<void> leaveCircle(String uuid) async {
+    await _request('POST', 'circles/$uuid/leave');
+  }
+
   Future<List<Map<String, dynamic>>> getMembers(String uuid) async =>
       _list(await _request('GET', 'circles/$uuid/members'));
 
@@ -96,15 +104,15 @@ class CircleApiService {
     late http.Response response;
     try {
       final uri = Uri.parse('$_baseUrl/api/v1/$path');
-      response = method == 'GET'
-          ? await _client
-              .get(uri, headers: headers)
-              .timeout(const Duration(seconds: 20))
-          : await _client
-              .post(uri,
-                  headers: headers,
-                  body: jsonEncode(body ?? const <String, dynamic>{}))
-              .timeout(const Duration(seconds: 20));
+      final encodedBody = body == null
+          ? null
+          : jsonEncode(body);
+      final request = switch (method) {
+        'GET' => _client.get(uri, headers: headers),
+        'DELETE' => _client.delete(uri, headers: headers),
+        _ => _client.post(uri, headers: headers, body: encodedBody),
+      };
+      response = await request.timeout(const Duration(seconds: 20));
     } on CircleApiException {
       rethrow;
     } catch (error) {

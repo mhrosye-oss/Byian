@@ -9,6 +9,7 @@ import 'package:itqan/features/tasbih/screens/smart_tasbih_screen.dart';
 
 import '../../../../core/services/auth_service.dart';
 import '../../application/circle_list_provider.dart';
+import '../../domain/circle_api_errors.dart';
 import 'whispers_sheet.dart';
 
 class CircleDashboardScreen extends ConsumerStatefulWidget {
@@ -55,15 +56,10 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
         .toList();
   }
 
-  List<Map<String, dynamic>> _assignedTasks(Map<String, dynamic> data) {
-    final userId = _currentUserId;
-    if (userId == null) return const [];
+  List<Map<String, dynamic>> _tasks(Map<String, dynamic> data) {
     final rawTasks =
         data['assigned_tasks'] ?? data['tasks'] ?? data['my_tasks'];
-    return _mapList(rawTasks).where((task) {
-      final assignedId = _assignedUserId(task);
-      return assignedId == userId && !_isCompleted(task);
-    }).toList();
+    return _mapList(rawTasks);
   }
 
   int? _assignedUserId(Map<String, dynamic> task) {
@@ -100,10 +96,28 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _completeTask(Map<String, dynamic> task) {
-    // The current CircleApiService has no task-completion operation. Do not
-    // optimistically mark a task complete when the server cannot persist it.
-    _showMessage('خدمة إنجاز المهام غير متاحة على الخادم حاليًا.');
+  Future<void> _completeTask(Map<String, dynamic> task) async {
+    final taskId = '${task['id'] ?? task['uuid'] ?? ''}';
+    if (taskId.isEmpty) {
+      _showMessage('تعذر تحديد المهمة.');
+      return;
+    }
+    try {
+      await ref.read(circleApiServiceProvider).completeTask(taskId);
+      if (mounted) {
+        _showMessage('تم إنجاز المهمة بنجاح.');
+        await _refresh();
+      }
+    } on CircleApiException catch (error) {
+      if (!mounted) return;
+      _showMessage(switch (error.statusCode) {
+        409 => 'المهمة مكتملة بالفعل',
+        403 => 'هذه المهمة غير مسندة إليك',
+        _ => 'تعذر إنجاز المهمة (${error.statusCode}).',
+      });
+    } catch (_) {
+      if (mounted) _showMessage('تعذر إنجاز المهمة.');
+    }
   }
 
   Future<void> _confirmLeaveCircle() async {
@@ -127,8 +141,21 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
     );
     if (shouldLeave != true || !mounted) return;
 
-    // CircleApiService currently exposes no leave-circle operation.
-    _showMessage('خدمة مغادرة الدائرة غير متاحة على الخادم حاليًا.');
+    try {
+      await ref.read(circleApiServiceProvider).leaveCircle(widget.uuid);
+      ref.invalidate(myCirclesProvider);
+      if (mounted) {
+        _showMessage('تمت مغادرة الدائرة.');
+        Navigator.pop(context);
+      }
+    } on CircleApiException catch (error) {
+      if (!mounted) return;
+      _showMessage(error.statusCode == 409
+          ? 'لا يمكنك مغادرة الدائرة كمالك وحيد'
+          : 'تعذر مغادرة الدائرة (${error.statusCode}).');
+    } catch (_) {
+      if (mounted) _showMessage('تعذر مغادرة الدائرة.');
+    }
   }
 
   void _openService(String label) {
@@ -187,7 +214,8 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
             final data = snapshot.data ?? const <String, dynamic>{};
             final members = _mapList(data['members']);
             final activities = _mapList(data['activities']);
-            final tasks = _assignedTasks(data);
+            final tasks = _tasks(data);
+            final role = _dashboardRole(data, members);
             final name = '${data['name'] ?? widget.name ?? 'الدائرة'}';
             final type = data['type'] is Map
                 ? '${data['type']['name'] ?? ''}'
@@ -199,10 +227,10 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
               child: ListView(
                 padding: const EdgeInsets.only(bottom: 24),
                 children: [
-                  _buildHeader(name, type, memberCount),
+                  _buildHeader(name, type, memberCount, role),
                   _buildServicesGrid(),
                   const SizedBox(height: 12),
-                  _sectionTitle('المهام المسندة إليّ'),
+                  _sectionTitle('المهام'),
                   if (tasks.isEmpty)
                     _emptyState('لا توجد مهام حالياً')
                   else
@@ -220,18 +248,19 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
                   else
                     ...activities.take(5).map(_buildActivityTile),
                   const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TextButton.icon(
-                      onPressed: _confirmLeaveCircle,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red.shade700,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                  if (role != 'owner')
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: TextButton.icon(
+                        onPressed: _confirmLeaveCircle,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red.shade700,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        icon: const Icon(Icons.logout_rounded),
+                        label: const Text('مغادرة الدائرة'),
                       ),
-                      icon: const Icon(Icons.logout_rounded),
-                      label: const Text('مغادرة الدائرة'),
                     ),
-                  ),
                 ],
               ),
             );
@@ -239,7 +268,26 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
         ),
       );
 
-  Widget _buildHeader(String name, String type, int memberCount) => Container(
+  String _dashboardRole(
+    Map<String, dynamic> data,
+    List<Map<String, dynamic>> members,
+  ) {
+    final direct = data['my_role'] ?? data['role'];
+    if (direct != null && '$direct'.isNotEmpty) return '$direct'.toLowerCase();
+    for (final member in members) {
+      if (_asInt(member['user_id']) == _currentUserId) {
+        return '${member['role'] ?? 'member'}'.toLowerCase();
+      }
+    }
+    return 'member';
+  }
+
+  Widget _buildHeader(
+    String name,
+    String type,
+    int memberCount,
+    String role,
+  ) => Container(
         margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
@@ -286,7 +334,7 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                'عضو',
+                _roleLabel(role),
                 style: TextStyle(
                   color: Colors.blue.shade800,
                   fontWeight: FontWeight.bold,
@@ -367,6 +415,9 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
       'medium' || 'متوسطة' => Colors.orange,
       _ => Colors.green,
     };
+    final canComplete = !_isCompleted(task) &&
+        _currentUserId != null &&
+        _assignedUserId(task) == _currentUserId;
 
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -397,16 +448,37 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
             ),
             const SizedBox(height: 8),
             Text(target, style: Theme.of(context).textTheme.bodySmall),
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: FilledButton.tonalIcon(
-                onPressed: () => _completeTask(task),
-                icon: const Icon(Icons.check_rounded),
-                label: const Text('أنجز'),
-              ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _statusBadge(task),
+                const Spacer(),
+                if (canComplete)
+                  FilledButton.tonalIcon(
+                    onPressed: () => _completeTask(task),
+                    icon: const Icon(Icons.check_rounded),
+                    label: const Text('إنجاز'),
+                  ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _statusBadge(Map<String, dynamic> task) {
+    final completed = _isCompleted(task);
+    final color = completed ? Colors.green : Colors.orange;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withAlpha(31),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        completed ? 'مكتملة' : 'معلقة',
+        style: TextStyle(color: color.shade700, fontWeight: FontWeight.w600),
       ),
     );
   }

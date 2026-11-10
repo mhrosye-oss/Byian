@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:itqan/core/services/auth_service.dart';
+import 'package:itqan/core/services/firebase_messaging_service.dart';
+import 'package:itqan/core/services/google_firebase_auth_service.dart';
 import 'package:itqan/core/settings/app_settings_provider.dart';
 import 'package:itqan/features/auth/screens/login_screen.dart';
 import 'package:itqan/features/about/screens/about_screen.dart';
@@ -45,6 +47,12 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
   }
 
   Future<void> _logout() async {
+    await FirebaseMessagingService.instance.unregisterAfterLogout();
+    try {
+      await GoogleFirebaseAuthService.instance.signOut();
+    } catch (_) {
+      // Email/password users may not have an active Firebase session.
+    }
     await AuthService.logout();
     if (mounted) setState(() => _user = null);
   }
