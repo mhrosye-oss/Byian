@@ -12,6 +12,7 @@ import 'package:itqan/features/tasbih/screens/smart_tasbih_screen.dart';
 
 import '../../application/circle_list_provider.dart';
 import 'circle_members_screen.dart';
+import 'whispers_sheet.dart';
 
 class CircleDashboardScreen extends ConsumerStatefulWidget {
   const CircleDashboardScreen({super.key, required this.uuid, this.name});
@@ -39,8 +40,7 @@ class _CircleDashboardScreenState extends ConsumerState<CircleDashboardScreen> {
     await future;
   }
 
-  void _openWhispers() => ScaffoldMessenger.of(context)
-      .showSnackBar(const SnackBar(content: Text('ستتوفر الهمسات قريبًا.')));
+  void _openWhispers() => CircleWhispersSheet.show(context, widget.uuid);
 
   Future<void> _showInviteDialog() async {
     setState(() => _inviting = true);

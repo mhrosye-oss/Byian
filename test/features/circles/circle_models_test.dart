@@ -6,6 +6,7 @@ import 'package:itqan/features/circles/data/circle_api_service.dart';
 import 'package:itqan/features/circles/domain/circle_models.dart';
 import 'package:itqan/features/circles/presentation/screens/create_circle_screen.dart';
 import 'package:itqan/features/circles/presentation/screens/my_circles_screen.dart';
+import 'package:itqan/features/circles/presentation/screens/whispers_sheet.dart';
 
 void main() {
   group('Circle models', () {
@@ -72,6 +73,26 @@ void main() {
     expect(find.text('الدخول مباشرة'), findsOneWidget);
     expect(find.text('مالك'), findsOneWidget);
   });
+
+  testWidgets('whispers sheet displays an empty state when the list is empty',
+      (tester) async {
+    await tester.pumpWidget(ProviderScope(
+      overrides: [circleApiServiceProvider.overrideWithValue(_FakeCircleApi())],
+      child: MaterialApp(
+        home: Builder(
+            builder: (context) => Scaffold(
+                  body: TextButton(
+                    onPressed: () =>
+                        CircleWhispersSheet.show(context, 'circle-uuid'),
+                    child: const Text('فتح الهمسات'),
+                  ),
+                )),
+      ),
+    ));
+    await tester.tap(find.text('فتح الهمسات'));
+    await tester.pumpAndSettle();
+    expect(find.text('لا توجد همسات بعد'), findsOneWidget);
+  });
 }
 
 class _FakeCircleApi extends CircleApiService {
@@ -83,4 +104,7 @@ class _FakeCircleApi extends CircleApiService {
         {'id': 4, 'key': 'goodness', 'name': 'مجموعة خير'},
         {'id': 5, 'key': 'companions', 'name': 'دائرة الرفقة'},
       ];
+
+  @override
+  Future<List<Map<String, dynamic>>> getWhispers(String uuid) async => [];
 }
