@@ -58,20 +58,41 @@ class _CustomDrawerState extends ConsumerState<CustomDrawer> {
   }
 
   Future<void> _selectLanguage() async {
-    final selected = await showDialog<Locale>(
-        context: context,
-        builder: (c) => SimpleDialog(
-            title: const Text('اختر اللغة'),
-            children: _languages.entries
-                .map((e) => SimpleDialogOption(
-                    onPressed: () => Navigator.pop(c, Locale(e.key)),
-                    child: Text(e.value)))
-                .toList()));
-    if (selected == null || !mounted) return;
+    final currentCode = Localizations.localeOf(context).languageCode;
+    final appSettings = AppSettingsScope.of(context);
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    final dialogContext = rootNavigator.context;
+
+    // Close the drawer before rebuilding MaterialApp after a locale change.
+    rootNavigator.pop();
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+
+    final selectedLocale = await showDialog<Locale>(
+      context: dialogContext,
+      useRootNavigator: true,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('اختر اللغة', textDirection: TextDirection.rtl),
+        children: _languages.entries.map((entry) {
+          return SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogContext, Locale(entry.key)),
+            child: Row(
+              children: [
+                Expanded(child: Text(entry.value)),
+                if (entry.key == currentCode)
+                  const Icon(Icons.check_rounded, color: Color(0xFF1B5E20)),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+    if (selectedLocale == null || !mounted) return;
+
     try {
-      await AppSettingsScope.of(context).setLocale(selected);
+      await appSettings.setLocale(selectedLocale);
       if (!mounted) return;
-      final name = switch (selected.languageCode) {
+      final name = switch (selectedLocale.languageCode) {
         'en' => 'english',
         'fr' => 'french',
         _ => 'arabic'

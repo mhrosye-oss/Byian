@@ -79,6 +79,7 @@ class _RecitationScreenState extends ConsumerState<RecitationScreen> {
     RecordButtonState btnState = RecordButtonState.idle;
     if (isRecording) btnState = RecordButtonState.recording;
     if (isProcessing) btnState = RecordButtonState.processing;
+    final theme = Theme.of(context);
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
@@ -112,9 +113,10 @@ class _RecitationScreenState extends ConsumerState<RecitationScreen> {
         },
       ),
     
-      backgroundColor: ItqanColors.void_,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: ItqanColors.void_,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
         title: Column(
           children: [
             Text(widget.surahName, style: ItqanTypography.label),
@@ -148,7 +150,7 @@ class _RecitationScreenState extends ConsumerState<RecitationScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(ItqanSpacing.lg),
                   decoration: BoxDecoration(
-                    color: ItqanColors.onyx,
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(ItqanRadius.xl),
                     border: Border.all(color: ItqanColors.goldGlow, width: 1.5),
                   ),
