@@ -12,6 +12,12 @@
 6. راجع أن Web/server client ID الموجود في إعداد Google يطابق `googleServerClientId` في `CircleFirebaseOptions`.
 7. استخدم `firebase/android/google-services.json.example` كمرجع للحقول فقط؛ هذا الملف غير قابل للاستخدام حتى تُستبدل القيم من Firebase Console.
 
+### علاج خطأ `Api10` / `DEVELOPER_ERROR`
+
+هذا الخطأ لا ينتج من واجهة Flutter؛ يعني أن Google لا يجد OAuth Android client مطابقًا لحزمة التطبيق وتوقيعه. في Firebase Console أضف تطبيق Android بالاسم `com.itqan.itqan`، ثم أضف SHA-1 وSHA-256 للشهادة التي بُني بها APK. إذا كان APK مبنيًا بإعداد المشروع الحالي، فـ release يستخدم debug signing مؤقتًا، ولذلك يجب إضافة بصمة debug keystore أيضًا. تحقق كذلك من أن `googleServerClientId` هو Web client ID من المشروع نفسه، وليس Android client ID.
+
+لا يكفي تغيير `apiKey` يدويًا لحل Api10. بعد إضافة البصمات أعد تنزيل `google-services.json`، ثم أعد البناء. يمكن استخراج بصمة debug محليًا بالأمر `./gradlew signingReport` من مجلد Android أو عبر `keytool` على ملف debug keystore.
+
 التطبيق الحالي يهيئ Firebase عبر `FirebaseOptions` يدويًا. لذلك لا ينبغي إضافة Google Services Gradle plugin أو تعديل Gradle إلا إذا اختيرت عملية التهيئة المولدة من FlutterFire كمعيار للمشروع.
 
 ## iOS
@@ -37,3 +43,5 @@
 - تشغيل `flutter analyze` ثم `flutter test` ثم `flutter build apk --release`.
 - اختبار Google Sign-In وFCM على جهاز Android حقيقي؛ لا يكفي اختبار المحاكي لتأكيد استقبال الإشعارات في جميع الحالات.
 - عدم وضع مفاتيح service account أو FCM server key داخل التطبيق أو Git.
+
+يصدر CI الآن ملفًا واحدًا فقط باسم `app-release.apk` بدل ملفات ABI المنفصلة، ويضعه داخل artifact باسم `itqan-android-latest-<commit-sha>`. هذه هي النسخة التي يجب تنزيلها وتثبيتها، ولا توجد ثلاث نسخ للاختيار بينها.

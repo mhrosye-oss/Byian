@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/colors.dart';
 import '../data/circle_api_client.dart';
@@ -40,6 +41,9 @@ class _CirclesLoginScreenState extends State<CirclesLoginScreen> {
     }
     if (text.contains('ApiException')) {
       return text.replaceFirst('Exception: ', '');
+    }
+    if (text.contains('Api10') || text.contains('sign_in_failed')) {
+      return 'تعذر تسجيل Google (Api10). أضف SHA-1 وSHA-256 لشهادة هذه النسخة في Firebase، وتأكد من أن package name هو com.itqan.itqan.';
     }
     return 'تعذر تسجيل الدخول عبر Google. تحقق من إعداد Firebase وحاول مجددًا.';
   }
@@ -121,6 +125,12 @@ class _CirclesLoginScreenState extends State<CirclesLoginScreen> {
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ItqanColors.muted,
                         ),
+                  ),
+                  const SizedBox(height: 18),
+                  TextButton.icon(
+                    onPressed: _busy ? null : () => context.go('/itqan-home'),
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    label: const Text('تخطي إلى القائمة الرئيسية'),
                   ),
                 ],
               ),
