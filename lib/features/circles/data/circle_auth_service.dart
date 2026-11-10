@@ -58,6 +58,67 @@ class CircleFirebaseAuthService {
     return api.exchangeFirebaseIdToken(firebaseIdToken);
   }
 
+  Future<AppUser> loginWithEmail(
+    CircleApiClient api, {
+    required String email,
+    required String password,
+  }) async {
+    await initialize();
+    try {
+      final result = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      return api.exchangeFirebaseIdToken(await _idToken(result.user));
+    } on FirebaseAuthException catch (error) {
+      throw StateError(_emailAuthMessage(error));
+    }
+  }
+
+  Future<AppUser> registerWithEmail(
+    CircleApiClient api, {
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    await initialize();
+    try {
+      final result = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      await result.user?.updateDisplayName(name.trim());
+      return api.exchangeFirebaseIdToken(await _idToken(result.user));
+    } on FirebaseAuthException catch (error) {
+      throw StateError(_emailAuthMessage(error));
+    }
+  }
+
+  Future<String> _idToken(User? user) async {
+    final token = await user?.getIdToken();
+    if (token == null || token.isEmpty) {
+      throw StateError('لم تُرجع Firebase رمز هوية صالحًا.');
+    }
+    return token;
+  }
+
+  String _emailAuthMessage(FirebaseAuthException error) {
+    return switch (error.code) {
+      'invalid-email' => 'صيغة البريد الإلكتروني غير صحيحة.',
+      'user-not-found' ||
+      'wrong-password' ||
+      'invalid-credential' =>
+        'البريد الإلكتروني أو كلمة المرور غير صحيحة.',
+      'email-already-in-use' => 'هذا البريد مستخدم مسبقًا. جرّب تسجيل الدخول.',
+      'weak-password' => 'كلمة المرور ضعيفة؛ استخدم 6 أحرف أو أكثر.',
+      'network-request-failed' =>
+        'تعذر الاتصال. تحقق من الإنترنت ثم حاول مجددًا.',
+      'operation-not-allowed' =>
+        'تسجيل البريد غير مفعّل في Firebase لهذا المشروع.',
+      _ => error.message ?? 'تعذر إتمام المصادقة بالبريد الإلكتروني.',
+    };
+  }
+
   Future<void> signOut() async {
     if (!isSupported || Firebase.apps.isEmpty) return;
     try {

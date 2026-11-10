@@ -8,13 +8,17 @@
 2. أضف تطبيق Android بالمعرّف `com.itqan.itqan`.
 3. أضف بصمتي SHA-1 وSHA-256 لشهادة debug، ثم أضف بصمات شهادة release قبل النشر.
 4. فعّل **Authentication → Sign-in method → Google**.
-5. نزّل `google-services.json` وضعه محليًا في `android/app/google-services.json`. لا تغيّر اسمه ولا ترفعه إلى Git.
-6. راجع أن Web/server client ID الموجود في إعداد Google يطابق `googleServerClientId` في `CircleFirebaseOptions`.
-7. استخدم `firebase/android/google-services.json.example` كمرجع للحقول فقط؛ هذا الملف غير قابل للاستخدام حتى تُستبدل القيم من Firebase Console.
+5. فعّل **Authentication → Sign-in method → Email/Password** حتى يعمل الدخول
+   والتسجيل من شاشة دوائر إتقان. البريد وكلمة المرور يمران عبر Firebase، ثم
+   يرسل التطبيق Firebase ID token إلى `POST /api/v1/auth/firebase` نفسه؛ لا
+   يوجد عقد API جديد للباك إند.
+6. نزّل `google-services.json` وضعه محليًا في `android/app/google-services.json`. لا تغيّر اسمه ولا ترفعه إلى Git.
+7. راجع أن Web/server client ID الموجود في إعداد Google يطابق `googleServerClientId` في `CircleFirebaseOptions`.
+8. استخدم `firebase/android/google-services.json.example` كمرجع للحقول فقط؛ هذا الملف غير قابل للاستخدام حتى تُستبدل القيم من Firebase Console.
 
 ### علاج خطأ `Api10` / `DEVELOPER_ERROR`
 
-هذا الخطأ لا ينتج من واجهة Flutter؛ يعني أن Google لا يجد OAuth Android client مطابقًا لحزمة التطبيق وتوقيعه. في Firebase Console أضف تطبيق Android بالاسم `com.itqan.itqan`، ثم أضف SHA-1 وSHA-256 للشهادة التي بُني بها APK. إذا كان APK مبنيًا بإعداد المشروع الحالي، فـ release يستخدم debug signing مؤقتًا، ولذلك يجب إضافة بصمة debug keystore أيضًا. تحقق كذلك من أن `googleServerClientId` هو Web client ID من المشروع نفسه، وليس Android client ID.
+هذا الخطأ لا ينتج من واجهة Flutter؛ يعني أن Google لا يجد OAuth Android client مطابقًا لحزمة التطبيق وتوقيعه. في Firebase Console أضف تطبيق Android بالاسم `com.itqan.itqan`، ثم أضف SHA-1 وSHA-256 للشهادة التي بُني بها APK. إذا كان APK مبنيًا بإعداد المشروع الحالي، فـ release يستخدم debug signing مؤقتًا، ولذلك يجب إضافة بصمة debug keystore أيضًا. وعند التثبيت من Google Play يجب إضافة **App signing certificate** الظاهر في Play Console، وليس Upload certificate فقط. تحقق كذلك من أن `googleServerClientId` هو Web client ID من المشروع نفسه، وليس Android client ID.
 
 لا يكفي تغيير `apiKey` يدويًا لحل Api10. بعد إضافة البصمات أعد تنزيل `google-services.json`، ثم أعد البناء. يمكن استخراج بصمة debug محليًا بالأمر `./gradlew signingReport` من مجلد Android أو عبر `keytool` على ملف debug keystore.
 
