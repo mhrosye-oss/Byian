@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:itqan/features/home/home_screen.dart';
 
 void main() {
   testWidgets('home screen shows Bento content and persistent navigation',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: HomeScreen())),
+    );
 
     expect(find.text('أهلاً بك في إتقان'), findsOneWidget);
     expect(find.text('مصحفي'), findsOneWidget);
