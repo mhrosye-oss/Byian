@@ -50,6 +50,7 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
       if (last != null && last is Map) {
         setState(() {
           _resultData = Map<String, dynamic>.from(last);
+          _savedToRevision = _resultData!['revisionScheduled'] == true;
           _isLoading = false;
         });
       } else {
@@ -98,6 +99,9 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
         'nextReviewDate': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
       };
       await progressBox.add(sessionData);
+      final resultBox = await Hive.openBox('quran_teacher_recitation');
+      _resultData!['revisionScheduled'] = true;
+      await resultBox.put('lastResult', _resultData);
 
       if (mounted) {
         setState(() => _savedToRevision = true);
@@ -284,7 +288,7 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
                         const SizedBox(height: 12),
 
                         OutlinedButton.icon(
-                          onPressed: _saveToRevisionSchedule,
+                          onPressed: _savedToRevision ? null : _saveToRevisionSchedule,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: ItqanColors.emerald,
                             side: const BorderSide(color: ItqanColors.emerald),
@@ -292,8 +296,10 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                           icon: const Icon(Icons.schedule_rounded, size: 18),
-                          label: const Text(
-                            'إضافة المقطع لجدول المراجعة التراكمية',
+                          label: Text(
+                            _savedToRevision
+                                ? 'المقطع مضاف إلى جدول المراجعة'
+                                : 'إضافة المقطع لجدول المراجعة التراكمية',
                             style: TextStyle(fontFamily: ItqanTypography.uiFont, fontWeight: FontWeight.bold),
                           ),
                         ),

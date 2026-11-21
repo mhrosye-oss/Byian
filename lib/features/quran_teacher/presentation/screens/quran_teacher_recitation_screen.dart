@@ -206,6 +206,19 @@ class _QuranTeacherRecitationScreenState
 
       // حفظ جلسة التسميع في Hive
       final box = await Hive.openBox('quran_teacher_recitation');
+      final timestamp = DateTime.now().toIso8601String();
+      final progressBox = await Hive.openBox('quran_teacher_progress');
+      await progressBox.add({
+        'surah': _selectedSurah?.number ?? 1,
+        'surahName': _selectedSurah?.nameArabic ?? '',
+        'startAyah': _targetStartAyah,
+        'endAyah': _targetEndAyah,
+        'verseCount': _targetEndAyah - _targetStartAyah + 1,
+        'masteryLevel': 'تسميع صوتي',
+        'isRevision': true,
+        'timestamp': timestamp,
+        'nextReviewDate': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
+      });
       final recordData = {
         'surah': _selectedSurah?.number ?? 1,
         'surahName': _selectedSurah?.nameArabic ?? '',
@@ -215,7 +228,8 @@ class _QuranTeacherRecitationScreenState
         'engineUnavailable': result.engineUnavailable,
         'transcript': result.transcript,
         'expectedText': result.expectedText ?? 'تلاوة ${_selectedSurah?.nameArabic} الآيات ($_targetStartAyah - $_targetEndAyah)',
-        'timestamp': DateTime.now().toIso8601String(),
+        'timestamp': timestamp,
+        'revisionScheduled': true,
       };
       await box.put('lastResult', recordData);
       await box.add(recordData);
