@@ -320,6 +320,7 @@ class _TajweedLessonsScreenState extends State<TajweedLessonsScreen>
             ],
           ),
           child: ExpansionTile(
+            enabled: lesson.isAvailable,
             shape: const Border(),
             leading: Container(
               width: 40,
@@ -475,4 +476,3 @@ class _TajweedLessonsScreenState extends State<TajweedLessonsScreen>
     );
   }
 }
-
