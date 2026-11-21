@@ -2,7 +2,7 @@ name: Analyze, Test and Build APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "fix-quran-teacher" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
@@ -31,18 +31,23 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: stable
           cache: true
           cache-key: flutter-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
 
       - name: Get dependencies
+        id: dependencies
         run: flutter pub get
 
+      - name: Check Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib
+
       - name: Analyze Dart code
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
+        run: flutter analyze
 
       - name: Run Flutter tests
+        if: ${{ always() && steps.dependencies.outcome == 'success' }}
         run: flutter test
 
       - name: Build release APKs
