@@ -151,6 +151,7 @@ class _QuranTeacherRecitationScreenState
   Future<void> _startRecording() async {
     // إيقاف أي استماع سابق
     await _audioPlaybackService.stop();
+    if (!mounted) return;
     if (mounted) {
       setState(() {
         _recordedFilePath = null;
@@ -165,8 +166,8 @@ class _QuranTeacherRecitationScreenState
     } catch (_) {
       // Permission state can fail on unsupported devices; report it as unavailable.
     }
+    if (!mounted) return;
     if (!hasPermission) {
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('يرجى منح إذن استخدام الميكروفون لتتمكن من التسميع والتسجيل.'),
@@ -178,6 +179,7 @@ class _QuranTeacherRecitationScreenState
 
     try {
       final tempDir = await getTemporaryDirectory();
+      if (!mounted) return;
       final path =
           '${tempDir.path}/recitation_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
@@ -190,6 +192,14 @@ class _QuranTeacherRecitationScreenState
         path: path,
       );
 
+      if (!mounted) {
+        try {
+          await _recorder.stop();
+        } catch (_) {
+          // Navigation may dispose the recorder while platform recording starts.
+        }
+        return;
+      }
       setState(() {
         _isRecording = true;
       });
