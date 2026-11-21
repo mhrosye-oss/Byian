@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/colors.dart';
+import '../adhan/presentation/adhan_settings_screen.dart';
+import '../adhan/services/adhan_scheduler.dart';
 import '../about/screens/about_screen.dart';
 import '../adhkar/screens/duas_screen.dart';
 import '../adhkar/screens/new_adhkar_screen.dart';
@@ -54,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  Timer? _adhanTimer;
 
   @override
   void initState() {
@@ -65,10 +70,17 @@ class _HomeScreenState extends State<HomeScreen> {
         onNavigateRoute: (route) => _open(context, route),
       );
     });
+
+    // فحص دوري كل دقيقة لتشغيل الأذان عند دخول وقت الصلاة.
+    // الإحداثيات تُقرأ من الإعدادات (الافتراضي: مكة المكرمة).
+    _adhanTimer = Timer.periodic(const Duration(minutes: 1), (_) async {
+      await AdhanScheduler.instance.checkAndPlay();
+    });
   }
 
   @override
   void dispose() {
+    _adhanTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -181,6 +193,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'nearby_mosques':
         page = const NearbyMosquesScreen();
         break;
+      case 'adhan_audio':
+        page = const AdhanSettingsScreen();
+        break;
       case 'prayer_notifications':
         page = const PrayerNotificationsScreen();
         break;
@@ -204,6 +219,14 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: Icons.access_time_filled_rounded,
         bg: const Color(0xFFEEF2FF),
         iconColor: const Color(0xFF4F46E5),
+      ),
+      (
+        title: 'الأذان الصوتي',
+        subtitle: 'أذان تلقائي في وقت كل صلاة',
+        route: 'adhan_audio',
+        icon: Icons.volume_up,
+        bg: const Color(0xFFFDF3D8),
+        iconColor: const Color(0xFFB8860B),
       ),
       (
         title: 'المصحف الشريف',
