@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import '../../../../core/theme/colors.dart';
@@ -41,6 +42,7 @@ class _QuranTeacherRecitationScreenState
   String? _recordedFilePath;
   bool _isPlayingRecorded = false;
   bool _isAnalyzing = false;
+  StreamSubscription<PlayerState>? _playbackSubscription;
 
   @override
   void initState() {
@@ -52,13 +54,14 @@ class _QuranTeacherRecitationScreenState
   @override
   void dispose() {
     _recordingTimer?.cancel();
+    _playbackSubscription?.cancel();
     _recorder.dispose();
     _audioPlaybackService.dispose();
     super.dispose();
   }
 
   void _setupPlaybackListener() {
-    _audioPlaybackService.playerStateStream.listen((state) {
+    _playbackSubscription = _audioPlaybackService.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
           _isPlayingRecorded = state.playing;
@@ -102,6 +105,12 @@ class _QuranTeacherRecitationScreenState
   Future<void> _startRecording() async {
     // إيقاف أي استماع سابق
     await _audioPlaybackService.stop();
+    if (mounted) {
+      setState(() {
+        _recordedFilePath = null;
+        _recordingSeconds = 0;
+      });
+    }
 
     // فحص إذن الميكروفون فقط عند الضغط
     final hasPermission = await _recorder.hasPermission();
@@ -132,8 +141,6 @@ class _QuranTeacherRecitationScreenState
 
       setState(() {
         _isRecording = true;
-        _recordingSeconds = 0;
-        _recordedFilePath = null;
       });
 
       _recordingTimer?.cancel();
@@ -158,12 +165,13 @@ class _QuranTeacherRecitationScreenState
     _recordingTimer?.cancel();
     try {
       final path = await _recorder.stop();
+      if (!mounted) return;
       setState(() {
         _isRecording = false;
         _recordedFilePath = path;
       });
     } catch (e) {
-      setState(() => _isRecording = false);
+      if (mounted) setState(() => _isRecording = false);
     }
   }
 

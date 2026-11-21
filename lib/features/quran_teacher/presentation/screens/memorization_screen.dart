@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -37,6 +38,8 @@ class _MemorizationScreenState extends ConsumerState<MemorizationScreen> {
   int _repeatCount = 1; // 1, 3, 5, -1 (مستمر)
   int _currentPlayingIndex = -1;
   bool _isPlaying = false;
+  int _completedCycles = 0;
+  StreamSubscription<PlayerState>? _playerStateSubscription;
 
   @override
   void initState() {
@@ -47,18 +50,20 @@ class _MemorizationScreenState extends ConsumerState<MemorizationScreen> {
 
   @override
   void dispose() {
+    _playerStateSubscription?.cancel();
     _audioService.dispose();
     super.dispose();
   }
 
   void _setupAudioListener() {
-    _audioService.playerStateStream.listen((state) {
+    _playerStateSubscription = _audioService.playerStateStream.listen((state) {
       if (mounted) {
+        final wasPlaying = _isPlaying;
         setState(() {
           _isPlaying = state.playing && state.processingState != ProcessingState.completed;
         });
 
-        if (state.processingState == ProcessingState.completed && _isPlaying) {
+        if (state.processingState == ProcessingState.completed && wasPlaying) {
           _onAyahAudioCompleted();
         }
       }
@@ -69,13 +74,15 @@ class _MemorizationScreenState extends ConsumerState<MemorizationScreen> {
     if (_currentPlayingIndex >= 0 && _currentPlayingIndex < _verses.length - 1) {
       // الانتقال للآية التالية تلقائياً إذا كان ضمن نطاق
       _playVerseAtIndex(_currentPlayingIndex + 1);
-    } else if (_repeatCount > 1 || _repeatCount == -1) {
-      // إعادة التشغيل من البداية عند التكرار
+    } else if (_repeatCount == -1 || _completedCycles + 1 < _repeatCount) {
+      // اكتملت دورة كاملة؛ أعدها فقط بالعدد المطلوب، أو بشكل مستمر.
+      _completedCycles++;
       _playVerseAtIndex(0);
     } else {
       setState(() {
         _currentPlayingIndex = -1;
         _isPlaying = false;
+        _completedCycles = 0;
       });
     }
   }
@@ -148,10 +155,12 @@ class _MemorizationScreenState extends ConsumerState<MemorizationScreen> {
 
   Future<void> _loadVerses() async {
     if (_selectedSurah == null) return;
+    await _audioService.stop();
     setState(() {
       _isLoadingVerses = true;
       _errorMessage = null;
       _currentPlayingIndex = -1;
+      _completedCycles = 0;
       _revealedAyahs.clear();
     });
 
@@ -177,10 +186,11 @@ class _MemorizationScreenState extends ConsumerState<MemorizationScreen> {
     }
   }
 
-  Future<void> _playVerseAtIndex(int index) async {
+  Future<void> _playVerseAtIndex(int index, {bool resetCycle = false}) async {
     if (index < 0 || index >= _verses.length) return;
     setState(() {
       _currentPlayingIndex = index;
+      if (resetCycle) _completedCycles = 0;
     });
 
     try {
@@ -205,7 +215,7 @@ class _MemorizationScreenState extends ConsumerState<MemorizationScreen> {
       if (_currentPlayingIndex >= 0) {
         await _audioService.resume();
       } else if (_verses.isNotEmpty) {
-        await _playVerseAtIndex(0);
+        await _playVerseAtIndex(0, resetCycle: true);
       }
     }
   }
@@ -215,6 +225,7 @@ class _MemorizationScreenState extends ConsumerState<MemorizationScreen> {
     setState(() {
       _isPlaying = false;
       _currentPlayingIndex = -1;
+      _completedCycles = 0;
     });
   }
 
@@ -736,7 +747,10 @@ class _MemorizationScreenState extends ConsumerState<MemorizationScreen> {
             ],
             onChanged: (val) {
               if (val != null) {
-                setState(() => _repeatCount = val);
+                setState(() {
+                  _repeatCount = val;
+                  _completedCycles = 0;
+                });
               }
             },
           ),
@@ -839,7 +853,7 @@ class _MemorizationScreenState extends ConsumerState<MemorizationScreen> {
                         if (isPlayingThis) {
                           _audioService.pause();
                         } else {
-                          _playVerseAtIndex(index);
+                          _playVerseAtIndex(index, resetCycle: true);
                         }
                       },
                     ),

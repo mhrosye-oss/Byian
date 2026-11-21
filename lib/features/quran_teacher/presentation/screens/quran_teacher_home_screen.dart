@@ -29,13 +29,14 @@ class _QuranTeacherHomeScreenState extends ConsumerState<QuranTeacherHomeScreen>
   Future<void> _loadProgressStats() async {
     try {
       final box = await Hive.openBox('quran_teacher_progress');
-      final allValues = box.values.toList();
-      
       int memCount = 0;
       int revCount = 0;
       String lastSurah = '';
 
-      for (final val in allValues) {
+      for (var i = 0; i < box.length; i++) {
+        // lastSession نسخة لاستعادة آخر اختيار وليست جلسة مستقلة.
+        if (box.keyAt(i) == 'lastSession') continue;
+        final val = box.getAt(i);
         if (val is Map) {
           final isRevision = val['isRevision'] == true;
           if (isRevision) {

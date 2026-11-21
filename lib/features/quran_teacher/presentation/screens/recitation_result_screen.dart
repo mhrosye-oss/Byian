@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:just_audio/just_audio.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/typography.dart';
 import '../../../../core/ui/base_widgets.dart';
@@ -20,12 +22,14 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
   bool _isPlaying = false;
   Map<String, dynamic>? _resultData;
   bool _isLoading = true;
+  bool _savedToRevision = false;
+  StreamSubscription<PlayerState>? _playbackSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadResult();
-    _audioPlayer.playerStateStream.listen((state) {
+    _playbackSubscription = _audioPlayer.playerStateStream.listen((state) {
       if (mounted) {
         setState(() => _isPlaying = state.playing);
       }
@@ -34,6 +38,7 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
 
   @override
   void dispose() {
+    _playbackSubscription?.cancel();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -78,7 +83,7 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
   }
 
   Future<void> _saveToRevisionSchedule() async {
-    if (_resultData == null) return;
+    if (_resultData == null || _savedToRevision) return;
     try {
       final progressBox = await Hive.openBox('quran_teacher_progress');
       final sessionData = {
@@ -95,6 +100,7 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
       await progressBox.add(sessionData);
 
       if (mounted) {
+        setState(() => _savedToRevision = true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('تمت إضافة هذا المقطع إلى جدول مراجعتك بنجاح!'),
