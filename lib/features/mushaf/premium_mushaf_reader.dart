@@ -292,7 +292,7 @@ class _PremiumMushafReaderState extends State<PremiumMushafReader> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _showTranslation ? const Color(0xFF1B5E20).withOpacity(0.1) : Colors.transparent,
+                  color: _showTranslation ? const Color(0xFF1B5E20).withValues(alpha: 0.1) : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(

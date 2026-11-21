@@ -45,11 +45,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final code = localeCodes[language];
     if (code == null) return;
 
-    await ref.read(settingsProvider.notifier).update(
-          ref.read(settingsProvider).copyWith(language: language),
-        );
-    if (!mounted) return;
-    await AppSettingsScope.of(context).setLocale(Locale(code));
+    try {
+      await ref.read(settingsProvider.notifier).update(
+            ref.read(settingsProvider).copyWith(language: language),
+          );
+      if (!mounted) return;
+      await AppSettingsScope.of(context).setLocale(Locale(code));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('تم حفظ اللغة محليًا، لكن تعذر تحديثها على الخادم: $error'),
+        ),
+      );
+    }
   }
 
   @override
@@ -235,7 +245,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: ItqanColors.roseGold.withOpacity(0.12),
+                    color: ItqanColors.roseGold.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(ItqanRadius.full),
                   ),
                   child: const Text(
@@ -431,7 +441,7 @@ class _SwitchRow extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             activeTrackColor: ItqanColors.gold,
-            activeColor: ItqanColors.void_,
+            activeThumbColor: ItqanColors.void_,
             inactiveTrackColor: ItqanColors.charcoal,
             inactiveThumbColor: ItqanColors.silver,
           ),

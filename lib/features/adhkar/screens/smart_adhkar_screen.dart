@@ -34,7 +34,7 @@ class SmartAdhkarScreen extends StatelessWidget {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1B5E20).withOpacity(0.1),
+              color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Text(
@@ -75,7 +75,7 @@ class SmartAdhkarScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: theme.cardColor,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -83,7 +83,7 @@ class SmartAdhkarScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: (ctx['color'] as Color).withOpacity(0.1),
+                            color: (ctx['color'] as Color).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(ctx['icon'], size: 36, color: ctx['color']),

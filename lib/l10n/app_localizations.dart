@@ -6,8 +6,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_ar.dart';
+import 'app_localizations_bn.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
 import 'app_localizations_fr.dart';
+import 'app_localizations_hi.dart';
+import 'app_localizations_id.dart';
+import 'app_localizations_tr.dart';
+import 'app_localizations_ur.dart';
+import 'app_localizations_uz.dart';
 
 // ignore_for_file: type=lint
 
@@ -96,8 +103,15 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
+    Locale('bn'),
     Locale('en'),
-    Locale('fr')
+    Locale('es'),
+    Locale('fr'),
+    Locale('hi'),
+    Locale('id'),
+    Locale('tr'),
+    Locale('ur'),
+    Locale('uz')
   ];
 
   /// No description provided for @appName.
@@ -340,6 +354,36 @@ abstract class AppLocalizations {
   /// **'إعادة المحاولة'**
   String get recitationRetry;
 
+  /// No description provided for @expected_text_label.
+  ///
+  /// In ar, this message translates to:
+  /// **'النص المتوقع'**
+  String get expected_text_label;
+
+  /// No description provided for @retry_button.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get retry_button;
+
+  /// No description provided for @save_progress_button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ التقدم'**
+  String get save_progress_button;
+
+  /// No description provided for @progress_saved_message.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ التقدم'**
+  String get progress_saved_message;
+
+  /// No description provided for @transcript_label.
+  ///
+  /// In ar, this message translates to:
+  /// **'نص التفريغ'**
+  String get transcript_label;
+
   /// No description provided for @recitationNextAyah.
   ///
   /// In ar, this message translates to:
@@ -495,6 +539,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إتقان التجويد'**
   String get progressTajweedMastery;
+
+  /// No description provided for @teacher_home_title.
+  ///
+  /// In ar, this message translates to:
+  /// **'شاشة المعلم'**
+  String get teacher_home_title;
 
   /// No description provided for @settingsTitle.
   ///
@@ -825,8 +875,18 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['ar', 'en', 'fr'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>[
+        'ar',
+        'bn',
+        'en',
+        'es',
+        'fr',
+        'hi',
+        'id',
+        'tr',
+        'ur',
+        'uz'
+      ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -837,10 +897,24 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'ar':
       return AppLocalizationsAr();
+    case 'bn':
+      return AppLocalizationsBn();
     case 'en':
       return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
     case 'fr':
       return AppLocalizationsFr();
+    case 'hi':
+      return AppLocalizationsHi();
+    case 'id':
+      return AppLocalizationsId();
+    case 'tr':
+      return AppLocalizationsTr();
+    case 'ur':
+      return AppLocalizationsUr();
+    case 'uz':
+      return AppLocalizationsUz();
   }
 
   throw FlutterError(

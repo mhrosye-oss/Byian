@@ -1,0 +1,12 @@
+{
+  "@@locale": "hi",
+  "appName": "इतक़ान",
+  "navHome": "होम",
+  "navQuran": "क़ुरआन",
+  "navProgress": "प्रगति",
+  "navSettings": "सेटिंग्स",
+  "homeGreeting": "अस्सलामु अलैकुं",
+  "homeSubtitle": "इतक़ान में आपका स्वागत है",
+  "settingsLanguage": "भाषा",
+  "settingsTitle": "सेटिंग्स"
+}

@@ -85,8 +85,8 @@ class _RecordButtonState extends State<RecordButton> with TickerProviderStateMix
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: ItqanColors.error.withOpacity(
-                              1 - (_pulseAnimation.value - 1) / 0.6,
+                            color: ItqanColors.error.withValues(
+                              alpha: 1 - (_pulseAnimation.value - 1) / 0.6,
                             ),
                             width: 2,
                           ),
@@ -103,7 +103,7 @@ class _RecordButtonState extends State<RecordButton> with TickerProviderStateMix
                     boxShadow: [
                       BoxShadow(
                         color: (isRecording ? ItqanColors.error : ItqanColors.gold)
-                            .withOpacity(0.35),
+                            .withValues(alpha: 0.35),
                         blurRadius: 24,
                         spreadRadius: 4,
                       ),

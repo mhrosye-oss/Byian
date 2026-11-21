@@ -1,0 +1,12 @@
+{
+  "@@locale": "id",
+  "appName": "Itqan",
+  "navHome": "Beranda",
+  "navQuran": "Quran",
+  "navProgress": "Kemajuan",
+  "navSettings": "Pengaturan",
+  "homeGreeting": "Assalamu Alaikum",
+  "homeSubtitle": "Selamat datang di Itqan",
+  "settingsLanguage": "Bahasa",
+  "settingsTitle": "Pengaturan"
+}

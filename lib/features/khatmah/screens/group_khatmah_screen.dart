@@ -196,7 +196,7 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
           Text('نوع المجموعة:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _selectedGroupType,
+            initialValue: _selectedGroupType,
             decoration: InputDecoration(filled: true, fillColor: theme.cardColor, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)),
             hint: const Text('اختر نوع المجموعة'),
             items: _groupTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
@@ -304,7 +304,7 @@ class _GroupKhatmahScreenState extends State<GroupKhatmahScreen> {
                   color: theme.cardColor,
                   margin: const EdgeInsets.only(bottom: 10),
                   child: ListTile(
-                    leading: CircleAvatar(backgroundColor: const Color(0xFF1B5E20).withOpacity(0.1), child: Text('${index + 1}', style: const TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold))),
+                    leading: CircleAvatar(backgroundColor: const Color(0xFF1B5E20).withValues(alpha: 0.1), child: Text('${index + 1}', style: const TextStyle(color: Color(0xFF1B5E20), fontWeight: FontWeight.bold))),
                     title: Text(member['name'], style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
                     subtitle: Text('صفحات ${member['start_page']} إلى ${member['end_page']}', style: TextStyle(color: theme.textTheme.bodySmall?.color)),
                     trailing: Row(

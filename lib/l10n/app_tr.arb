@@ -1,0 +1,12 @@
+{
+  "@@locale": "tr",
+  "appName": "Itqan",
+  "navHome": "Ana Sayfa",
+  "navQuran": "Kur'an",
+  "navProgress": "İlerleme",
+  "navSettings": "Ayarlar",
+  "homeGreeting": "Esselamu Aleykum",
+  "homeSubtitle": "Itqan'a hoş geldiniz",
+  "settingsLanguage": "Dil",
+  "settingsTitle": "Ayarlar"
+}

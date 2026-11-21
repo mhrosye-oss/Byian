@@ -116,7 +116,7 @@ class _KhatmahScreenState extends State<KhatmahScreen> {
                   LinearProgressIndicator(
                     value: _completionPercent / 100,
                     minHeight: 10,
-                    backgroundColor: const Color(0xFF1A1A1A).withOpacity(0.08),
+                    backgroundColor: const Color(0xFF1A1A1A).withValues(alpha: 0.08),
                     valueColor: const AlwaysStoppedAnimation<Color>(
                       Color(0xFFD32F2F),
                     ),

@@ -223,14 +223,14 @@ class _QiblaScreenState extends State<QiblaScreen> {
                                           child: Container(
                                             width: 2,
                                             height: 180,
-                                            color: const Color(0xFF1A1A1A).withOpacity(0.15),
+                                            color: const Color(0xFF1A1A1A).withValues(alpha: 0.15),
                                           ),
                                         ),
                                         Center(
                                           child: Container(
                                             width: 150,
                                             height: 2,
-                                            color: const Color(0xFF1A1A1A).withOpacity(0.15),
+                                            color: const Color(0xFF1A1A1A).withValues(alpha: 0.15),
                                           ),
                                         ),
                                       ],

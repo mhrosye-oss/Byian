@@ -50,7 +50,7 @@ class _MyKhatmahTaskScreenState extends State<MyKhatmahTaskScreen> {
               children: [
                 Text(
                   'حصتك من الختمة',
-                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -80,7 +80,7 @@ class _MyKhatmahTaskScreenState extends State<MyKhatmahTaskScreen> {
                 final isRead = _readPages.contains(pageNumber);
 
                 return Card(
-                  color: isRead ? const Color(0xFF1B5E20).withOpacity(0.05) : theme.cardColor,
+                  color: isRead ? const Color(0xFF1B5E20).withValues(alpha: 0.05) : theme.cardColor,
                   margin: const EdgeInsets.only(bottom: 10),
                   child: CheckboxListTile(
                     value: isRead,

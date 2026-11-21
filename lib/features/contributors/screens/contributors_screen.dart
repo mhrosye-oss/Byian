@@ -67,7 +67,7 @@ class _ContributorsScreenState extends State<ContributorsScreen> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF1B5E20).withOpacity(0.1),
+              color: const Color(0xFF1B5E20).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -105,7 +105,7 @@ class _ContributorsScreenState extends State<ContributorsScreen> {
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           leading: CircleAvatar(
-                            backgroundColor: const Color(0xFF1B5E20).withOpacity(0.1),
+                            backgroundColor: const Color(0xFF1B5E20).withValues(alpha: 0.1),
                             child: const Icon(Icons.person, color: Color(0xFF1B5E20)),
                           ),
                           title: Text(

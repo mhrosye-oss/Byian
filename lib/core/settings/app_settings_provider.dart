@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/itqan_journey/data/journey_auth_api.dart';
+import '../services/auth_service.dart';
+
 /// App-wide settings persisted locally and exposed to the widget tree.
 class AppSettingsProvider extends ChangeNotifier {
   static const _darkModeKey = 'app_dark_mode';
@@ -36,10 +39,26 @@ class AppSettingsProvider extends ChangeNotifier {
     notifyListeners();
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_languageKey, language);
+    await AuthService.saveLocale(language);
+    if (await AuthService.isAuthenticated()) {
+      await JourneyAuthApi().updateLocale(language);
+    }
   }
 
-  String _supportedLanguage(String language) =>
-      const {'ar', 'en', 'fr', 'ur'}.contains(language) ? language : 'ar';
+  String _supportedLanguage(String language) => const {
+        'ar',
+        'en',
+        'fr',
+        'es',
+        'ur',
+        'id',
+        'hi',
+        'bn',
+        'tr',
+        'uz'
+      }.contains(language)
+          ? language
+          : 'ar';
 }
 
 class AppSettingsScope extends InheritedNotifier<AppSettingsProvider> {
@@ -50,7 +69,8 @@ class AppSettingsScope extends InheritedNotifier<AppSettingsProvider> {
   }) : super(notifier: settings);
 
   static AppSettingsProvider of(BuildContext context) {
-    final scope = context.dependOnInheritedWidgetOfExactType<AppSettingsScope>();
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<AppSettingsScope>();
     assert(scope != null, 'AppSettingsScope is missing from the widget tree.');
     return scope!.notifier!;
   }

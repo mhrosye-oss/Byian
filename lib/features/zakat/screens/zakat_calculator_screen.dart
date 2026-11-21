@@ -164,7 +164,7 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> with Sing
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedCurrencyName,
+                    initialValue: _selectedCurrencyName,
                     isExpanded: true, // لمنع خروج النص عن الإطار
                     decoration: InputDecoration(
                       labelText: 'اختر العملة (الافتراضي: ريال يمني)',
@@ -240,17 +240,21 @@ class _ZakatCalculatorScreenState extends State<ZakatCalculatorScreen> with Sing
           _buildField('إجمالي قيمة الزروع والثمار ($_selectedCurrencyName)', _cropsValueController, theme),
           const SizedBox(height: 10),
           Text('طريقة السقيا:', style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),
-          RadioListTile<bool>(
-            title: const Text('تسقى بماء المطر أو العيون (العشر 10%)'),
-            value: true,
+          RadioGroup<bool>(
             groupValue: _isRainWatered,
             onChanged: (val) => setState(() => _isRainWatered = val!),
-          ),
-          RadioListTile<bool>(
-            title: const Text('تسقى بتكلفة ومؤونة (نصف العشر 5%)'),
-            value: false,
-            groupValue: _isRainWatered,
-            onChanged: (val) => setState(() => _isRainWatered = val!),
+            child: Column(
+              children: [
+                RadioListTile<bool>(
+                  title: const Text('تسقى بماء المطر أو العيون (العشر 10%)'),
+                  value: true,
+                ),
+                RadioListTile<bool>(
+                  title: const Text('تسقى بتكلفة ومؤونة (نصف العشر 5%)'),
+                  value: false,
+                ),
+              ],
+            ),
           ),
         ],
       ),

@@ -71,7 +71,7 @@ class _WaveformVisualizerState extends State<WaveformVisualizer> with TickerProv
                 height: 4 + 44 * _animations[i].value,
                 margin: const EdgeInsets.symmetric(horizontal: 2),
                 decoration: BoxDecoration(
-                  color: ItqanColors.gold.withOpacity(0.6 + 0.4 * _animations[i].value),
+                  color: ItqanColors.gold.withValues(alpha: 0.6 + 0.4 * _animations[i].value),
                   borderRadius: BorderRadius.circular(2),
                 ),
               );

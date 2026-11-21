@@ -219,9 +219,9 @@ class _WordAnalysis extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _color(ws.score).withOpacity(0.12),
+                  color: _color(ws.score).withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(ItqanRadius.sm),
-                  border: Border.all(color: _color(ws.score).withOpacity(0.4)),
+                  border: Border.all(color: _color(ws.score).withValues(alpha: 0.4)),
                 ),
                 child: Text(
                   ws.word,
@@ -252,9 +252,9 @@ class _MistakeCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: ItqanSpacing.sm),
       padding: const EdgeInsets.all(ItqanSpacing.md),
       decoration: BoxDecoration(
-        color: ItqanColors.error.withOpacity(0.08),
+        color: ItqanColors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(ItqanRadius.lg),
-        border: Border.all(color: ItqanColors.error.withOpacity(0.25)),
+        border: Border.all(color: ItqanColors.error.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [

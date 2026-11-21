@@ -77,7 +77,7 @@ class _HallOfFameScreenState extends State<HallOfFameScreen> {
             decoration: BoxDecoration(
               gradient: const LinearGradient(colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)]),
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: const Color(0xFF1B5E20).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5))],
+              boxShadow: [BoxShadow(color: const Color(0xFF1B5E20).withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 5))],
             ),
             child: Column(
               children: [
@@ -120,20 +120,20 @@ class _HallOfFameScreenState extends State<HallOfFameScreen> {
                               color: theme.cardColor,
                               borderRadius: BorderRadius.circular(16),
                               border: isTop ? Border.all(color: tierColor, width: 2) : null,
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
                             ),
                             child: ListTile(
                               contentPadding: const EdgeInsets.all(16),
                               leading: CircleAvatar(
                                 radius: 25,
-                                backgroundColor: tierColor.withOpacity(0.15),
+                                backgroundColor: tierColor.withValues(alpha: 0.15),
                                 child: Icon(_getIcon(c['icon_name']), color: tierColor, size: 28),
                               ),
                               title: Row(
                                 children: [
                                   Text(c['name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.textTheme.bodyLarge?.color)),
                                   const SizedBox(width: 8),
-                                  if (isTop) Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: tierColor.withOpacity(0.2), borderRadius: BorderRadius.circular(6)), child: Text(c['tier_name'], style: TextStyle(fontSize: 10, color: tierColor, fontWeight: FontWeight.bold))),
+                                  if (isTop) Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: tierColor.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)), child: Text(c['tier_name'], style: TextStyle(fontSize: 10, color: tierColor, fontWeight: FontWeight.bold))),
                                 ],
                               ),
                               subtitle: Column(

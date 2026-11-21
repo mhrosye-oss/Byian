@@ -81,7 +81,7 @@ class _NewAdhkarScreenState extends State<NewAdhkarScreen> {
                         children: [
                           Container(
                             width: 64, height: 64,
-                            decoration: BoxDecoration(color: const Color(0xFF1B5E20).withOpacity(.09), shape: BoxShape.circle),
+                            decoration: BoxDecoration(color: const Color(0xFF1B5E20).withValues(alpha: .09), shape: BoxShape.circle),
                             child: Icon(_getIcon(cat['icon']), color: const Color(0xFF1B5E20), size: 31),
                           ),
                           const SizedBox(height: 14),

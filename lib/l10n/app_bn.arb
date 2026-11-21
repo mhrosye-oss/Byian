@@ -1,0 +1,21 @@
+{
+  "@@locale": "bn",
+  "appName": "ইতকান",
+  "navHome": "হোম",
+  "navQuran": "কোরআন",
+  "navProgress": "প্রগতি",
+  "navSettings": "সেটিংস",
+  "homeGreeting": "আসসালামু আলাইকুম",
+  "homeSubtitle": "ইতকানে স্বাগতম",
+  "homeContinueReading": "পড়া চালিয়ে যান",
+  "homeStartReading": "আল-ফাতিহা দিয়ে শুরু করুন",
+  "homeContinueBtn": "চালিয়ে যান →",
+  "homeStartFromBeginning": "শুরু থেকে ১",
+  "homeLastRead": "শেষে পড়া",
+  "homePracticeMode": "অনুশীলন",
+  "homeReadMode": "পড়া",
+  "homeListenMode": "শুনুন",
+  "homeProgressMode": "প্রগতি",
+  "settingsLanguage": "ভাষা",
+  "settingsTitle": "সেটিংস"
+}

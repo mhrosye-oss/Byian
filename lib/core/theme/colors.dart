@@ -18,7 +18,17 @@ class ItqanColors {
   static const Color muted = Color(0xFF8A8C83);
   static const Color white = Color(0xFFFFFFFF);
 
-  // Legacy aliases keep older feature screens aligned while they migrate.
+  // ── New design tokens (web parity) ───────────────────────────────────────
+  /// Warm gold — matches web #D97706 (amber-600)
+  static const Color goldWarm = Color(0xFFD97706);
+
+  /// Bright gold — matches web #FBBF24 (amber-400)
+  static const Color goldBright = Color(0xFFFBBF24);
+
+  /// Sage green — matches web #8AA899
+  static const Color sage = Color(0xFF8AA899);
+
+  // ── Legacy aliases keep older feature screens aligned while they migrate ─
   static const Color void_ = cream;
   static const Color obsidian = surface;
   static const Color onyx = surface;
@@ -40,8 +50,7 @@ class ItqanColors {
   static const Color error = Color(0xFFF87171);
   static const Color info = Color(0xFF3B6F91);
 
-  // Tajweed palette. These are visual cues; rule identification should come
-  // from verified annotations/phonemizer output, not letter shape alone.
+  // Tajweed palette.
   static const Color tajweedIdgham = Color(0xFF0A5C36);
   static const Color tajweedIkhfa = Color(0xFFB76E79);
   static const Color tajweedIqlab = Color(0xFF725A9B);

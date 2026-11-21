@@ -126,7 +126,7 @@ class MoodQuranScreen extends StatelessWidget {
                 data: theme.copyWith(dividerColor: Colors.transparent),
                 child: ExpansionTile(
                   leading: CircleAvatar(
-                    backgroundColor: (mood['color'] as Color).withOpacity(0.1),
+                    backgroundColor: (mood['color'] as Color).withValues(alpha: 0.1),
                     child: Icon(mood['icon'], color: mood['color']),
                   ),
                   title: Text(mood['title'], style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyLarge?.color)),

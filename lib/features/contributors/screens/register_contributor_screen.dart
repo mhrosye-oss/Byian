@@ -72,7 +72,7 @@ class _RegisterContributorScreenState extends State<RegisterContributorScreen> {
               title: const Text('مساهمة مجهولة (فاعل خير)'),
               subtitle: const Text('لن يظهر اسمك في جدار الشرف.'),
               value: _isAnonymous,
-              activeColor: const Color(0xFF1B5E20),
+              activeThumbColor: const Color(0xFF1B5E20),
               onChanged: (val) => setState(() => _isAnonymous = val),
             ),
             
@@ -93,7 +93,7 @@ class _RegisterContributorScreenState extends State<RegisterContributorScreen> {
               title: const Text('إظهار المبلغ في جدار الشرف'),
               subtitle: const Text('إذا ألغيته، سيظهر اسمك فقط والمبلغ سيكون سرياً.'),
               value: _showAmount,
-              activeColor: const Color(0xFF1B5E20),
+              activeThumbColor: const Color(0xFF1B5E20),
               onChanged: (val) => setState(() => _showAmount = val),
             ),
             

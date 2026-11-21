@@ -32,13 +32,13 @@ class AppTheme {
         onError: ItqanColors.white,
       ),
       textTheme: textTheme,
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: ItqanColors.surface,
-        elevation: 2,
-        shadowColor: ItqanColors.ink.withOpacity(0.06),
+        elevation: 4,
+        shadowColor: ItqanColors.ink.withValues(alpha: 0.08),
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           side: const BorderSide(color: ItqanColors.border),
         ),
       ),
@@ -58,8 +58,9 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: ItqanColors.surface,
-        indicatorColor: ItqanColors.emerald.withOpacity(0.10),
+        indicatorColor: ItqanColors.emerald.withValues(alpha: 0.12),
         surfaceTintColor: Colors.transparent,
+        height: 76,
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
               fontFamily: GoogleFonts.tajawal().fontFamily,
               fontSize: 12,
@@ -75,12 +76,14 @@ class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: ItqanColors.emerald,
           foregroundColor: ItqanColors.white,
+          minimumSize: const Size.fromHeight(54),
           textStyle: TextStyle(
             fontFamily: GoogleFonts.tajawal().fontFamily,
             fontWeight: FontWeight.w700,
+            fontSize: 16,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ItqanRadius.md),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
       ),
@@ -89,17 +92,17 @@ class AppTheme {
         fillColor: ItqanColors.surface,
         hintStyle: const TextStyle(color: ItqanColors.muted),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ItqanRadius.md),
+          borderRadius: BorderRadius.circular(ItqanRadius.lg),
           borderSide: const BorderSide(color: ItqanColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ItqanRadius.md),
+          borderRadius: BorderRadius.circular(ItqanRadius.lg),
           borderSide: const BorderSide(color: ItqanColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ItqanRadius.md),
+          borderRadius: BorderRadius.circular(ItqanRadius.lg),
           borderSide: const BorderSide(color: ItqanColors.emerald, width: 1.5),
         ),
       ),
@@ -117,6 +120,7 @@ class AppTheme {
           color: ItqanColors.white,
         ),
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }

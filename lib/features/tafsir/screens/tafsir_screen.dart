@@ -167,7 +167,7 @@ class _TafsirScreenState extends State<TafsirScreen> {
             return Card(
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: ItqanColors.emerald.withOpacity(.1),
+                  backgroundColor: ItqanColors.emerald.withValues(alpha: .1),
                   child: Text(
                     '${surah.number}',
                     style: const TextStyle(

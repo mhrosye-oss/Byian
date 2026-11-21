@@ -248,7 +248,7 @@ class _AudioQuranScreenState extends State<AudioQuranScreen> {
                       return Card(
                         color: theme.cardColor,
                         elevation: 2,
-                        shadowColor: _green.withOpacity(.08),
+                        shadowColor: _green.withValues(alpha: .08),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
                         ),

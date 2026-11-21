@@ -229,11 +229,11 @@ class _ActivityHeatmap extends StatelessWidget {
               final color = c == 0
                   ? ItqanColors.charcoal
                   : c == 1
-                      ? ItqanColors.gold.withOpacity(0.15)
+                      ? ItqanColors.gold.withValues(alpha: 0.15)
                       : c == 2
-                          ? ItqanColors.gold.withOpacity(0.30)
+                          ? ItqanColors.gold.withValues(alpha: 0.30)
                           : c <= 4
-                              ? ItqanColors.gold.withOpacity(0.50)
+                              ? ItqanColors.gold.withValues(alpha: 0.50)
                               : ItqanColors.gold;
               return Container(decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)));
             },

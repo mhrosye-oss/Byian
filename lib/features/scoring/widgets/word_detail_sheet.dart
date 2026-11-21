@@ -54,9 +54,9 @@ class WordDetailSheet extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: scoreColor.withOpacity(0.15),
+                color: scoreColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(ItqanRadius.full),
-                border: Border.all(color: scoreColor.withOpacity(0.4)),
+                border: Border.all(color: scoreColor.withValues(alpha: 0.4)),
               ),
               child: Text(pct, style: TextStyle(color: scoreColor, fontSize: 16, fontWeight: FontWeight.w700)),
             ),

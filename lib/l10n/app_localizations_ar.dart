@@ -137,6 +137,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get recitationRetry => 'إعادة المحاولة';
 
   @override
+  String get expected_text_label => 'النص المتوقع';
+
+  @override
+  String get retry_button => 'إعادة المحاولة';
+
+  @override
+  String get save_progress_button => 'حفظ التقدم';
+
+  @override
+  String get progress_saved_message => 'تم حفظ التقدم';
+
+  @override
+  String get transcript_label => 'نص التفريغ';
+
+  @override
   String get recitationNextAyah => 'الآية التالية ←';
 
   @override
@@ -215,6 +230,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get progressTajweedMastery => 'إتقان التجويد';
+
+  @override
+  String get teacher_home_title => 'شاشة المعلم';
 
   @override
   String get settingsTitle => 'الإعدادات';

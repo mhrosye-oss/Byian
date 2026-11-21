@@ -102,7 +102,7 @@ class _BookmarkTile extends ConsumerWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: ItqanSpacing.lg),
         decoration: BoxDecoration(
-          color: ItqanColors.error.withOpacity(0.2),
+          color: ItqanColors.error.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(ItqanRadius.lg),
         ),
         child: const Icon(Icons.delete_rounded, color: ItqanColors.error),

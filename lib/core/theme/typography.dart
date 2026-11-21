@@ -38,6 +38,22 @@ class ItqanTypography {
     letterSpacing: -0.3,
   );
 
+  static const TextStyle heading3 = TextStyle(
+    fontFamily: uiFont,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    color: ItqanColors.ink,
+    letterSpacing: -0.1,
+  );
+
+  static const TextStyle bodyLarge = TextStyle(
+    fontFamily: uiFont,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    color: ItqanColors.inkSoft,
+    height: 1.5,
+  );
+
   static const TextStyle heading2 = TextStyle(
     fontFamily: uiFont,
     fontSize: 22,
@@ -52,6 +68,14 @@ class ItqanTypography {
     fontWeight: FontWeight.w400,
     color: ItqanColors.inkSoft,
     height: 1.5,
+  );
+
+  static const TextStyle bodyMedium = TextStyle(
+    fontFamily: uiFont,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    color: ItqanColors.inkSoft,
+    height: 1.4,
   );
 
   static const TextStyle caption = TextStyle(

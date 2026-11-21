@@ -58,6 +58,11 @@
   "recitationRecord": "سجّل",
   "recitationStop": "إيقاف",
   "recitationRetry": "إعادة المحاولة",
+  "expected_text_label": "النص المتوقع",
+  "retry_button": "إعادة المحاولة",
+  "save_progress_button": "حفظ التقدم",
+  "progress_saved_message": "تم حفظ التقدم",
+  "transcript_label": "نص التفريغ",
   "recitationNextAyah": "الآية التالية ←",
   "recitationRecording": "جارٍ التسجيل",
   "recitationProcessing": "جارٍ التحليل...",
@@ -89,6 +94,8 @@
   "progressFocusAreas": "مجالات التحسين",
   "progressNoData": "ابدأ التلاوة لرؤية تقدمك",
   "progressTajweedMastery": "إتقان التجويد",
+  "teacher_home_title": "شاشة المعلم",
+
 
   "settingsTitle": "الإعدادات",
   "settingsProfile": "الملف الشخصي",

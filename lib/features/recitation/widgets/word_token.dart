@@ -14,9 +14,9 @@ class WordToken extends StatelessWidget {
   Color get _bgColor {
     return switch (state) {
       WordState.active => ItqanColors.goldGlow,
-      WordState.correct => ItqanColors.correct.withOpacity(0.15),
-      WordState.warning => ItqanColors.warning.withOpacity(0.15),
-      WordState.error => ItqanColors.error.withOpacity(0.15),
+      WordState.correct => ItqanColors.correct.withValues(alpha: 0.15),
+      WordState.warning => ItqanColors.warning.withValues(alpha: 0.15),
+      WordState.error => ItqanColors.error.withValues(alpha: 0.15),
       WordState.idle => Colors.transparent,
     };
   }
@@ -56,7 +56,7 @@ class WordToken extends StatelessWidget {
           color: _bgColor,
           borderRadius: BorderRadius.circular(6),
           border: state == WordState.active
-              ? Border.all(color: ItqanColors.gold.withOpacity(0.5))
+              ? Border.all(color: ItqanColors.gold.withValues(alpha: 0.5))
               : null,
         ),
         child: Text(

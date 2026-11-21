@@ -79,7 +79,6 @@ class _RecitationScreenState extends ConsumerState<RecitationScreen> {
     RecordButtonState btnState = RecordButtonState.idle;
     if (isRecording) btnState = RecordButtonState.recording;
     if (isProcessing) btnState = RecordButtonState.processing;
-    final theme = Theme.of(context);
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
@@ -113,10 +112,9 @@ class _RecitationScreenState extends ConsumerState<RecitationScreen> {
         },
       ),
     
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: ItqanColors.void_,
       appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        surfaceTintColor: Colors.transparent,
+        backgroundColor: ItqanColors.void_,
         title: Column(
           children: [
             Text(widget.surahName, style: ItqanTypography.label),
@@ -150,7 +148,7 @@ class _RecitationScreenState extends ConsumerState<RecitationScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(ItqanSpacing.lg),
                   decoration: BoxDecoration(
-                    color: theme.cardColor,
+                    color: ItqanColors.onyx,
                     borderRadius: BorderRadius.circular(ItqanRadius.xl),
                     border: Border.all(color: ItqanColors.goldGlow, width: 1.5),
                   ),
@@ -315,9 +313,9 @@ class _ControlButton extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               shape: BoxShape.circle,
-              border: Border.all(color: color.withOpacity(0.4)),
+              border: Border.all(color: color.withValues(alpha: 0.4)),
             ),
             child: Icon(icon, color: color, size: 24),
           ),

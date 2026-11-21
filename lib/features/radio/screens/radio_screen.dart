@@ -78,7 +78,7 @@ class _RadioScreenState extends State<RadioScreen> {
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD32F2F).withOpacity(0.12),
+                      color: const Color(0xFFD32F2F).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: const Icon(
