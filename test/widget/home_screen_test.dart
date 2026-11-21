@@ -10,17 +10,32 @@ void main() {
       const ProviderScope(child: MaterialApp(home: HomeScreen())),
     );
 
-    expect(find.text('أهلاً بك في إتقان'), findsOneWidget);
-    expect(find.text('مصحفي'), findsOneWidget);
     expect(find.text('مساحتك اليومية'), findsOneWidget);
     expect(find.text('الرئيسية'), findsOneWidget);
-    expect(find.text('القرآن'), findsOneWidget);
     expect(find.text('الصلاة'), findsOneWidget);
-    expect(find.text('الإعدادات'), findsOneWidget);
+    expect(find.text('التسبيح'), findsOneWidget);
+    expect(find.text('المزيد'), findsOneWidget);
 
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
-    await tester.pumpAndSettle();
-    expect(find.text('خدمات إتقان'), findsOneWidget);
+    await tester.dragUntilVisible(
+      find.text('ورد اليوم'),
+      find.byType(CustomScrollView),
+      const Offset(0, -400),
+    );
+    expect(find.text('معلّم القرآن'), findsOneWidget);
+    expect(find.text('ورد اليوم'), findsOneWidget);
+
+    await tester.dragUntilVisible(
+      find.text('جميع الخدمات الإسلامية'),
+      find.byType(CustomScrollView),
+      const Offset(0, -400),
+    );
+    expect(find.text('جميع الخدمات الإسلامية'), findsOneWidget);
+
+    await tester.dragUntilVisible(
+      find.text('خطوة صغيرة كل يوم تصنع أثرًا كبيرًا'),
+      find.byType(CustomScrollView),
+      const Offset(0, -400),
+    );
     expect(find.text('خطوة صغيرة كل يوم تصنع أثرًا كبيرًا'), findsOneWidget);
   });
 }
