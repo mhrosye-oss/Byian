@@ -200,7 +200,9 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
                                         foregroundColor: Colors.white,
                                       ),
                                       icon: Icon(_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                                      onPressed: _toggleAudio,
+                                      onPressed: _resultData?['audioPath'] is String
+                                          ? _toggleAudio
+                                          : null,
                                     ),
                                     const SizedBox(width: 12),
                                     const Expanded(
@@ -221,6 +223,30 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
                           ),
                         ),
 
+                        if (_resultData!['expectedText'] is String &&
+                            (_resultData!['expectedText'] as String).isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                            ),
+                            child: Text(
+                              _resultData!['expectedText'] as String,
+                              textAlign: TextAlign.justify,
+                              textDirection: TextDirection.rtl,
+                              style: const TextStyle(
+                                fontFamily: ItqanTypography.arabicFont,
+                                fontSize: 22,
+                                height: 2,
+                                color: ItqanColors.ink,
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 18),
 
                         // حالة محرك التحليل ASR (بكل شفافية وأمانة)
@@ -251,7 +277,7 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
                                     ),
                                     SizedBox(height: 4),
                                     Text(
-                                      'تم تسجيل وحفظ تلاوتك بنجاح. محرك التحليل الآلي للكلمات القرآنية قيد المعايرة والتطوير في هذه النسخة، ولن نصدر أحكاماً قطعية غير دقيقة على صحة تلاوتك التزاماً بالأمانة العلمية لكتاب الله.',
+                                      'تم حفظ تسجيلك. لا يتوفر حالياً محرك موثوق لتحليل هذا الصوت ومقارنته بالآيات على جهازك؛ لذلك لا توجد نتيجة أو نسبة دقة. استمع إلى تسجيلك، ولا تعتمد على هذه الخدمة للحكم على صحة التلاوة.',
                                       style: TextStyle(
                                         fontFamily: ItqanTypography.uiFont,
                                         fontSize: 12.5,

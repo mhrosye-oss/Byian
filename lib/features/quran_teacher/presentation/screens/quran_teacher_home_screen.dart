@@ -180,7 +180,7 @@ class _QuranTeacherHomeScreenState extends ConsumerState<QuranTeacherHomeScreen>
                   ),
                   TeacherServiceCard(
                     title: 'سمّع لي',
-                    description: 'تسجيل قراءتك ومراجعتها بصوتك مع التحقق من الحفظ',
+                    description: 'تسجيل قراءتك والاستماع إليها؛ التحليل الآلي غير متاح حالياً',
                     icon: Icons.mic_rounded,
                     badgeText: 'تسجيل صوتي',
                     accentColor: ItqanColors.roseGold,

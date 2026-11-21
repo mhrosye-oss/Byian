@@ -337,7 +337,7 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
             supportedLocales: itqanSupportedLocales,
             localizationsDelegates: itqanLocalizationsDelegates,
             routes: {
-              '/smart_quran_teacher': (context) => const RecitationIntroScreen(),
+              '/smart_quran_teacher': (context) => const QuranTeacherHomeScreen(),
               '/recitation_intro': (context) => const RecitationIntroScreen(),
               '/teacher_recitation': (context) => const QuranTeacherRecitationScreen(),
               '/recitation_result': (context) => const RecitationResultScreen(),

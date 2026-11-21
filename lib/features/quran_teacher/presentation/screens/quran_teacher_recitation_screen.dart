@@ -24,7 +24,8 @@ class QuranTeacherRecitationScreen extends ConsumerStatefulWidget {
 }
 
 class _QuranTeacherRecitationScreenState
-    extends ConsumerState<QuranTeacherRecitationScreen> {
+    extends ConsumerState<QuranTeacherRecitationScreen>
+    with WidgetsBindingObserver {
   final QuranService _quranService = QuranService();
   final AudioRecorder _recorder = AudioRecorder();
   final AudioPlayerService _audioPlaybackService = AudioPlayerService();
@@ -34,6 +35,7 @@ class _QuranTeacherRecitationScreenState
   Surah? _selectedSurah;
   int _targetStartAyah = 1;
   int _targetEndAyah = 1;
+  List<Ayah> _targetAyahs = [];
 
   bool _isRecording = false;
   int _recordingSeconds = 0;
@@ -47,17 +49,43 @@ class _QuranTeacherRecitationScreenState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _checkDisclaimerAndLoadSurahs();
     _setupPlaybackListener();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if ((state == AppLifecycleState.inactive ||
+            state == AppLifecycleState.paused) &&
+        _isRecording) {
+      _stopRecording();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _recordingTimer?.cancel();
     _playbackSubscription?.cancel();
-    _recorder.dispose();
+    unawaited(_disposeRecorder());
     _audioPlaybackService.dispose();
     super.dispose();
+  }
+
+  Future<void> _disposeRecorder() async {
+    if (_isRecording) {
+      try {
+        await _recorder.stop();
+      } catch (_) {
+        // The recorder may already have stopped because of an interruption.
+      }
+    }
+    try {
+      await _recorder.dispose();
+    } catch (_) {
+      // Disposal during platform teardown should not crash navigation.
+    }
   }
 
   void _setupPlaybackListener() {
@@ -90,8 +118,26 @@ class _QuranTeacherRecitationScreenState
             _targetEndAyah = surahs.first.ayahCount.clamp(1, 5);
           }
         });
+        await _loadTargetAyahs();
       }
     } catch (_) {}
+  }
+
+  Future<void> _loadTargetAyahs() async {
+    final surah = _selectedSurah;
+    if (surah == null) return;
+    try {
+      final ayahs = await _quranService.getAyahs(surah.number);
+      if (!mounted || _selectedSurah?.number != surah.number) return;
+      setState(() {
+        _targetAyahs = ayahs
+            .where((ayah) => ayah.ayahNumber >= _targetStartAyah &&
+                ayah.ayahNumber <= _targetEndAyah)
+            .toList(growable: false);
+      });
+    } catch (_) {
+      if (mounted) setState(() => _targetAyahs = []);
+    }
   }
 
   Future<void> _toggleRecording() async {
@@ -113,7 +159,12 @@ class _QuranTeacherRecitationScreenState
     }
 
     // فحص إذن الميكروفون فقط عند الضغط
-    final hasPermission = await _recorder.hasPermission();
+    var hasPermission = false;
+    try {
+      hasPermission = await _recorder.hasPermission();
+    } catch (_) {
+      // Permission state can fail on unsupported devices; report it as unavailable.
+    }
     if (!hasPermission) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -149,11 +200,11 @@ class _QuranTeacherRecitationScreenState
           setState(() => _recordingSeconds++);
         }
       });
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ أثناء بدء التسجيل: $e'),
+            content: const Text('تعذر بدء التسجيل. تحقق من إذن الميكروفون وحاول مجدداً.'),
             backgroundColor: ItqanColors.roseGold,
           ),
         );
@@ -170,7 +221,7 @@ class _QuranTeacherRecitationScreenState
         _isRecording = false;
         _recordedFilePath = path;
       });
-    } catch (e) {
+    } catch (_) {
       if (mounted) setState(() => _isRecording = false);
     }
   }
@@ -201,24 +252,23 @@ class _QuranTeacherRecitationScreenState
     setState(() => _isAnalyzing = true);
 
     try {
-      // استدعاء محرك ASR الحقيقي
+      // قد يُرجع المحرك الحالي حالة عدم التوفر؛ لا نصطنع transcript أو تقييماً.
       final result = await _asrEngine.recognize(_recordedFilePath!);
 
-      // حفظ جلسة التسميع في Hive
+      // لا نضيف جلسة التسميع إلى جدول المراجعة إلا بطلب صريح من شاشة النتيجة.
       final box = await Hive.openBox('quran_teacher_recitation');
       final timestamp = DateTime.now().toIso8601String();
-      final progressBox = await Hive.openBox('quran_teacher_progress');
-      await progressBox.add({
-        'surah': _selectedSurah?.number ?? 1,
-        'surahName': _selectedSurah?.nameArabic ?? '',
-        'startAyah': _targetStartAyah,
-        'endAyah': _targetEndAyah,
-        'verseCount': _targetEndAyah - _targetStartAyah + 1,
-        'masteryLevel': 'تسميع صوتي',
-        'isRevision': true,
-        'timestamp': timestamp,
-        'nextReviewDate': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
-      });
+      final selectedSurah = _selectedSurah;
+      var expectedText = '';
+      if (selectedSurah != null) {
+        final ayahs = await _quranService.getAyahs(selectedSurah.number);
+        expectedText = ayahs
+            .where((ayah) => ayah.ayahNumber >= _targetStartAyah &&
+                ayah.ayahNumber <= _targetEndAyah)
+            .map((ayah) => ayah.textUthmani)
+            .where((text) => text.isNotEmpty)
+            .join(' ');
+      }
       final recordData = {
         'surah': _selectedSurah?.number ?? 1,
         'surahName': _selectedSurah?.nameArabic ?? '',
@@ -227,9 +277,9 @@ class _QuranTeacherRecitationScreenState
         'audioPath': _recordedFilePath,
         'engineUnavailable': result.engineUnavailable,
         'transcript': result.transcript,
-        'expectedText': result.expectedText ?? 'تلاوة ${_selectedSurah?.nameArabic} الآيات ($_targetStartAyah - $_targetEndAyah)',
+        'expectedText': result.expectedText ?? (expectedText.isEmpty ? null : expectedText),
         'timestamp': timestamp,
-        'revisionScheduled': true,
+        'revisionScheduled': false,
       };
       await box.put('lastResult', recordData);
       await box.add(recordData);
@@ -239,12 +289,12 @@ class _QuranTeacherRecitationScreenState
 
       // الانتقال إلى شاشة النتيجة
       Navigator.of(context).pushNamed('/recitation_result');
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() => _isAnalyzing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تعذر إتمام التحليل: $e'),
+            content: const Text('تعذر حفظ نتيجة الجلسة. حاول مجدداً.'),
             backgroundColor: ItqanColors.roseGold,
           ),
         );
@@ -347,7 +397,9 @@ class _QuranTeacherRecitationScreenState
                         _selectedSurah = s;
                         _targetStartAyah = 1;
                         _targetEndAyah = s.ayahCount.clamp(1, 5);
+                        _targetAyahs = [];
                       });
+                      _loadTargetAyahs();
                     }
                   },
                 ),
@@ -371,7 +423,9 @@ class _QuranTeacherRecitationScreenState
                         setState(() {
                           _targetStartAyah = val;
                           if (_targetEndAyah < _targetStartAyah) _targetEndAyah = _targetStartAyah;
+                          _targetAyahs = [];
                         });
+                        _loadTargetAyahs();
                       }
                     },
                   ),
@@ -395,6 +449,7 @@ class _QuranTeacherRecitationScreenState
                     onChanged: (val) {
                       if (val != null) {
                         setState(() => _targetEndAyah = val);
+                        _loadTargetAyahs();
                       }
                     },
                   ),
@@ -402,6 +457,25 @@ class _QuranTeacherRecitationScreenState
               ],
             ],
           ),
+          if (_targetAyahs.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 142),
+              child: SingleChildScrollView(
+                child: Text(
+                  _targetAyahs.map((ayah) => ayah.textUthmani).join(' '),
+                  textAlign: TextAlign.justify,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(
+                    fontFamily: ItqanTypography.arabicFont,
+                    fontSize: 18,
+                    height: 1.9,
+                    color: ItqanColors.ink,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

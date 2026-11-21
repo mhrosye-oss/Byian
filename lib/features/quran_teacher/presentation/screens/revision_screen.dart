@@ -41,11 +41,18 @@ class _RevisionScreenState extends ConsumerState<RevisionScreen> {
         }
       }
 
-      // ترتيب تنازلي حسب التاريخ الأحدث
+      // الأقرب استحقاقاً أولاً، مع إبقاء السجلات القديمة بلا موعد في النهاية.
+      DateTime? reviewDate(Map<String, dynamic> item) {
+        final raw = item['nextReviewDate'];
+        return raw is String ? DateTime.tryParse(raw) : null;
+      }
       list.sort((a, b) {
-        final tsA = DateTime.tryParse(a['timestamp'] ?? '') ?? DateTime(2000);
-        final tsB = DateTime.tryParse(b['timestamp'] ?? '') ?? DateTime(2000);
-        return tsB.compareTo(tsA);
+        final dueA = reviewDate(a);
+        final dueB = reviewDate(b);
+        if (dueA == null && dueB == null) return 0;
+        if (dueA == null) return 1;
+        if (dueB == null) return -1;
+        return dueA.compareTo(dueB);
       });
 
       if (mounted) {
