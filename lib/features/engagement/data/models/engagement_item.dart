@@ -12,10 +12,33 @@ class EngagementMedia {
 
   factory EngagementMedia.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const EngagementMedia();
+
+    // API returns media.image as an object {url, alt, mime}, but tolerate a plain string too.
+    String? imageUrl;
+    final rawImage = json['image'];
+    if (rawImage is Map) {
+      final u = rawImage['url'];
+      if (u is String && u.trim().isNotEmpty) imageUrl = u.trim();
+    } else if (rawImage is String && rawImage.trim().isNotEmpty) {
+      imageUrl = rawImage.trim();
+    }
+
+    // Gallery entries may also be objects with a url field.
+    final gallery = ((json['gallery'] as List<dynamic>?) ?? const [])
+        .map((e) {
+          if (e is Map) {
+            final u = e['url'];
+            return u is String ? u.trim() : '';
+          }
+          return e.toString().trim();
+        })
+        .where((s) => s.isNotEmpty)
+        .toList();
+
     return EngagementMedia(
-      image: json['image'] as String?,
+      image: imageUrl,
       video: json['video'] as String?,
-      gallery: (json['gallery'] as List<dynamic>?) ?? const [],
+      gallery: gallery,
     );
   }
 
@@ -71,12 +94,14 @@ class EngagementAction {
       return const EngagementAction(type: '');
     }
     final rawType = (json['type'] ?? '').toString().toLowerCase();
+    // API may send "url" or "open_url" — normalize both to "url".
+    final normalizedType = rawType == 'open_url' ? 'url' : rawType;
     final rawUrl = json['url'] as String?;
     final rawScreen = (json['screen'] ?? json['target']) as String?;
     final rawButtonText = (json['button_text'] ?? json['label']) as String?;
 
     return EngagementAction(
-      type: rawType,
+      type: normalizedType,
       url: rawUrl,
       screen: rawScreen ?? (rawType == 'screen' ? rawUrl : null),
       buttonText: rawButtonText,
