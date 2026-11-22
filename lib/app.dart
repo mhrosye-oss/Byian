@@ -58,9 +58,12 @@ class ItqanApp extends StatefulWidget {
 }
 
 class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
+  static const _startupTimeout = Duration(seconds: 10);
   final AppSettingsProvider _settings = AppSettingsProvider();
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   bool _isLoaded = false;
+  bool _startupFailed = false;
+  bool _loadingSettings = false;
   bool _showOnboarding = false;
   bool _isAuthenticated = false;
   Map<String, dynamic>? _pendingNotification;
@@ -94,14 +97,20 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && _isLoaded) {
       _refreshAuthState();
     }
   }
 
   Future<void> _refreshAuthState() async {
-    final authenticated = await AuthService.isAuthenticated();
-    if (!mounted) return;
+    var authenticated = false;
+    try {
+      authenticated =
+          await AuthService.isAuthenticated().timeout(_startupTimeout);
+    } catch (error, stackTrace) {
+      debugPrint('Could not refresh saved session: $error\n$stackTrace');
+    }
+    if (!mounted || !_isLoaded) return;
     final wasAuthenticated = _isAuthenticated;
     setState(() => _isAuthenticated = authenticated);
 
@@ -283,22 +292,46 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
   }
 
   Future<void> _loadSettings() async {
-    await _settings.load();
-    final preferences = await SharedPreferences.getInstance();
-    final authenticated = await AuthService.isAuthenticated();
-    if (mounted) {
+    if (_loadingSettings) return;
+    _loadingSettings = true;
+    if (_startupFailed && mounted) setState(() => _startupFailed = false);
+
+    try {
+      await _settings.load().timeout(_startupTimeout);
+      final preferences =
+          await SharedPreferences.getInstance().timeout(_startupTimeout);
+      final showOnboarding =
+          !(preferences.getBool('onboarding_completed') ?? false);
+      final authenticated =
+          await AuthService.isAuthenticated().timeout(_startupTimeout);
+      if (!mounted) return;
       setState(() {
         _isLoaded = true;
-        _showOnboarding =
-            !(preferences.getBool('onboarding_completed') ?? false);
+        _showOnboarding = showOnboarding;
         _isAuthenticated = authenticated;
       });
+      _openPendingNotification();
+    } catch (error, stackTrace) {
+      debugPrint('Could not load app settings or session: $error\n$stackTrace');
+      if (!mounted) return;
+      setState(() {
+        _isLoaded = false;
+        _isAuthenticated = false;
+        _startupFailed = true;
+      });
+    } finally {
+      _loadingSettings = false;
     }
-    _openPendingNotification();
   }
 
   ThemeData get _lightTheme => AppTheme.light;
   ThemeData get _darkTheme => AppTheme.dark;
+  static final ThemeData _startupTheme = ThemeData(
+    brightness: Brightness.light,
+    useMaterial3: true,
+    colorScheme: const ColorScheme.light(primary: Color(0xFF1B5E20)),
+    scaffoldBackgroundColor: const Color(0xFFF9F6F0),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -312,8 +345,8 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
             title: 'إتقان',
             debugShowCheckedModeBanner: false,
             themeMode: ThemeMode.light,
-            theme: _lightTheme,
-            darkTheme: _darkTheme,
+            theme: _isLoaded ? _lightTheme : _startupTheme,
+            darkTheme: _isLoaded ? _darkTheme : _startupTheme,
             locale: _settings.locale,
             supportedLocales: itqanSupportedLocales,
             localizationsDelegates: itqanLocalizationsDelegates,
@@ -331,13 +364,18 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
               '/prayer_notifications': (context) => const PrayerNotificationsScreen(),
               '/system_notifications': (context) => const SystemNotificationsScreen(),
             },
-            home: !_isLoaded
-                ? const _SplashScreen()
-                : _showOnboarding
-                    ? const OnboardingScreen()
-                    : _isAuthenticated
-                        ? const HomeScreen()
-                        : const LoginScreen(),
+            home: _startupFailed
+                ? _StartupErrorScreen(onRetry: _loadSettings)
+                : !_isLoaded
+                    ? const _SplashScreen()
+                    : KeyedSubtree(
+                        key: const ValueKey('app-ready-screen'),
+                        child: _showOnboarding
+                            ? const OnboardingScreen()
+                            : _isAuthenticated
+                                ? const HomeScreen()
+                                : const LoginScreen(),
+                      ),
           ),
         );
       },
@@ -356,6 +394,7 @@ class _SplashScreen extends StatelessWidget {
     final displayName = appName == 'app_title' ? 'إتقان' : appName;
 
     return Scaffold(
+      key: const ValueKey('app-startup-splash'),
       backgroundColor: const Color(0xFF1B5E20),
       body: Center(
         child: Column(
@@ -387,6 +426,50 @@ class _SplashScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StartupErrorScreen extends StatelessWidget {
+  const _StartupErrorScreen({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: const ValueKey('app-startup-error'),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline,
+                    size: 52, color: Color(0xFF1B5E20)),
+                const SizedBox(height: 16),
+                const Text(
+                  'تعذّرت قراءة إعدادات التطبيق أو التحقق من الجلسة.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'تحقق من بيانات الجهاز ثم أعد المحاولة.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('إعادة المحاولة'),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

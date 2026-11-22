@@ -1,67 +1,24 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/theme/colors.dart';
 import '../../data/models/engagement_item.dart';
 import '../../data/services/engagement_service.dart';
 
-/// Dynamic Modal Popup Dialog for Engagement / Welcome Popups.
-/// Automatically shown once based on SharedPreferences state.
+/// The presentation of an engagement popup, managed by EngagementPopupWidget.
 class DynamicPopupWidget extends StatelessWidget {
   final EngagementItem item;
   final void Function(String route)? onNavigateRoute;
+  final EngagementService service;
+  final BuildContext homeContext;
 
   const DynamicPopupWidget({
     super.key,
     required this.item,
     this.onNavigateRoute,
+    required this.service,
+    required this.homeContext,
   });
-
-  /// Checks if a popup should be displayed and opens the dialog if so.
-  /// Uses SharedPreferences to ensure it is only shown once.
-  static Future<void> showIfAvailable(
-    BuildContext context, {
-    String placementKey = 'welcome_popup',
-    void Function(String route)? onNavigateRoute,
-  }) async {
-    try {
-      final items =
-          await EngagementService.instance.fetchEngagementItems(placementKey);
-      if (items.isEmpty) return;
-
-      final targetItem = items.first;
-      final prefs = await SharedPreferences.getInstance();
-      final storageKey = 'shown_engagement_popup_${targetItem.uuid}';
-
-      // Check if this specific popup has already been displayed
-      final alreadyShown = prefs.getBool(storageKey) ?? false;
-      if (alreadyShown) return;
-
-      if (!context.mounted) return;
-
-      // Mark as shown in SharedPreferences
-      await prefs.setBool(storageKey, true);
-
-      // Track view analytics
-      EngagementService.instance.trackView(targetItem.uuid);
-
-      if (!context.mounted) return;
-
-      // Show Dialog
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: true,
-        barrierColor: Colors.black.withValues(alpha: 0.65),
-        builder: (ctx) => DynamicPopupWidget(
-          item: targetItem,
-          onNavigateRoute: onNavigateRoute,
-        ),
-      );
-    } catch (e) {
-      // Fail silently without disrupting user flow
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -173,14 +130,18 @@ class DynamicPopupWidget extends StatelessWidget {
                                   ),
                                   onPressed: () {
                                     Navigator.of(context).pop();
-                                    EngagementService.instance.executeAction(
-                                      context,
-                                      item.action,
-                                      onNavigateRoute: onNavigateRoute,
-                                    );
+                                    if (homeContext.mounted) {
+                                      service.executeAction(
+                                        homeContext,
+                                        item.action,
+                                        onNavigateRoute: onNavigateRoute,
+                                      );
+                                    }
                                   },
                                   child: Text(
-                                    item.action!.buttonText?.trim().isNotEmpty ==
+                                    item.action!.buttonText
+                                                ?.trim()
+                                                .isNotEmpty ==
                                             true
                                         ? item.action!.buttonText!
                                         : (item.action!.type == 'url'

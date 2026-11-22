@@ -19,15 +19,24 @@ dependencies:
   # Existing dependencies
   intl: 0.19.0
   just_audio: ^0.9.36
+  workmanager: ^0.10.10
   record: 5.0.4
   dio: ^5.4.0
   hive_flutter: ^1.1.0
   flutter_riverpod: ^2.4.9
+  uuid: ^4.5.1
   google_fonts: ^6.1.0
   cached_network_image: ^3.3.1
   shimmer: ^3.0.0
   path_provider: ^2.1.2
+  share_plus: ^10.1.4
+  flutter_secure_storage: ^9.2.4
   cupertino_icons: ^1.0.8
+
+  google_sign_in: ^7.2.0
+  mobile_scanner: ^5.2.0
+  qr_flutter: ^4.1.0
+  youtube_player_iframe: ^5.2.2
 
   # Quran and prayer services
   geolocator: ^14.0.0
@@ -42,6 +51,9 @@ dependencies:
 
   # Quran and tafsir content
   quran_with_tafsir: ^1.0.0
+  firebase_core: ^5.2.0
+  firebase_auth: ^7.1.0
+  firebase_messaging: ^17.1.0
 
 dependency_overrides:
   intl: 0.19.0

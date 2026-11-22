@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -13,11 +14,17 @@ import '../../../core/theme/colors.dart';
 /// من OpenStreetMap (Overpass API) — بدون أي بيانات تجريبية.
 /// تعرض النتائج في قائمة أو خريطة تفاعلية (تبديل من شريط التطبيق).
 class NearbyMosquesScreen extends StatefulWidget {
-  const NearbyMosquesScreen({super.key});
+  const NearbyMosquesScreen({super.key, this.httpClient});
+
+  /// Optional client for testing; the caller owns and closes it.
+  @visibleForTesting
+  final http.Client? httpClient;
 
   @override
   State<NearbyMosquesScreen> createState() => _NearbyMosquesScreenState();
 }
+
+enum _LocationProblem { serviceDisabled, denied, deniedForever, timeout, other }
 
 class _Mosque {
   final String name;
@@ -51,10 +58,18 @@ class _Mosque {
 }
 
 class _NearbyMosquesScreenState extends State<NearbyMosquesScreen> {
+  static const _locationTimeout = Duration(seconds: 15);
+
+  // A platform permission dialog cannot be cancelled by Future.timeout. Reuse
+  // its pending result on retry, including after leaving and reopening the page.
+  static Future<LocationPermission>? _pendingPermissionRequest;
+
   bool _isLoading = true;
   bool _isFetchingMosques = false;
+  bool _searchInProgress = false;
   bool _showMap = false;
   String? _errorMessage;
+  _LocationProblem? _locationProblem;
   Position? _currentPosition;
   List<_Mosque> _mosques = [];
   final MapController _mapController = MapController();
@@ -78,49 +93,97 @@ class _NearbyMosquesScreenState extends State<NearbyMosquesScreen> {
     super.dispose();
   }
 
+  static Future<LocationPermission> _requestPermissionOnce() {
+    return _pendingPermissionRequest ??= _performPermissionRequest();
+  }
+
+  static Future<LocationPermission> _performPermissionRequest() async {
+    try {
+      return await Geolocator.requestPermission();
+    } finally {
+      _pendingPermissionRequest = null;
+    }
+  }
+
+  void _showLocationProblem(_LocationProblem problem) {
+    if (!mounted) return;
+    setState(() {
+      _locationProblem = problem;
+      _errorMessage = switch (problem) {
+        _LocationProblem.serviceDisabled =>
+          'خدمة تحديد الموقع معطّلة. شغّلها من إعدادات الموقع، ثم أعد المحاولة.',
+        _LocationProblem.denied =>
+          'تم رفض إذن الموقع. أعد المحاولة واسمح بالوصول عند ظهور طلب الإذن.',
+        _LocationProblem.deniedForever =>
+          'رُفض إذن الموقع بشكل دائم. افتح إعدادات التطبيق واسمح بالموقع، ثم أعد المحاولة.',
+        _LocationProblem.timeout =>
+          'انتهت مهلة تحديد الموقع. إذا ظهرت نافذة طلب الإذن فأجب عنها، ثم أعد المحاولة.',
+        _LocationProblem.other =>
+          'تعذر تحديد موقعك الحالي. تحقق من إعدادات الموقع ثم أعد المحاولة.',
+      };
+      _isLoading = false;
+      _isFetchingMosques = false;
+    });
+  }
+
   Future<void> _determinePosition() async {
+    if (_searchInProgress) return;
+    _searchInProgress = true;
     setState(() {
       _isLoading = true;
+      _isFetchingMosques = false;
       _errorMessage = null;
+      _locationProblem = null;
+      _currentPosition = null;
       _mosques = [];
     });
 
+    // One deadline for the whole location flow. Racing each step separately
+    // stops a late response from continuing an already timed-out attempt.
+    final stopwatch = Stopwatch()..start();
+    final deadline = Completer<Never>();
+    final timer = Timer(_locationTimeout, () {
+      deadline.completeError(TimeoutException('Location request timed out'));
+    });
+    Future<T> beforeDeadline<T>(Future<T> step) =>
+        Future.any<T>([step, deadline.future]);
+
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final serviceEnabled = await beforeDeadline(Geolocator.isLocationServiceEnabled());
+      if (!mounted) return;
       if (!serviceEnabled) {
-        setState(() {
-          _errorMessage = 'يرجى تشغيل خدمة تحديد الموقع (GPS) للبحث عن أقرب المساجد.';
-          _isLoading = false;
-        });
+        _showLocationProblem(_LocationProblem.serviceDisabled);
         return;
       }
 
-      LocationPermission permission = await Geolocator.checkPermission();
+      var permission = await beforeDeadline(Geolocator.checkPermission());
+      if (!mounted) return;
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() {
-            _errorMessage = 'تم رفض إذن الوصول للموقع. يُرجى منحه لعرض المساجد القريبة منك.';
-            _isLoading = false;
-          });
-          return;
-        }
+        permission = await beforeDeadline(_requestPermissionOnce());
+        if (!mounted) return;
       }
-
+      if (permission == LocationPermission.denied) {
+        _showLocationProblem(_LocationProblem.denied);
+        return;
+      }
       if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _errorMessage = 'إذن الموقع مرفوض بشكل دائم، يُرجى تمكينه من إعدادات الجهاز.';
-          _isLoading = false;
-        });
+        _showLocationProblem(_LocationProblem.deniedForever);
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
+      // Also bound the native request to the remaining budget, so plugins
+      // capable of cancellation can stop it at the overall deadline.
+      final remaining = _locationTimeout - stopwatch.elapsed;
+      if (remaining <= Duration.zero) {
+        throw TimeoutException('Location request timed out');
+      }
+      final position = await beforeDeadline(Geolocator.getCurrentPosition(
+        locationSettings: LocationSettings(
           accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 15),
+          timeLimit: remaining,
         ),
-      );
+      ));
+      timer.cancel();
 
       if (!mounted) return;
       setState(() {
@@ -129,35 +192,70 @@ class _NearbyMosquesScreenState extends State<NearbyMosquesScreen> {
       });
 
       await _fetchNearbyMosques(position.latitude, position.longitude);
-    } catch (e) {
+    } on TimeoutException {
+      _showLocationProblem(_LocationProblem.timeout);
+    } on LocationServiceDisabledException {
+      // The service can be disabled between the check and the location fix.
+      _showLocationProblem(_LocationProblem.serviceDisabled);
+    } on PermissionDeniedException {
+      // Permission can also be revoked after the initial check.
+      _showLocationProblem(_LocationProblem.denied);
+    } on PermissionRequestInProgressException {
       if (mounted) {
         setState(() {
-          _errorMessage = 'تعذر تحديد موقعك الحالي، تأكد من تفعيل GPS ثم أعد المحاولة.';
+          _errorMessage = 'يوجد طلب إذن موقع قيد الانتظار. أجب عن الطلب ثم أعد المحاولة.';
           _isLoading = false;
           _isFetchingMosques = false;
         });
       }
+    } catch (_) {
+      _showLocationProblem(_LocationProblem.other);
+    } finally {
+      timer.cancel();
+      _searchInProgress = false;
     }
+  }
+
+  Future<void> _openLocationSettings() async {
+    final appSettings = _locationProblem == _LocationProblem.deniedForever;
+    try {
+      final opened = await (appSettings
+              ? Geolocator.openAppSettings()
+              : Geolocator.openLocationSettings())
+          .timeout(const Duration(seconds: 5));
+      if (opened || !mounted) return;
+    } catch (_) {
+      if (!mounted) return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(appSettings
+          ? 'تعذر فتح الإعدادات. افتح إعدادات التطبيق يدويًا واسمح بالموقع.'
+          : 'تعذر فتح الإعدادات. شغّل الموقع يدويًا من إعدادات الجهاز.'),
+    ));
   }
 
   /// استعلام حقيقي عن المساجد من OpenStreetMap Overpass API
   Future<void> _fetchNearbyMosques(double lat, double lon, {int radiusMeters = 3000}) async {
     final query = '''
-[out:json][timeout:25];
-nwr["amenity"="place_of_worship"]["religion"="muslim"](around:$radiusMeters,$lat,$lon);
+[out:json][timeout:20];
+(
+  nwr["amenity"="place_of_worship"]["religion"~"^(muslim|islam)",i](around:$radiusMeters,$lat,$lon);
+  nwr["amenity"="place_of_worship"]["name"~"مسجد|جامع|mosque|masjid",i](around:$radiusMeters,$lat,$lon);
+);
 out center 40;
 ''';
 
     Object? lastError;
     for (final endpoint in _overpassEndpoints) {
       try {
-        final response = await http
-            .post(
-              Uri.parse(endpoint),
-              body: {'data': query},
-              headers: {'User-Agent': 'ByianApp/1.0 (nearby mosques)'},
-            )
-            .timeout(const Duration(seconds: 30));
+        final client = widget.httpClient;
+        final uri = Uri.parse(endpoint);
+        final body = {'data': query};
+        final headers = {'User-Agent': 'ByianApp/1.0 (nearby mosques)'};
+        final response = await (client == null
+                ? http.post(uri, body: body, headers: headers)
+                : client.post(uri, body: body, headers: headers))
+            .timeout(const Duration(seconds: 22));
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -414,15 +512,17 @@ out center 40;
           ],
         ),
         body: _isLoading
-            ? const Center(
+            ? Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: Color(0xFF064E3B)),
-                    SizedBox(height: 16),
+                    const CircularProgressIndicator(color: Color(0xFF064E3B)),
+                    const SizedBox(height: 16),
                     Text(
-                      'جارٍ تحديد موقعك والبحث عن أقرب المساجد...',
-                      style: TextStyle(fontFamily: 'Tajawal', color: ItqanColors.ink),
+                      _isFetchingMosques
+                          ? 'جارٍ البحث عن المساجد القريبة...'
+                          : 'جارٍ تحديد موقعك...',
+                      style: const TextStyle(fontFamily: 'Tajawal', color: ItqanColors.ink),
                     ),
                   ],
                 ),
@@ -430,7 +530,7 @@ out center 40;
             : RefreshIndicator(
                 color: const Color(0xFF064E3B),
                 onRefresh: _determinePosition,
-                child: _showMap && _currentPosition != null
+                child: _showMap && _currentPosition != null && _errorMessage == null
                     ? _buildMapView()
                     : _buildListView(),
               ),
@@ -574,6 +674,7 @@ out center 40;
   Widget _buildListView() {
     return ListView(
       padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
         if (_errorMessage != null) ...[
           Container(
@@ -607,6 +708,20 @@ out center 40;
               ),
             ),
           ),
+          if (_locationProblem == _LocationProblem.deniedForever ||
+              _locationProblem == _LocationProblem.serviceDisabled)
+            Center(
+              child: TextButton.icon(
+                onPressed: _openLocationSettings,
+                icon: const Icon(Icons.settings_outlined, size: 18),
+                label: Text(
+                  _locationProblem == _LocationProblem.deniedForever
+                      ? 'فتح إعدادات التطبيق'
+                      : 'فتح إعدادات الموقع',
+                  style: const TextStyle(fontFamily: 'Tajawal', fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
         ],
 
         // بطاقة رأسية للموقع الحالي

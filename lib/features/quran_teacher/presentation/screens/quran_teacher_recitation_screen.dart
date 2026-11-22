@@ -204,6 +204,21 @@ class _QuranTeacherRecitationScreenState
       // استدعاء محرك ASR الحقيقي
       final result = await _asrEngine.recognize(_recordedFilePath!);
 
+      if (result.engineUnavailable) {
+        if (mounted) {
+          setState(() => _isAnalyzing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'محرك التسميع غير مفعّل حاليًا. تم الاحتفاظ بالتسجيل دون ادعاء نتيجة تحليل.',
+              ),
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+
       // حفظ جلسة التسميع في Hive
       final box = await Hive.openBox('quran_teacher_recitation');
       final timestamp = DateTime.now().toIso8601String();
@@ -281,6 +296,8 @@ class _QuranTeacherRecitationScreenState
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             child: Column(
               children: [
+                _buildAsrAvailabilityNotice(),
+                const SizedBox(height: 12),
                 // اختيار السورة والآيات المستهدفة
                 _buildTargetSelector(),
 
@@ -300,6 +317,32 @@ class _QuranTeacherRecitationScreenState
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAsrAvailabilityNotice() {
+    if (_asrEngine is! NoOpAsrEngine) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.45)),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded, color: Colors.amber),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'التسجيل والاستماع متاحان. التحليل الصوتي السحابي والمحلي غير مفعّل بعد، لذلك لن تُحفظ نتيجة وهمية.',
+              style: TextStyle(fontSize: 12, height: 1.4),
+            ),
+          ),
+        ],
       ),
     );
   }

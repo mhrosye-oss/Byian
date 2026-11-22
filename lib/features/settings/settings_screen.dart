@@ -8,7 +8,6 @@ import '../../core/theme/typography.dart';
 import '../../core/settings/app_settings_provider.dart';
 import 'settings_service.dart';
 import '../mushaf/bookmarks_screen.dart';
-import '../prayer/services/prayer_notification_service.dart';
 import '../prayer/services/prayer_times_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -280,8 +279,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (enabled) {
                     await PrayerTimesService.scheduleUpcomingNotifications();
                   } else {
-                    await PrayerNotificationService.instance
-                        .cancelPrayerNotifications();
+                    await PrayerTimesService.disablePrayerNotifications();
                   }
                 } catch (error) {
                   if (!mounted) return;

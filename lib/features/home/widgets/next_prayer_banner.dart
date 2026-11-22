@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+import '../../prayer/services/adhan_playback_controller.dart';
 import '../../prayer/services/prayer_times_service.dart';
 
 class NextPrayerBanner extends StatefulWidget {
@@ -8,10 +9,12 @@ class NextPrayerBanner extends StatefulWidget {
     super.key,
     required this.onOpenPrayerTimes,
     this.onOpenDrawer,
+    this.playbackController,
   });
 
   final VoidCallback onOpenPrayerTimes;
   final VoidCallback? onOpenDrawer;
+  final AdhanPlaybackController? playbackController;
 
   @override
   State<NextPrayerBanner> createState() => _NextPrayerBannerState();
@@ -21,18 +24,47 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
   PrayerTime? _prayer;
   Timer? _timer;
   Duration _remaining = const Duration(hours: 1, minutes: 24, seconds: 18);
-  bool _isPlayingAdhan = false;
+  late AdhanPlaybackController _playback;
+  String? _shownPlaybackError;
 
   @override
   void initState() {
     super.initState();
+    _playback = widget.playbackController ?? AdhanPlaybackController();
+    _playback.addListener(_onPlaybackChanged);
     _fetchNextPrayer();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+  }
+
+  void _onPlaybackChanged() {
+    if (!mounted) return;
+    setState(() {});
+    final error = _playback.error;
+    if (error == null) {
+      _shownPlaybackError = null;
+    } else if (_shownPlaybackError != error) {
+      _shownPlaybackError = error;
+      ScaffoldMessenger.maybeOf(context)
+          ?.showSnackBar(SnackBar(content: Text(error)));
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant NextPrayerBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.playbackController != widget.playbackController) {
+      _playback.removeListener(_onPlaybackChanged);
+      if (oldWidget.playbackController == null) _playback.dispose();
+      _playback = widget.playbackController ?? AdhanPlaybackController();
+      _playback.addListener(_onPlaybackChanged);
+    }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _playback.removeListener(_onPlaybackChanged);
+    if (widget.playbackController == null) _playback.dispose();
     super.dispose();
   }
 
@@ -185,12 +217,15 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
                       children: [
                         // Live badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.20),
+                            color:
+                                const Color(0xFF10B981).withValues(alpha: 0.20),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.40),
+                              color: const Color(0xFF10B981)
+                                  .withValues(alpha: 0.40),
                             ),
                           ),
                           child: Row(
@@ -332,18 +367,9 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
                         borderRadius: BorderRadius.circular(16),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            setState(() => _isPlayingAdhan = !_isPlayingAdhan);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(_isPlayingAdhan
-                                    ? 'تم تشغيل تجربة الأذان بصوت ندي'
-                                    : 'تم إيقاف الأذان'),
-                                backgroundColor: const Color(0xFF064E3B),
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          },
+                          onTap: _playback.isLoading
+                              ? null
+                              : () => _playback.toggle(),
                           child: Container(
                             height: 48,
                             decoration: BoxDecoration(
@@ -356,7 +382,8 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+                                  color: const Color(0xFFF59E0B)
+                                      .withValues(alpha: 0.35),
                                   blurRadius: 12,
                                   offset: const Offset(0, 4),
                                 ),
@@ -366,7 +393,7 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  _isPlayingAdhan
+                                  _playback.isPlaying
                                       ? Icons.stop_rounded
                                       : Icons.volume_up_rounded,
                                   color: Colors.white,
@@ -374,7 +401,11 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _isPlayingAdhan ? 'إيقاف الأذان' : 'استمع للأذان',
+                                  _playback.isLoading
+                                      ? 'جارٍ التحميل…'
+                                      : _playback.isPlaying
+                                          ? 'إيقاف الأذان'
+                                          : 'استمع للأذان',
                                   style: const TextStyle(
                                     fontFamily: 'Tajawal',
                                     color: Colors.white,

@@ -37,17 +37,29 @@ class PrayerNotificationService {
   Future<bool> requestPermissions() async {
     await initialize();
 
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android != null) {
-      final notificationsGranted =
-          await android.requestNotificationsPermission();
-      final exactAlarmsGranted = await android.requestExactAlarmsPermission();
-      return notificationsGranted != false && exactAlarmsGranted != false;
+      final notificationsGranted = await android
+          .requestNotificationsPermission();
+      if (notificationsGranted == false) return false;
+      // Exact alarms are optional for ordinary prayer reminders. Android may
+      // reject this special-access request while inexact notifications can
+      // still be delivered normally.
+      try {
+        await android.requestExactAlarmsPermission();
+      } catch (_) {
+        // Best effort only; ordinary reminders do not depend on this access.
+      }
+      return true;
     }
 
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     if (ios != null) {
       final granted = await ios.requestPermissions(
         alert: true,
@@ -58,6 +70,24 @@ class PrayerNotificationService {
     }
 
     return false;
+  }
+
+  /// Checks permissions without showing any prompt, including in the worker.
+  Future<bool> canSchedulePrayerAlerts() async {
+    await initialize();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (android == null) return true;
+    // Do not block ordinary prayer reminders when Exact Alarm special access
+    // is disabled. The scheduler selects an inexact mode as a fallback.
+    return await android.areNotificationsEnabled() == true;
+  }
+
+  Future<void> cancelPrayerNotification(int id) async {
+    await initialize();
+    await _plugin.cancel(id);
   }
 
   Future<void> cancelPrayerNotifications() async {
@@ -90,7 +120,7 @@ class PrayerNotificationService {
   }) async {
     await initialize();
     final androidDetails = AndroidNotificationDetails(
-      playAzan ? 'prayer_azan_v1' : 'prayer_reminder_v1',
+      playAzan ? 'prayer_azan_excerpt_v2' : 'prayer_reminder_v1',
       playAzan ? 'أذان الصلاة' : 'تذكير الصلاة',
       channelDescription: playAzan
           ? 'تنبيه عند دخول وقت الصلاة بصوت أذان قصير'
@@ -98,14 +128,26 @@ class PrayerNotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: playAzan,
-      audioAttributesUsage: AudioAttributesUsage.alarm,
+      sound: playAzan
+          ? const RawResourceAndroidNotificationSound('adhan')
+          : null,
+      audioAttributesUsage: AudioAttributesUsage.notification,
     );
     final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: false,
       presentSound: playAzan,
-      sound: playAzan ? 'adhan' : null,
+      sound: playAzan ? 'adhan.caf' : null,
     );
+
+    final exactAlarmsAllowed =
+        playAzan &&
+        await _plugin
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >()
+                ?.canScheduleExactNotifications() ==
+            true;
 
     await _plugin.zonedSchedule(
       id,
@@ -113,22 +155,60 @@ class PrayerNotificationService {
       playAzan ? 'حيّ على الصلاة' : 'بقي 15 دقيقة على الصلاة',
       tz.TZDateTime.from(at, tz.local),
       NotificationDetails(android: androidDetails, iOS: iosDetails),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: exactAlarmsAllowed
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
     );
   }
 
+  /// Shows the same sound/channel used by a real prayer alert immediately.
+  /// This is intentionally separate from scheduling so the user can verify
+  /// permissions, channel sound and device volume from the settings screen.
+  Future<void> showTestAdhanNotification() async {
+    await initialize();
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'prayer_azan_excerpt_v2',
+        'أذان الصلاة',
+        channelDescription: 'تنبيه عند دخول وقت الصلاة بصوت أذان قصير',
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('adhan'),
+        audioAttributesUsage: AudioAttributesUsage.notification,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: false,
+        presentSound: true,
+        sound: 'adhan.caf',
+      ),
+    );
+    await _plugin.show(
+      2147483001,
+      'اختبار أذان الصلاة',
+      'هذا إشعار اختبار للتأكد من عمل الإذن والصوت.',
+      details,
+      payload: 'test_prayer_adhan',
+    );
+  }
+
   Future<bool> requestReminderPermissions() async {
     await initialize();
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android != null) {
       return await android.requestNotificationsPermission() != false;
     }
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     if (ios != null) {
       return await ios.requestPermissions(
             alert: true,

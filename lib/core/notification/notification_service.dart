@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -15,8 +19,26 @@ class NotificationService {
 
   bool _initialized = false;
 
+  /// Handles FCM messages while the application is in the background.
+  @pragma('vm:entry-point')
+  static Future<void> handleBackgroundMessage(RemoteMessage message) async {
+    await Firebase.initializeApp();
+  }
+
   Future<void> init() async {
     if (_initialized) return;
+
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
+    final messaging = FirebaseMessaging.instance;
+    await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+    await messaging.register();
+    FirebaseMessaging.onMessage.listen(_showForegroundMessage);
 
     // تهيئة المناطق الزمنية
     tz_data.initializeTimeZones();
@@ -35,6 +57,17 @@ class NotificationService {
     await _plugin.initialize(initializationSettings);
     await _createChannels();
     _initialized = true;
+  }
+
+  Future<void> _showForegroundMessage(RemoteMessage message) async {
+    final notification = message.notification;
+    if (notification == null) return;
+    await showSystemNotification(
+      id: message.messageId?.hashCode ?? DateTime.now().millisecondsSinceEpoch,
+      title: notification.title ?? 'إشعار جديد',
+      body: notification.body ?? '',
+      payload: jsonEncode(message.data),
+    );
   }
 
   Future<void> _createChannels() async {

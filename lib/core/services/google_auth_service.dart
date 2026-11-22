@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 /// نتيجة محاولة تسجيل الدخول بواسطة Google
@@ -50,7 +51,18 @@ class GoogleAuthService {
           await GoogleSignIn.instance.authenticate();
 
       final googleAuth = account.authentication;
-      final firebaseIdToken = googleAuth.idToken;
+      final idToken = googleAuth.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        return const GoogleAuthResult(
+          success: false,
+          message: 'تعذر الحصول على رمز Google الآمن.',
+        );
+      }
+
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
+      final userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      final firebaseIdToken = await userCredential.user?.getIdToken();
 
       return GoogleAuthResult(
         success: true,
