@@ -14,6 +14,9 @@ import 'auth_service.dart';
 const String _notificationChannelId = 'itqan_messages_v1';
 const String _notificationChannelName = 'إشعارات إتقان';
 const String _notificationChannelDescription = 'إشعارات وتذكيرات تطبيق إتقان';
+const String _topicNotificationChannelId = 'itqan_topic_v1';
+const String _topicNotificationChannelName = 'إعلانات إتقان';
+const String _topicNotificationChannelDescription = 'إشعارات topic العامة';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -29,6 +32,9 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class FcmService {
+  /// A public topic for announcements, subscribed independently of login.
+  static const String announcementsTopic = 'itqan_announcements';
+
   static const String _baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'https://blueviolet-viper-439935.hostingersite.com',
@@ -90,6 +96,13 @@ class FcmService {
       onError: (Object error) =>
           debugPrint('FCM token refresh listener failed: $error'),
     );
+    // This topic does not depend on the authenticated installation API.
+    // Guests can subscribe as soon as Firebase Messaging is initialized.
+    try {
+      await FirebaseMessaging.instance.subscribeToTopic(announcementsTopic);
+    } catch (error) {
+      debugPrint('FCM announcements topic subscription failed: $error');
+    }
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
       _handleRemoteNotificationTap(initialMessage);
@@ -158,6 +171,14 @@ class FcmService {
         importance: Importance.high,
       ),
     );
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _topicNotificationChannelId,
+        _topicNotificationChannelName,
+        description: _topicNotificationChannelDescription,
+        importance: Importance.high,
+      ),
+    );
     _localNotificationsInitialized = true;
     final launchDetails =
         await _localNotifications.getNotificationAppLaunchDetails();
@@ -203,6 +224,30 @@ class FcmService {
   static bool _canShowNotifications(AuthorizationStatus status) =>
       status == AuthorizationStatus.authorized ||
       status == AuthorizationStatus.provisional;
+
+  static Future<void> subscribeToTopic(String topic) async {
+    final topicName = _validatedTopicName(topic);
+    await initialize();
+    await FirebaseMessaging.instance.subscribeToTopic(topicName);
+  }
+
+  static Future<void> unsubscribeFromTopic(String topic) async {
+    final topicName = _validatedTopicName(topic);
+    await initialize();
+    await FirebaseMessaging.instance.unsubscribeFromTopic(topicName);
+  }
+
+  static String _validatedTopicName(String topic) {
+    final topicName = topic.trim();
+    if (topicName.isEmpty || topicName.startsWith('/topics/')) {
+      throw ArgumentError.value(
+        topic,
+        'topic',
+        'Pass a non-empty topic name without the /topics/ prefix.',
+      );
+    }
+    return topicName;
+  }
 
   static Future<void> _registerRefreshedToken(String installationId) async {
     final sessionToken = await AuthService.getToken();
@@ -253,16 +298,28 @@ class FcmService {
         message.data['body']?.toString() ??
         message.data['message']?.toString();
     if (body == null || body.trim().isEmpty) return;
+    final isTopicNotification =
+        message.data['notification_type']?.toString().toLowerCase() ==
+            'topic' ||
+        message.data['topic']?.toString() == announcementsTopic ||
+        message.data['notification_channel']?.toString() ==
+            _topicNotificationChannelId;
 
     await _localNotifications.show(
       message.hashCode,
       title,
       body,
-      const NotificationDetails(
+      NotificationDetails(
         android: AndroidNotificationDetails(
-          _notificationChannelId,
-          _notificationChannelName,
-          channelDescription: _notificationChannelDescription,
+          isTopicNotification
+              ? _topicNotificationChannelId
+              : _notificationChannelId,
+          isTopicNotification
+              ? _topicNotificationChannelName
+              : _notificationChannelName,
+          channelDescription: isTopicNotification
+              ? _topicNotificationChannelDescription
+              : _notificationChannelDescription,
           importance: Importance.high,
           priority: Priority.high,
         ),
