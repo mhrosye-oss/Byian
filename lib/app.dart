@@ -5,6 +5,7 @@ import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/services/auth_service.dart';
 import 'core/settings/app_settings_provider.dart';
+import 'core/startup/app_startup.dart';
 import 'features/circles/presentation/circle_khatmah_screen.dart';
 import 'features/circles/presentation/circle_community_features_screen.dart';
 import 'features/circles/presentation/circle_lessons_screen.dart';
@@ -58,9 +59,11 @@ class ItqanApp extends StatefulWidget {
 }
 
 class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
+  static final AppStartup _startup = AppStartup();
   final AppSettingsProvider _settings = AppSettingsProvider();
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   bool _isLoaded = false;
+  bool _startupFailed = false;
   bool _showOnboarding = false;
   bool _isAuthenticated = false;
   Map<String, dynamic>? _pendingNotification;
@@ -283,14 +286,46 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
   }
 
   Future<void> _loadSettings() async {
-    await _settings.load();
-    final preferences = await SharedPreferences.getInstance();
-    final authenticated = await AuthService.isAuthenticated();
+    if (_startupFailed && mounted) {
+      setState(() => _startupFailed = false);
+    }
+
+    try {
+      await _startup.initialize();
+    } catch (error, stackTrace) {
+      debugPrint('App storage startup failed: $error\n$stackTrace');
+      if (mounted) setState(() => _startupFailed = true);
+      return;
+    }
+
+    try {
+      await _settings.load().timeout(const Duration(seconds: 10));
+    } catch (error, stackTrace) {
+      debugPrint('App settings could not be loaded: $error\n$stackTrace');
+    }
+
+    var showOnboarding = true;
+    try {
+      final preferences = await SharedPreferences.getInstance()
+          .timeout(const Duration(seconds: 10));
+      showOnboarding =
+          !(preferences.getBool('onboarding_completed') ?? false);
+    } catch (error, stackTrace) {
+      debugPrint('Onboarding preference could not be loaded: $error\n$stackTrace');
+    }
+
+    var authenticated = false;
+    try {
+      authenticated = await AuthService.isAuthenticated()
+          .timeout(const Duration(seconds: 10));
+    } catch (error, stackTrace) {
+      debugPrint('Saved session could not be loaded; showing sign-in: $error\n$stackTrace');
+    }
+
     if (mounted) {
       setState(() {
         _isLoaded = true;
-        _showOnboarding =
-            !(preferences.getBool('onboarding_completed') ?? false);
+        _showOnboarding = showOnboarding;
         _isAuthenticated = authenticated;
       });
     }
@@ -299,6 +334,15 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
 
   ThemeData get _lightTheme => AppTheme.light;
   ThemeData get _darkTheme => AppTheme.dark;
+  ThemeData get _startupTheme => ThemeData(
+        brightness: Brightness.light,
+        useMaterial3: true,
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF0A5C36),
+          surface: Color(0xFFF9F6F0),
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF9F6F0),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -312,8 +356,8 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
             title: 'إتقان',
             debugShowCheckedModeBanner: false,
             themeMode: ThemeMode.light,
-            theme: _lightTheme,
-            darkTheme: _darkTheme,
+            theme: _isLoaded ? _lightTheme : _startupTheme,
+            darkTheme: _isLoaded ? _darkTheme : _startupTheme,
             locale: _settings.locale,
             supportedLocales: itqanSupportedLocales,
             localizationsDelegates: itqanLocalizationsDelegates,
@@ -331,13 +375,18 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
               '/prayer_notifications': (context) => const PrayerNotificationsScreen(),
               '/system_notifications': (context) => const SystemNotificationsScreen(),
             },
-            home: !_isLoaded
-                ? const _SplashScreen()
-                : _showOnboarding
-                    ? const OnboardingScreen()
-                    : _isAuthenticated
-                        ? const HomeScreen()
-                        : const LoginScreen(),
+            home: _startupFailed
+                ? _StartupErrorScreen(onRetry: _loadSettings)
+                : !_isLoaded
+                    ? const _SplashScreen()
+                    : KeyedSubtree(
+                        key: const ValueKey('app-ready-screen'),
+                        child: _showOnboarding
+                            ? const OnboardingScreen()
+                            : _isAuthenticated
+                                ? const HomeScreen()
+                                : const LoginScreen(),
+                      ),
           ),
         );
       },
@@ -356,6 +405,7 @@ class _SplashScreen extends StatelessWidget {
     final displayName = appName == 'app_title' ? 'إتقان' : appName;
 
     return Scaffold(
+      key: const ValueKey('app-startup-splash'),
       backgroundColor: const Color(0xFF1B5E20),
       body: Center(
         child: Column(
@@ -387,6 +437,50 @@ class _SplashScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StartupErrorScreen extends StatelessWidget {
+  const _StartupErrorScreen({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: const ValueKey('app-startup-error'),
+      backgroundColor: const Color(0xFFF9F6F0),
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.storage_rounded, size: 52, color: Color(0xFF0A5C36)),
+                const SizedBox(height: 16),
+                const Text(
+                  'تعذّر تجهيز بيانات التطبيق على هذا الجهاز.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'تحقق من مساحة التخزين ثم حاول مرة أخرى.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 22),
+                FilledButton.icon(
+                  onPressed: onRetry,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('إعادة المحاولة'),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
