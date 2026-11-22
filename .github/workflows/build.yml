@@ -37,7 +37,7 @@ jobs:
 
       - name: Get dependencies
         id: dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Upload resolved dependency lockfile
         uses: actions/upload-artifact@v4
@@ -85,23 +85,7 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
-          script: |
-            set -eu
-            mkdir -p build/startup-diagnostics
-            collect_diagnostics() {
-              adb logcat -d -v time > build/startup-diagnostics/logcat.txt || true
-              adb exec-out screencap -p > build/startup-diagnostics/screen.png || true
-              adb shell dumpsys activity activities > build/startup-diagnostics/activities.txt || true
-            }
-            trap collect_diagnostics EXIT
-            flutter test integration_test/app_startup_test.dart -d emulator-5554
-            adb uninstall com.itqan.itqan || true
-            adb install build/app/outputs/flutter-apk/app-x86_64-release.apk
-            adb logcat -c
-            adb shell am start -n com.itqan.itqan/.MainActivity
-            sleep 30
-            adb shell pidof com.itqan.itqan
-            adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | grep -F 'com.itqan.itqan'
+          script: bash .github/scripts/android_startup_smoke.sh
 
       - name: Upload Android startup diagnostics
         if: ${{ always() && !cancelled() && steps.apk.outcome == 'success' }}
