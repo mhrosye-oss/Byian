@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/fcm_service.dart';
 import '../../../core/services/google_auth_service.dart';
 import '../../itqan_journey/data/journey_auth_api.dart';
 import 'register_screen.dart';
@@ -60,6 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _busy = true);
     try {
       await _api.login(_email.text.trim(), _password.text);
+      await _registerPushNotifications();
       if (_remember) {
         await AuthService.saveCredentials(_email.text.trim(), _password.text);
       } else {
@@ -95,6 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       await _api.firebaseLogin(idToken: result.firebaseIdToken!);
+      await _registerPushNotifications();
       if (!mounted) return;
       _message('تم تسجيل الدخول بنجاح');
 
@@ -112,6 +115,17 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) _message('حدث خطأ أثناء الاتصال: $e');
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _registerPushNotifications() async {
+    try {
+      final registered = await FcmService.registerCurrentDevice();
+      if (!registered && mounted) {
+        _message('لم تُفعّل إشعارات إتقان. تحقق من إذن الإشعارات في إعدادات الجهاز.');
+      }
+    } catch (error) {
+      debugPrint('FCM registration after login failed: $error');
     }
   }
 

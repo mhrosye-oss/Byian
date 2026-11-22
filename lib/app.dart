@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/services/auth_service.dart';
+import 'core/services/fcm_service.dart';
 import 'core/settings/app_settings_provider.dart';
 import 'features/circles/presentation/circle_khatmah_screen.dart';
 import 'features/circles/presentation/circle_community_features_screen.dart';
@@ -70,6 +71,7 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     AuthService.setSessionExpiredHandler(_handleSessionExpired);
+    FcmService.setNotificationTapHandler(_handleNotificationTap);
     _loadSettings();
   }
 
@@ -115,8 +117,18 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
       );
     }
     if (authenticated) {
+      try {
+        await FcmService.registerCurrentDevice(requestPermission: false);
+      } catch (error) {
+        debugPrint('FCM device registration failed: $error');
+      }
       _openPendingNotification();
     }
+  }
+
+  void _handleNotificationTap(Map<String, dynamic> data) {
+    _pendingNotification = data;
+    _openPendingNotification();
   }
 
   void _openPendingNotification() {
@@ -295,6 +307,13 @@ class _ItqanAppState extends State<ItqanApp> with WidgetsBindingObserver {
       });
     }
     _openPendingNotification();
+    if (authenticated) {
+      try {
+        await FcmService.registerCurrentDevice();
+      } catch (error) {
+        debugPrint('FCM device registration failed: $error');
+      }
+    }
   }
 
   ThemeData get _lightTheme => AppTheme.light;
