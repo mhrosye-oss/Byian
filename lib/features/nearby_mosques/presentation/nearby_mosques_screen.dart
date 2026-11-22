@@ -238,7 +238,10 @@ class _NearbyMosquesScreenState extends State<NearbyMosquesScreen> {
   Future<void> _fetchNearbyMosques(double lat, double lon, {int radiusMeters = 3000}) async {
     final query = '''
 [out:json][timeout:20];
-nwr["amenity"="place_of_worship"]["religion"~"^(muslim|islam)",i](around:$radiusMeters,$lat,$lon);
+(
+  nwr["amenity"="place_of_worship"]["religion"~"^(muslim|islam)",i](around:$radiusMeters,$lat,$lon);
+  nwr["amenity"="place_of_worship"]["name"~"مسجد|جامع|mosque|masjid",i](around:$radiusMeters,$lat,$lon);
+);
 out center 40;
 ''';
 
