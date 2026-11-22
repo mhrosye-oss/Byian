@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../../../core/services/fcm_service.dart';
 import '../../../core/services/google_auth_service.dart';
 import '../../itqan_journey/data/journey_auth_api.dart';
 import '../../itqan_journey/referral/services/referral_service.dart';
@@ -74,7 +73,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone: phone.isEmpty ? null : phone,
       );
 
-      await _registerPushNotifications();
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
@@ -136,7 +134,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
       await _api.firebaseLogin(idToken: result.firebaseIdToken!);
-      await _registerPushNotifications();
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
@@ -154,26 +151,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } finally {
       if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _registerPushNotifications() async {
-    try {
-      final registered = await FcmService.registerCurrentDevice();
-      if (!registered && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'لم تُفعّل إشعارات إتقان. تحقق من إذن الإشعارات في إعدادات الجهاز.'),
-          ),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر تفعيل الإشعارات: $error')),
-        );
-      }
     }
   }
 
