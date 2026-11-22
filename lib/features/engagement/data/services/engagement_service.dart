@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -20,17 +21,17 @@ class EngagementService {
 
   /// Constructs common headers with authentication token if available.
   Future<Map<String, String>> _buildHeaders() async {
-    final headers = <String, String>{
-      'Accept': 'application/json',
-    };
+    final headers = <String, String>{'Accept': 'application/json'};
+    String? token;
     try {
-      final token = await AuthService.getToken();
+      token = await AuthService.getToken();
       if (token != null && token.trim().isNotEmpty) {
         headers['Authorization'] = 'Bearer ${token.trim()}';
       }
     } catch (e) {
       developer.log('Error reading auth token: $e', name: 'EngagementService');
     }
+    debugPrint('>>> TOKEN: ${token != null ? "EXISTS" : "NULL"}');
     return headers;
   }
 
@@ -90,7 +91,10 @@ class EngagementService {
           .timeout(const Duration(seconds: 8));
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        developer.log('Successfully tracked view for $uuid', name: 'EngagementService');
+        developer.log(
+          'Successfully tracked view for $uuid',
+          name: 'EngagementService',
+        );
         return true;
       } else {
         developer.log(
@@ -99,7 +103,10 @@ class EngagementService {
         );
       }
     } catch (e) {
-      developer.log('Error tracking view for $uuid: $e', name: 'EngagementService');
+      developer.log(
+        'Error tracking view for $uuid: $e',
+        name: 'EngagementService',
+      );
     }
     return false;
   }
@@ -123,7 +130,10 @@ class EngagementService {
             await launchUrl(uri, mode: LaunchMode.externalApplication);
           }
         } catch (e) {
-          developer.log('Could not launch URL $rawUrl: $e', name: 'EngagementService');
+          developer.log(
+            'Could not launch URL $rawUrl: $e',
+            name: 'EngagementService',
+          );
         }
       }
     } else if (type == 'screen') {
@@ -139,7 +149,10 @@ class EngagementService {
           try {
             Navigator.of(context).pushNamed(screenTarget);
           } catch (e) {
-            developer.log('Could not navigate to $screenTarget: $e', name: 'EngagementService');
+            developer.log(
+              'Could not navigate to $screenTarget: $e',
+              name: 'EngagementService',
+            );
           }
         }
       }

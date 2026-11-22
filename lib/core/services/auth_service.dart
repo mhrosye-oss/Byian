@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'google_auth_service.dart';
 
 /// Stores authentication secrets separately from non-sensitive profile labels.
@@ -44,6 +45,7 @@ class AuthService {
     await _secureStorage.write(key: _tokenKey, value: token);
     await _secureStorage.write(key: _legacyTokenKey, value: token);
     final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
     await prefs.setString(_keyName, name);
     await prefs.setString(_keyEmail, email);
     if (userId != null) await prefs.setInt(_keyId, userId);
@@ -61,6 +63,13 @@ class AuthService {
       return legacyValue;
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    final savedPreferenceToken = prefs.getString(_tokenKey);
+    if (savedPreferenceToken != null && savedPreferenceToken.isNotEmpty) {
+      await _secureStorage.write(key: _tokenKey, value: savedPreferenceToken);
+      return savedPreferenceToken;
+    }
+
     return null;
   }
 
@@ -76,18 +85,19 @@ class AuthService {
 
     final platformLocale =
         WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    final fallbackLocale = const {
-      'ar',
-      'en',
-      'fr',
-      'es',
-      'ur',
-      'id',
-      'hi',
-      'bn',
-      'tr',
-      'uz'
-    }.contains(platformLocale)
+    final fallbackLocale =
+        const {
+          'ar',
+          'en',
+          'fr',
+          'es',
+          'ur',
+          'id',
+          'hi',
+          'bn',
+          'tr',
+          'uz',
+        }.contains(platformLocale)
         ? platformLocale
         : 'ar';
     await prefs.setString(_localeKey, fallbackLocale);
@@ -102,6 +112,8 @@ class AuthService {
   static Future<void> clearToken() async {
     await _secureStorage.delete(key: _tokenKey);
     await _secureStorage.delete(key: _legacyTokenKey);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
   }
 
   static Future<void> saveUser(String name, String email) async {

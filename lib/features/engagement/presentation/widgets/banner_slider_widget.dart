@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
@@ -14,12 +15,16 @@ class BannerSliderWidget extends StatefulWidget {
   final String placementKey;
   final void Function(String route)? onNavigateRoute;
   final EdgeInsetsGeometry padding;
+  final Future<List<EngagementItem>> Function(String placementKey)? fetchItems;
+  final void Function(String uuid)? onBannerViewed;
 
   const BannerSliderWidget({
     super.key,
     this.placementKey = 'home_top_desktop',
     this.onNavigateRoute,
     this.padding = const EdgeInsets.symmetric(horizontal: 16),
+    this.fetchItems,
+    this.onBannerViewed,
   });
 
   @override
@@ -48,7 +53,10 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
 
   Future<void> _loadBanners() async {
     final items =
-        await EngagementService.instance.fetchEngagementItems(widget.placementKey);
+        await (widget.fetchItems?.call(widget.placementKey) ??
+            EngagementService.instance.fetchEngagementItems(
+              widget.placementKey,
+            ));
 
     if (!mounted) return;
 
@@ -59,7 +67,7 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
 
     if (_banners.isNotEmpty) {
       // Track view for the initially visible banner
-      EngagementService.instance.trackView(_banners.first.uuid);
+      _trackView(_banners.first.uuid);
 
       // Start auto-play timer if more than one banner exists
       if (_banners.length > 1) {
@@ -68,10 +76,20 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
     }
   }
 
+  void _trackView(String uuid) {
+    final callback = widget.onBannerViewed;
+    if (callback != null) {
+      callback(uuid);
+    } else {
+      EngagementService.instance.trackView(uuid);
+    }
+  }
+
   void _startAutoPlay() {
     _autoPlayTimer?.cancel();
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (!mounted || _banners.length <= 1 || !_pageController.hasClients) return;
+      if (!mounted || _banners.length <= 1 || !_pageController.hasClients)
+        return;
       final nextPage = (_currentIndex + 1) % _banners.length;
       _pageController.animateToPage(
         nextPage,
@@ -86,7 +104,7 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
       _currentIndex = index;
     });
     if (index >= 0 && index < _banners.length) {
-      EngagementService.instance.trackView(_banners[index].uuid);
+      _trackView(_banners[index].uuid);
     }
   }
 
@@ -154,7 +172,8 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
 
   /// Builds a single responsive banner card with Islamic emerald styling.
   Widget _buildBannerCard(EngagementItem item) {
-    final hasImage = item.media.image != null && item.media.image!.trim().isNotEmpty;
+    final hasImage =
+        item.media.image != null && item.media.image!.trim().isNotEmpty;
 
     return GestureDetector(
       onTap: () {
@@ -191,11 +210,14 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
                     child: const Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(ItqanColors.goldBright),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          ItqanColors.goldBright,
+                        ),
                       ),
                     ),
                   ),
-                  errorWidget: (context, url, error) => _buildFallbackGradientBackground(),
+                  errorWidget: (context, url, error) =>
+                      _buildFallbackGradientBackground(),
                 )
               else
                 _buildFallbackGradientBackground(),
@@ -207,8 +229,12 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
                     begin: Alignment.centerRight,
                     end: Alignment.centerLeft,
                     colors: [
-                      ItqanColors.emeraldDark.withValues(alpha: hasImage ? 0.88 : 0.2),
-                      ItqanColors.emeraldDark.withValues(alpha: hasImage ? 0.65 : 0.0),
+                      ItqanColors.emeraldDark.withValues(
+                        alpha: hasImage ? 0.88 : 0.2,
+                      ),
+                      ItqanColors.emeraldDark.withValues(
+                        alpha: hasImage ? 0.65 : 0.0,
+                      ),
                       Colors.transparent,
                     ],
                   ),
@@ -217,7 +243,10 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
 
               // 3. Text and Action Content (RTL)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 14,
+                ),
                 child: Directionality(
                   textDirection: TextDirection.rtl,
                   child: Row(
@@ -253,8 +282,10 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
                               ),
                             ],
                             if (item.action != null &&
-                                ((item.action!.url != null && item.action!.url!.isNotEmpty) ||
-                                 (item.action!.screen != null && item.action!.screen!.isNotEmpty))) ...[
+                                ((item.action!.url != null &&
+                                        item.action!.url!.isNotEmpty) ||
+                                    (item.action!.screen != null &&
+                                        item.action!.screen!.isNotEmpty))) ...[
                               const SizedBox(height: 8),
                               _buildActionPill(item.action!),
                             ],
@@ -268,7 +299,9 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
                           child: Icon(
                             Icons.auto_awesome_rounded,
                             size: 40,
-                            color: ItqanColors.goldBright.withValues(alpha: 0.85),
+                            color: ItqanColors.goldBright.withValues(
+                              alpha: 0.85,
+                            ),
                           ),
                         ),
                     ],
@@ -289,10 +322,7 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            ItqanColors.emeraldDark,
-            ItqanColors.emerald,
-          ],
+          colors: [ItqanColors.emeraldDark, ItqanColors.emerald],
         ),
       ),
     );
@@ -351,7 +381,9 @@ class _BannerSliderWidgetState extends State<BannerSliderWidget> {
           height: 6,
           width: isActive ? 18 : 6,
           decoration: BoxDecoration(
-            color: isActive ? ItqanColors.goldWarm : ItqanColors.muted.withValues(alpha: 0.35),
+            color: isActive
+                ? ItqanColors.goldWarm
+                : ItqanColors.muted.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(3),
           ),
         );
