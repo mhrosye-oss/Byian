@@ -203,9 +203,11 @@ class _RecitationResultScreenState extends ConsumerState<RecitationResultScreen>
                                       onPressed: _toggleAudio,
                                     ),
                                     const SizedBox(width: 12),
-                                    const Expanded(
+                                    Expanded(
                                       child: Text(
-                                        'استمع لتسجيلك الصوتي',
+                                        _isPlaying
+                                            ? 'إيقاف الاستماع'
+                                            : 'استمع لتسجيلك الصوتي',
                                         style: TextStyle(
                                           fontFamily: ItqanTypography.uiFont,
                                           fontSize: 14,

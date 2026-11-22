@@ -202,7 +202,9 @@ class _QuranTeacherRecitationScreenState
 
     try {
       // استدعاء محرك ASR الحقيقي
-      final result = await _asrEngine.recognize(_recordedFilePath!);
+      final result = await _asrEngine
+          .recognize(_recordedFilePath!)
+          .timeout(const Duration(seconds: 30));
 
       // حفظ جلسة التسميع في Hive
       final box = await Hive.openBox('quran_teacher_recitation');

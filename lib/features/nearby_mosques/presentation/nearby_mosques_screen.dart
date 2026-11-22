@@ -86,7 +86,9 @@ class _NearbyMosquesScreenState extends State<NearbyMosquesScreen> {
     });
 
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled()
+          .timeout(const Duration(seconds: 8));
+      if (!mounted) return;
       if (!serviceEnabled) {
         setState(() {
           _errorMessage = 'يرجى تشغيل خدمة تحديد الموقع (GPS) للبحث عن أقرب المساجد.';
@@ -95,9 +97,13 @@ class _NearbyMosquesScreenState extends State<NearbyMosquesScreen> {
         return;
       }
 
-      LocationPermission permission = await Geolocator.checkPermission();
+      LocationPermission permission = await Geolocator.checkPermission()
+          .timeout(const Duration(seconds: 8));
+      if (!mounted) return;
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        permission = await Geolocator.requestPermission()
+            .timeout(const Duration(seconds: 45));
+        if (!mounted) return;
         if (permission == LocationPermission.denied) {
           setState(() {
             _errorMessage = 'تم رفض إذن الوصول للموقع. يُرجى منحه لعرض المساجد القريبة منك.';
@@ -120,12 +126,13 @@ class _NearbyMosquesScreenState extends State<NearbyMosquesScreen> {
           accuracy: LocationAccuracy.medium,
           timeLimit: Duration(seconds: 15),
         ),
-      );
+      ).timeout(const Duration(seconds: 18));
 
       if (!mounted) return;
       setState(() {
         _currentPosition = position;
         _isFetchingMosques = true;
+        _isLoading = false;
       });
 
       await _fetchNearbyMosques(position.latitude, position.longitude);
@@ -157,7 +164,7 @@ out center 40;
               body: {'data': query},
               headers: {'User-Agent': 'ByianApp/1.0 (nearby mosques)'},
             )
-            .timeout(const Duration(seconds: 30));
+            .timeout(const Duration(seconds: 15));
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -404,12 +411,14 @@ out center 40;
             IconButton(
               icon: Icon(_showMap ? Icons.list_rounded : Icons.map_rounded),
               tooltip: _showMap ? 'عرض كقائمة' : 'عرض على الخريطة',
-              onPressed: _isLoading ? null : _toggleView,
+              onPressed: _isLoading || _isFetchingMosques ? null : _toggleView,
             ),
             IconButton(
               icon: const Icon(Icons.my_location_rounded),
               tooltip: 'تحديث موقعي',
-              onPressed: _isLoading ? null : _determinePosition,
+              onPressed: _isLoading || _isFetchingMosques
+                  ? null
+                  : _determinePosition,
             ),
           ],
         ),

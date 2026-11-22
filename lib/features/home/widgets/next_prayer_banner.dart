@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 
 import '../../prayer/services/prayer_times_service.dart';
 
@@ -22,18 +23,52 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
   Timer? _timer;
   Duration _remaining = const Duration(hours: 1, minutes: 24, seconds: 18);
   bool _isPlayingAdhan = false;
+  final AudioPlayer _adhanPlayer = AudioPlayer();
+  StreamSubscription<PlayerState>? _adhanStateSubscription;
+  bool _adhanAssetLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _fetchNextPrayer();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    _adhanStateSubscription = _adhanPlayer.playerStateStream.listen((state) {
+      if (mounted) setState(() => _isPlayingAdhan = state.playing);
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    unawaited(_adhanStateSubscription?.cancel() ?? Future<void>.value());
+    unawaited(_adhanPlayer.dispose());
     super.dispose();
+  }
+
+  Future<void> _toggleAdhan() async {
+    try {
+      if (_adhanPlayer.playing) {
+        await _adhanPlayer.pause();
+        return;
+      }
+
+      if (!_adhanAssetLoaded) {
+        await _adhanPlayer.setAsset('assets/audio/adhan.mp3');
+        _adhanAssetLoaded = true;
+      }
+      if (_adhanPlayer.processingState == ProcessingState.completed) {
+        await _adhanPlayer.seek(Duration.zero);
+      }
+      await _adhanPlayer.play();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تعذر تشغيل الأذان: $error'),
+          backgroundColor: const Color(0xFF064E3B),
+        ),
+      );
+    }
   }
 
   Future<void> _fetchNextPrayer() async {
@@ -332,18 +367,7 @@ class _NextPrayerBannerState extends State<NextPrayerBanner> {
                         borderRadius: BorderRadius.circular(16),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            setState(() => _isPlayingAdhan = !_isPlayingAdhan);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(_isPlayingAdhan
-                                    ? 'تم تشغيل تجربة الأذان بصوت ندي'
-                                    : 'تم إيقاف الأذان'),
-                                backgroundColor: const Color(0xFF064E3B),
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          },
+                          onTap: _toggleAdhan,
                           child: Container(
                             height: 48,
                             decoration: BoxDecoration(
