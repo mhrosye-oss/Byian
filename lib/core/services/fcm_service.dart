@@ -58,6 +58,9 @@ class FcmService {
 
   static Future<void> _initialize() async {
     WidgetsFlutterBinding.ensureInitialized();
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     await _initializeLocalNotifications();
@@ -171,6 +174,7 @@ class FcmService {
     final sessionToken = authToken ?? await AuthService.getToken();
     if (sessionToken == null || sessionToken.trim().isEmpty) return false;
 
+    await initialize();
     final messaging = FirebaseMessaging.instance;
     final settings = requestPermission
         ? await messaging.requestPermission(

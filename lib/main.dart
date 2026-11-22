@@ -27,7 +27,9 @@ Future<void> main() async {
   await Hive.openBox('reading_positions');
   await Hive.openBox('sessions');
 
+  // Firebase Messaging must be ready before the login screen can register a
+  // device or the app can handle an incoming message.
+  await _initializeFirebaseMessaging();
   runApp(const ProviderScope(child: ItqanApp()));
   unawaited(NotificationService().init());
-  unawaited(_initializeFirebaseMessaging());
 }
