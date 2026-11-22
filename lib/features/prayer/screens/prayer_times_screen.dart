@@ -35,7 +35,7 @@ class _PrayerTimesScreenState extends ConsumerState<PrayerTimesScreen> {
       if (!mounted) return;
       setState(() {
         _scheduleSucceeded = true;
-        _feedback = 'تم تفعيل تذكير قبل الصلاة بـ15 دقيقة والأذان عند دخول الوقت.';
+        _feedback = 'تم إعداد تذكير قبل الصلاة وإشعار بمقتطف أذان مدته 27 ثانية. قد تتأخر التنبيهات بسبب قيود النظام.';
       });
     } catch (error) {
       if (!mounted) return;

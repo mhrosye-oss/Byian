@@ -1,260 +1,113 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../../core/theme/colors.dart';
-import '../../../core/notification/notification_service.dart';
 
-/// صفحة إشعارات مواقيت الصلاة المخصصة
-/// تتيح تفعيل الأذان والتنبيهات المسبقة لكل صلاة واختبار الإشعارات
+import '../../../core/theme/colors.dart';
+import '../services/prayer_times_service.dart';
+
+/// Settings for the actual scheduled prayer notifications.
 class PrayerNotificationsScreen extends StatefulWidget {
   const PrayerNotificationsScreen({super.key});
 
   @override
-  State<PrayerNotificationsScreen> createState() => _PrayerNotificationsScreenState();
+  State<PrayerNotificationsScreen> createState() =>
+      _PrayerNotificationsScreenState();
 }
 
 class _PrayerNotificationsScreenState extends State<PrayerNotificationsScreen> {
-  bool _allPrayersEnabled = true;
-  bool _prePrayerReminder = true;
-  bool _playAzanSound = true;
+  bool? _enabled;
+  bool _busy = false;
+  String? _message;
 
-  final Map<String, bool> _prayerToggles = {
-    'الفجر': true,
-    'الظهر': true,
-    'العصر': true,
-    'المغرب': true,
-    'العشاء': true,
-  };
+  @override
+  void initState() {
+    super.initState();
+    _readStatus();
+  }
 
-  bool _isTesting = false;
-
-  Future<void> _testPrayerNotification() async {
-    setState(() => _isTesting = true);
+  Future<void> _readStatus() async {
     try {
-      await NotificationService().showSystemNotification(
-        id: 1001,
-        title: '🕌 حان الآن وقت أذان المغرب',
-        body: 'الله أكبر الله أكبر.. حيّ على الصلاة حيّ على الفلاح',
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم إرسال إشعار تجريبي لمواقيت الصلاة بنجاح'),
-          backgroundColor: ItqanColors.emerald,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('تعذر إرسال الإشعار: $e'),
-          backgroundColor: ItqanColors.roseGold,
-        ),
-      );
+      final enabled = await PrayerTimesService.prayerNotificationsEnabled();
+      if (mounted) setState(() => _enabled = enabled);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _enabled = false;
+          _message = 'تعذر قراءة إعدادات التنبيهات.';
+        });
+      }
+    }
+  }
+
+  Future<void> _setEnabled(bool enabled) async {
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      if (enabled) {
+        await PrayerTimesService.scheduleUpcomingNotifications();
+      } else {
+        await PrayerTimesService.disablePrayerNotifications();
+      }
+      if (mounted) {
+        setState(() {
+          _enabled = enabled;
+          _message = enabled ? 'تم إعداد التنبيهات.' : 'تم إيقاف التنبيهات.';
+        });
+      }
+    } catch (error) {
+      bool? actualStatus;
+      try {
+        actualStatus = await PrayerTimesService.prayerNotificationsEnabled();
+      } catch (_) {
+        actualStatus = null;
+      }
+      if (mounted) {
+        setState(() {
+          _enabled = actualStatus;
+          _message =
+              'تعذّر إعداد التنبيهات: ${error.toString().replaceFirst('Bad state: ', '')}';
+        });
+      }
     } finally {
-      if (mounted) setState(() => _isTesting = false);
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: ItqanColors.cream,
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF064E3B),
-          foregroundColor: Colors.white,
-          elevation: 0,
-          title: const Row(
-            children: [
-              Icon(Icons.access_alarms_rounded, size: 24, color: Color(0xFFFBBF24)),
-              SizedBox(width: 10),
-              Text(
-                'إشعارات مواقيت الصلاة',
-                style: TextStyle(
-                  fontFamily: 'Tajawal',
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
+        appBar: AppBar(title: const Text('إشعارات مواقيت الصلاة')),
         body: ListView(
           padding: const EdgeInsets.all(18),
           children: [
-            // بطاقة التنبيه العام
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  SwitchListTile.adaptive(
-                    value: _allPrayersEnabled,
-                    activeTrackColor: const Color(0xFF064E3B),
-                    title: const Text(
-                      'تفعيل تنبيهات الصلاة',
-                      style: TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'تشغيل التنبيهات والأذان عند حلول وقت الصلاة',
-                      style: TextStyle(fontFamily: 'Tajawal', fontSize: 13),
-                    ),
-                    onChanged: (val) {
-                      setState(() {
-                        _allPrayersEnabled = val;
-                      });
-                    },
-                  ),
-                  const Divider(),
-                  SwitchListTile.adaptive(
-                    value: _prePrayerReminder,
-                    activeTrackColor: const Color(0xFF064E3B),
-                    title: const Text(
-                      'تذكير مسبق بـ 15 دقيقة',
-                      style: TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'إشعار خفيف للاستعداد والوضوء قبل دخول الوقت',
-                      style: TextStyle(fontFamily: 'Tajawal', fontSize: 12),
-                    ),
-                    onChanged: (val) {
-                      setState(() {
-                        _prePrayerReminder = val;
-                      });
-                    },
-                  ),
-                  const Divider(),
-                  SwitchListTile.adaptive(
-                    value: _playAzanSound,
-                    activeTrackColor: const Color(0xFF064E3B),
-                    title: const Text(
-                      'تشغيل صوت الأذان',
-                      style: TextStyle(
-                        fontFamily: 'Tajawal',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'سماع صوت الأذان كاملاً عند دخول وقت الفريضة',
-                      style: TextStyle(fontFamily: 'Tajawal', fontSize: 12),
-                    ),
-                    onChanged: (val) {
-                      setState(() {
-                        _playAzanSound = val;
-                      });
-                    },
-                  ),
-                ],
-              ),
+            SwitchListTile.adaptive(
+              title: const Text('تنبيهات الصلاة'),
+              subtitle: const Text(
+                  'تذكير قبل الصلاة بـ15 دقيقة وإشعار عند دخول الوقت'),
+              value: _enabled ?? false,
+              onChanged: _busy || _enabled == null ? null : _setEnabled,
             ),
-
-            const SizedBox(height: 20),
-
-            // تخصيص الصلوات الفردية
+            if (_busy) const LinearProgressIndicator(),
+            if (_message != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(_message!),
+              ),
+            const SizedBox(height: 12),
             const Text(
-              'تخصيص الصلوات الخمس',
-              style: TextStyle(
-                fontFamily: 'Tajawal',
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: ItqanColors.ink,
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: Column(
-                children: _prayerToggles.entries.map((entry) {
-                  return Column(
-                    children: [
-                      SwitchListTile.adaptive(
-                        value: entry.value && _allPrayersEnabled,
-                        activeTrackColor: const Color(0xFF064E3B),
-                        title: Text(
-                          'صلاة ${entry.key}',
-                          style: const TextStyle(
-                            fontFamily: 'Tajawal',
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                          ),
-                        ),
-                        secondary: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF064E3B).withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.nights_stay_rounded,
-                            color: Color(0xFF064E3B),
-                            size: 20,
-                          ),
-                        ),
-                        onChanged: _allPrayersEnabled
-                            ? (val) {
-                                setState(() {
-                                  _prayerToggles[entry.key] = val;
-                                });
-                              }
-                            : null,
-                      ),
-                      if (entry.key != 'العشاء') const Divider(height: 1),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // زر اختبار الإشعار
-            SizedBox(
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _isTesting ? null : _testPrayerNotification,
-                icon: const Icon(Icons.notifications_active_rounded),
-                label: Text(
-                  _isTesting ? 'جارٍ الإرسال...' : 'تجربة إشعار الأذان الآن',
-                  style: const TextStyle(
-                    fontFamily: 'Tajawal',
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF064E3B),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ),
+                'صوت الإشعار مقتطف أذان مدته 27 ثانية، وليس الأذان كاملًا. يعتمد الصوت على إعدادات القناة ومستوى الصوت ووضع الجهاز.'),
+            const SizedBox(height: 12),
+            Text(android
+                ? 'تُجدول التنبيهات مسبقًا لستة أيام ويُحاول Android تجديدها دوريًا من آخر موقع محفوظ. قد يتأخر التجديد أو التنبيه بسبب قيود النظام أو الأذونات؛ أعد تحديث الموقع عند السفر.'
+                : 'تُجدول التنبيهات لستة أيام فقط؛ افتح التطبيق وأعد تفعيلها لتجديدها.'),
+            const SizedBox(height: 12),
+            const Text(
+                'لا تتوفر بعد خيارات مستقلة لكل صلاة أو للتذكير المسبق.'),
           ],
         ),
       ),

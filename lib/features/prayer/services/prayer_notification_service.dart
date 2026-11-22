@@ -42,8 +42,9 @@ class PrayerNotificationService {
     if (android != null) {
       final notificationsGranted =
           await android.requestNotificationsPermission();
+      if (notificationsGranted == false) return false;
       final exactAlarmsGranted = await android.requestExactAlarmsPermission();
-      return notificationsGranted != false && exactAlarmsGranted != false;
+      return exactAlarmsGranted != false;
     }
 
     final ios = _plugin.resolvePlatformSpecificImplementation<
@@ -58,6 +59,21 @@ class PrayerNotificationService {
     }
 
     return false;
+  }
+
+  /// Checks permissions without showing any prompt, including in the worker.
+  Future<bool> canSchedulePrayerAlerts() async {
+    await initialize();
+    final android = _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (android == null) return true;
+    return await android.areNotificationsEnabled() == true &&
+        await android.canScheduleExactNotifications() == true;
+  }
+
+  Future<void> cancelPrayerNotification(int id) async {
+    await initialize();
+    await _plugin.cancel(id);
   }
 
   Future<void> cancelPrayerNotifications() async {
@@ -90,7 +106,7 @@ class PrayerNotificationService {
   }) async {
     await initialize();
     final androidDetails = AndroidNotificationDetails(
-      playAzan ? 'prayer_azan_v1' : 'prayer_reminder_v1',
+      playAzan ? 'prayer_azan_excerpt_v2' : 'prayer_reminder_v1',
       playAzan ? 'أذان الصلاة' : 'تذكير الصلاة',
       channelDescription: playAzan
           ? 'تنبيه عند دخول وقت الصلاة بصوت أذان قصير'
@@ -98,13 +114,15 @@ class PrayerNotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: playAzan,
-      audioAttributesUsage: AudioAttributesUsage.alarm,
+      sound:
+          playAzan ? const RawResourceAndroidNotificationSound('adhan') : null,
+      audioAttributesUsage: AudioAttributesUsage.notification,
     );
     final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: false,
       presentSound: playAzan,
-      sound: playAzan ? 'adhan' : null,
+      sound: playAzan ? 'adhan.caf' : null,
     );
 
     await _plugin.zonedSchedule(

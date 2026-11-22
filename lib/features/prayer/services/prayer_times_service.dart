@@ -1,4 +1,6 @@
 import 'package:adhan/adhan.dart' as adhan;
+import 'package:flutter/foundation.dart';
+import 'package:workmanager/workmanager.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,6 +18,57 @@ class PrayerTime {
     required this.name,
     required this.time,
     required this.labelAr,
+  });
+}
+
+/// A planned one-shot alert with a stable ID for a prayer and civil date.
+class PrayerAlert {
+  const PrayerAlert(
+      {required this.id,
+      required this.prayerName,
+      required this.at,
+      required this.playAzan,
+      required this.payload});
+  final int id;
+  final String prayerName;
+  final DateTime at;
+  final bool playAzan;
+  final String payload;
+}
+
+/// Re-checks the persisted opt-in before and after each platform call. This
+/// also removes an alert added concurrently with an opt-out.
+@visibleForTesting
+Future<void> applyPrayerAlerts(
+  Iterable<PrayerAlert> alerts, {
+  required Future<bool> Function() isEnabled,
+  required Future<void> Function(PrayerAlert) schedule,
+  required Future<void> Function(int) cancel,
+}) async {
+  for (final alert in alerts) {
+    if (!await isEnabled()) return;
+    await schedule(alert);
+    if (!await isEnabled()) {
+      await cancel(alert.id);
+      return;
+    }
+  }
+}
+
+const _prayerWorkerName = 'prayer-schedule-refresh-v1';
+const _prayerEnabledKey = 'prayer_alerts_enabled_v1';
+
+@pragma('vm:entry-point')
+void prayerBackgroundDispatcher() {
+  Workmanager().executeTask((task, input) async {
+    if (task != _prayerWorkerName) return true;
+    try {
+      await PrayerTimesService.refreshSavedNotifications();
+      return true;
+    } catch (error, stack) {
+      debugPrint('Prayer schedule refresh failed: $error\n$stack');
+      return false; // WorkManager may retry; it does not guarantee timing.
+    }
   });
 }
 
@@ -106,62 +159,137 @@ class PrayerTimesService {
     return null;
   }
 
-  /// Rebuilds up to six days of notifications: 15-minute reminder plus exact
-  /// prayer-time notification with the custom Azan sound.
+  static bool get _isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  /// Explicit opt-in: GPS and permission prompts happen only in the UI.
   static Future<void> scheduleUpcomingNotifications({
     int days = scheduleDays,
   }) async {
-    if (days < 1 || days > 6) {
+    if (days < 1 || days > scheduleDays) {
       throw ArgumentError.value(days, 'days', 'Must be between 1 and 6.');
     }
-
     final position = await getCurrentPosition();
-    await _saveCoordinates(position.latitude, position.longitude);
-    final coordinates = adhan.Coordinates(
-      position.latitude,
-      position.longitude,
-      validate: true,
-    );
-    final parameters = _parametersForTimeZone(await _getDeviceTimeZone());
-
     final permissionGranted = await _notifications.requestPermissions();
     if (!permissionGranted) {
       throw StateError(
-        'يلزم السماح بالإشعارات والتنبيهات الدقيقة لتفعيل أذان الصلاة.',
-      );
+          'يلزم السماح بالإشعارات والتنبيهات الدقيقة لتفعيل تنبيهات الصلاة.');
     }
+    await _saveCoordinates(position.latitude, position.longitude);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_prayerEnabledKey, true);
+    try {
+      await refreshSavedNotifications(days: days);
+      if (_isAndroid) {
+        await Workmanager().initialize(prayerBackgroundDispatcher);
+        await Workmanager().registerPeriodicTask(
+          _prayerWorkerName,
+          _prayerWorkerName,
+          frequency: const Duration(hours: 12),
+          initialDelay: const Duration(hours: 12),
+          existingWorkPolicy: ExistingWorkPolicy.keep,
+        );
+      }
+    } catch (_) {
+      await disablePrayerNotifications();
+      rethrow;
+    }
+  }
 
-    await _notifications.cancelPrayerNotifications();
-    final now = DateTime.now();
-    for (var dayOffset = 0; dayOffset < days; dayOffset++) {
-      final day = DateTime(now.year, now.month, now.day + dayOffset);
+  static Future<bool> prayerNotificationsEnabled() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.reload();
+    return preferences.getBool(_prayerEnabledKey) ?? false;
+  }
+
+  /// Stops future refresh first and cancels only prayer-owned notifications.
+  static Future<void> disablePrayerNotifications() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_prayerEnabledKey, false);
+    try {
+      if (_isAndroid) await Workmanager().cancelByUniqueName(_prayerWorkerName);
+    } finally {
+      // A failed WorkManager cancellation must not leave existing alerts armed.
+      await _notifications.cancelPrayerNotifications();
+    }
+  }
+
+  /// Background refresh uses cached coordinates; no GPS or permission prompts.
+  static Future<void> refreshSavedNotifications(
+      {int days = scheduleDays}) async {
+    if (!await prayerNotificationsEnabled()) return;
+    if (!await _notifications.canSchedulePrayerAlerts()) {
+      throw StateError('إذن الإشعارات أو التنبيهات الدقيقة غير متاح.');
+    }
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.reload();
+    final latitude = preferences.getDouble(_latitudeKey);
+    final longitude = preferences.getDouble(_longitudeKey);
+    if (latitude == null || longitude == null) {
+      throw StateError('الموقع المحفوظ غير متاح لإعداد التنبيهات.');
+    }
+    final alerts = planPrayerAlerts(
+      latitude: latitude,
+      longitude: longitude,
+      timeZoneId: await _getDeviceTimeZone(),
+      now: DateTime.now(),
+      days: days,
+    );
+    await applyPrayerAlerts(
+      alerts,
+      isEnabled: prayerNotificationsEnabled,
+      schedule: (alert) => _notifications.schedulePrayer(
+        id: alert.id,
+        prayerName: alert.prayerName,
+        at: alert.at,
+        playAzan: alert.playAzan,
+        payload: alert.payload,
+      ),
+      cancel: _notifications.cancelPrayerNotification,
+    );
+  }
+
+  /// Pure calculation, allowing deterministic tests without GPS or plugins.
+  @visibleForTesting
+  static List<PrayerAlert> planPrayerAlerts({
+    required double latitude,
+    required double longitude,
+    required String timeZoneId,
+    required DateTime now,
+    int days = scheduleDays,
+  }) {
+    if (days < 1 || days > scheduleDays) {
+      throw ArgumentError.value(days, 'days', 'Must be between 1 and 6.');
+    }
+    final coordinates = adhan.Coordinates(latitude, longitude, validate: true);
+    final parameters = _parametersForTimeZone(timeZoneId);
+    final alerts = <PrayerAlert>[];
+    for (var offset = 0; offset < days; offset++) {
+      final day = DateTime(now.year, now.month, now.day + offset);
       final prayers = _prayersForDate(coordinates, day, parameters);
-
       for (var index = 0; index < prayers.length; index++) {
         final prayer = prayers[index];
-        final baseId = _notificationId(day, index);
-        final reminderTime = prayer.time.subtract(const Duration(minutes: 15));
-
-        if (reminderTime.isAfter(now)) {
-          await _notifications.schedulePrayer(
-            id: baseId,
-            prayerName: prayer.labelAr,
-            at: reminderTime,
-            playAzan: false,
-            payload: 'prayer:${day.toIso8601String()}:$index:before',
-          );
+        final id = _notificationId(day, index);
+        final reminder = prayer.time.subtract(const Duration(minutes: 15));
+        if (reminder.isAfter(now)) {
+          alerts.add(PrayerAlert(
+              id: id,
+              prayerName: prayer.labelAr,
+              at: reminder,
+              playAzan: false,
+              payload: 'prayer:${day.toIso8601String()}:$index:before'));
         }
         if (prayer.time.isAfter(now)) {
-          await _notifications.schedulePrayer(
-            id: baseId + 1,
-            prayerName: prayer.labelAr,
-            at: prayer.time,
-            playAzan: true,
-            payload: 'prayer:${day.toIso8601String()}:$index:adhan',
-          );
+          alerts.add(PrayerAlert(
+              id: id + 1,
+              prayerName: prayer.labelAr,
+              at: prayer.time,
+              playAzan: true,
+              payload: 'prayer:${day.toIso8601String()}:$index:adhan'));
         }
       }
     }
+    return alerts;
   }
 
   static List<PrayerTime> _prayersForDate(
