@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,8 +60,13 @@ class DynamicPopupWidget extends StatelessWidget {
           onNavigateRoute: onNavigateRoute,
         ),
       );
-    } catch (e) {
-      // Fail silently without disrupting user flow
+    } catch (e, stackTrace) {
+      developer.log(
+        'Failed to show engagement popup for $placementKey: $e',
+        name: 'DynamicPopupWidget',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 

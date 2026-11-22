@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../../engagement/presentation/widgets/dynamic_popup_widget.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/fcm_service.dart';
 import '../../../core/services/google_auth_service.dart';
@@ -28,6 +29,13 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     super.initState();
     _restoreSavedCredentials();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      DynamicPopupWidget.showIfAvailable(
+        context,
+        placementKey: 'welcome_popup',
+      );
+    });
     if (widget.sessionExpired) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _message('انتهت الجلسة. سجّل الدخول للمتابعة.');
