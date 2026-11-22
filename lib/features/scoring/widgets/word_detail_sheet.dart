@@ -25,7 +25,7 @@ class WordDetailSheet extends StatelessWidget {
     final letters = word.word.split('');
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: ItqanSpacing.lg, vertical: ItqanSpacing.md),
         child: Column(
           mainAxisSize: MainAxisSize.min,

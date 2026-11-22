@@ -18,17 +18,16 @@ void main() {
       ),
     );
 
-    expect(find.text('أهلاً بك في إتقان'), findsOneWidget);
-    expect(find.text('مصحفي'), findsOneWidget);
+    expect(find.text('معلّم القرآن'), findsOneWidget);
     expect(find.text('مساحتك اليومية'), findsOneWidget);
     expect(find.text('الرئيسية'), findsOneWidget);
-    expect(find.text('القرآن'), findsOneWidget);
     expect(find.text('الصلاة'), findsOneWidget);
-    expect(find.text('الإعدادات'), findsOneWidget);
+    expect(find.text('التسبيح'), findsOneWidget);
+    expect(find.text('المزيد'), findsOneWidget);
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
     await tester.pumpAndSettle();
-    expect(find.text('خدمات إتقان'), findsOneWidget);
+    expect(find.text('جميع الخدمات الإسلامية'), findsOneWidget);
     expect(find.text('خطوة صغيرة كل يوم تصنع أثرًا كبيرًا'), findsOneWidget);
   });
 }
