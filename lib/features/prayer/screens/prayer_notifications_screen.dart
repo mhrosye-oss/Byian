@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/colors.dart';
+import '../services/prayer_notification_service.dart';
 import '../services/prayer_times_service.dart';
 
 /// Settings for the actual scheduled prayer notifications.
@@ -74,6 +75,31 @@ class _PrayerNotificationsScreenState extends State<PrayerNotificationsScreen> {
     }
   }
 
+  Future<void> _sendTestNotification() async {
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      final allowed = await PrayerNotificationService.instance
+          .requestReminderPermissions();
+      if (!allowed) {
+        throw StateError('اسمح بإشعارات التطبيق من إعدادات النظام أولاً.');
+      }
+      await PrayerNotificationService.instance.showTestAdhanNotification();
+      if (mounted) {
+        setState(() => _message = 'تم إرسال إشعار اختبار الأذان الآن.');
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message =
+            'تعذر إرسال اختبار الأذان: ${error.toString().replaceFirst('Bad state: ', '')}');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -98,6 +124,12 @@ class _PrayerNotificationsScreenState extends State<PrayerNotificationsScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Text(_message!),
               ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _busy ? null : _sendTestNotification,
+              icon: const Icon(Icons.notifications_active_outlined),
+              label: const Text('اختبار إشعار الأذان الآن'),
+            ),
             const SizedBox(height: 12),
             const Text(
                 'صوت الإشعار مقتطف أذان مدته 27 ثانية، وليس الأذان كاملًا. يعتمد الصوت على إعدادات القناة ومستوى الصوت ووضع الجهاز.'),

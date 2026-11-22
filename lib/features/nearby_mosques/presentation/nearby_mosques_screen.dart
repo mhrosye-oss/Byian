@@ -237,8 +237,8 @@ class _NearbyMosquesScreenState extends State<NearbyMosquesScreen> {
   /// استعلام حقيقي عن المساجد من OpenStreetMap Overpass API
   Future<void> _fetchNearbyMosques(double lat, double lon, {int radiusMeters = 3000}) async {
     final query = '''
-[out:json][timeout:25];
-nwr["amenity"="place_of_worship"]["religion"="muslim"](around:$radiusMeters,$lat,$lon);
+[out:json][timeout:20];
+nwr["amenity"="place_of_worship"]["religion"~"^(muslim|islam)",i](around:$radiusMeters,$lat,$lon);
 out center 40;
 ''';
 
@@ -252,7 +252,7 @@ out center 40;
         final response = await (client == null
                 ? http.post(uri, body: body, headers: headers)
                 : client.post(uri, body: body, headers: headers))
-            .timeout(const Duration(seconds: 30));
+            .timeout(const Duration(seconds: 22));
 
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body) as Map<String, dynamic>;

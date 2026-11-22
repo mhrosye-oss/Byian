@@ -138,6 +138,38 @@ class PrayerNotificationService {
     );
   }
 
+  /// Shows the same sound/channel used by a real prayer alert immediately.
+  /// This is intentionally separate from scheduling so the user can verify
+  /// permissions, channel sound and device volume from the settings screen.
+  Future<void> showTestAdhanNotification() async {
+    await initialize();
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'prayer_azan_excerpt_v2',
+        'أذان الصلاة',
+        channelDescription: 'تنبيه عند دخول وقت الصلاة بصوت أذان قصير',
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        sound: RawResourceAndroidNotificationSound('adhan'),
+        audioAttributesUsage: AudioAttributesUsage.notification,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: false,
+        presentSound: true,
+        sound: 'adhan.caf',
+      ),
+    );
+    await _plugin.show(
+      2147483001,
+      'اختبار أذان الصلاة',
+      'هذا إشعار اختبار للتأكد من عمل الإذن والصوت.',
+      details,
+      payload: 'test_prayer_adhan',
+    );
+  }
+
   Future<bool> requestReminderPermissions() async {
     await initialize();
     final android = _plugin.resolvePlatformSpecificImplementation<
