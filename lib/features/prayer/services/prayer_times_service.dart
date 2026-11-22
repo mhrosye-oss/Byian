@@ -187,7 +187,7 @@ class PrayerTimesService {
           _prayerWorkerName,
           frequency: const Duration(hours: 12),
           initialDelay: const Duration(hours: 12),
-          existingWorkPolicy: ExistingWorkPolicy.keep,
+          existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
         );
       }
     } catch (_) {
