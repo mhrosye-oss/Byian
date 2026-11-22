@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import 'colors.dart';
 import 'spacing.dart';
+import 'typography.dart';
 
 class AppTheme {
   AppTheme._();
 
   static ThemeData get light {
-    final baseText = GoogleFonts.tajawalTextTheme(ThemeData.light().textTheme);
-    final textTheme = baseText.apply(
+    final textTheme = ThemeData.light().textTheme.apply(
+      fontFamily: ItqanTypography.uiFont,
       bodyColor: ItqanColors.ink,
       displayColor: ItqanColors.ink,
+    ).copyWith(
+      displayLarge: ItqanTypography.heading1,
+      displayMedium: ItqanTypography.heading1,
+      displaySmall: ItqanTypography.heading2,
+      headlineLarge: ItqanTypography.heading1,
+      headlineMedium: ItqanTypography.heading2,
+      headlineSmall: ItqanTypography.heading3,
+      titleLarge: ItqanTypography.heading2,
+      titleMedium: ItqanTypography.heading3,
+      titleSmall: ItqanTypography.label,
     );
 
     return ThemeData(
@@ -48,6 +57,12 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
+        titleTextStyle: TextStyle(
+          fontFamily: ItqanTypography.headingFont,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: ItqanColors.ink,
+        ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: ItqanColors.surface,
@@ -62,7 +77,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         height: 76,
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
-              fontFamily: GoogleFonts.tajawal().fontFamily,
+              fontFamily: ItqanTypography.uiFont,
               fontSize: 12,
               fontWeight: states.contains(WidgetState.selected)
                   ? FontWeight.w700
@@ -78,12 +93,36 @@ class AppTheme {
           foregroundColor: ItqanColors.white,
           minimumSize: const Size.fromHeight(54),
           textStyle: TextStyle(
-            fontFamily: GoogleFonts.tajawal().fontFamily,
+            fontFamily: ItqanTypography.headingFont,
             fontWeight: FontWeight.w700,
             fontSize: 16,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          textStyle: const TextStyle(
+            fontFamily: ItqanTypography.headingFont,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          textStyle: const TextStyle(
+            fontFamily: ItqanTypography.headingFont,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          textStyle: const TextStyle(
+            fontFamily: ItqanTypography.headingFont,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -116,7 +155,7 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         backgroundColor: ItqanColors.emeraldDark,
         contentTextStyle: TextStyle(
-          fontFamily: GoogleFonts.tajawal().fontFamily,
+          fontFamily: ItqanTypography.uiFont,
           color: ItqanColors.white,
         ),
         behavior: SnackBarBehavior.floating,

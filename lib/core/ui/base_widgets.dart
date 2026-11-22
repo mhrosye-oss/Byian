@@ -27,7 +27,7 @@ class TeacherAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Text(
         title,
         style: const TextStyle(
-          fontFamily: ItqanTypography.uiFont,
+          fontFamily: ItqanTypography.headingFont,
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: ItqanColors.ink,
@@ -156,7 +156,7 @@ class TeacherServiceCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontFamily: ItqanTypography.uiFont,
+                      fontFamily: ItqanTypography.headingFont,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: ItqanColors.ink,
@@ -364,7 +364,7 @@ class TeacherEmptyState extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontFamily: ItqanTypography.uiFont,
+                fontFamily: ItqanTypography.headingFont,
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: ItqanColors.ink,
@@ -395,7 +395,7 @@ class TeacherEmptyState extends StatelessWidget {
                 label: Text(
                   actionLabel!,
                   style: const TextStyle(
-                    fontFamily: ItqanTypography.uiFont,
+                    fontFamily: ItqanTypography.headingFont,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -456,7 +456,7 @@ class TeacherErrorState extends StatelessWidget {
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text(
                 'إعادة المحاولة',
-                style: TextStyle(fontFamily: ItqanTypography.uiFont),
+                style: TextStyle(fontFamily: ItqanTypography.headingFont),
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: ItqanColors.emerald,

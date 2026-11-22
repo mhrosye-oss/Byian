@@ -5,6 +5,9 @@ import 'colors.dart';
 class ItqanTypography {
   ItqanTypography._();
 
+  /// Cairo is reserved for prominent UI copy: headings and actions.
+  static const String headingFont = 'Cairo';
+  /// Tajawal is used for supporting copy and details throughout the app.
   static const String uiFont = 'Tajawal';
   static const String arabicFont = 'NotoNaskhArabic';
 
@@ -31,7 +34,7 @@ class ItqanTypography {
   );
 
   static const TextStyle heading1 = TextStyle(
-    fontFamily: uiFont,
+    fontFamily: headingFont,
     fontSize: 28,
     fontWeight: FontWeight.w700,
     color: ItqanColors.ink,
@@ -39,7 +42,7 @@ class ItqanTypography {
   );
 
   static const TextStyle heading3 = TextStyle(
-    fontFamily: uiFont,
+    fontFamily: headingFont,
     fontSize: 18,
     fontWeight: FontWeight.w600,
     color: ItqanColors.ink,
@@ -55,7 +58,7 @@ class ItqanTypography {
   );
 
   static const TextStyle heading2 = TextStyle(
-    fontFamily: uiFont,
+    fontFamily: headingFont,
     fontSize: 22,
     fontWeight: FontWeight.w700,
     color: ItqanColors.ink,

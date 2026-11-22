@@ -39,6 +39,14 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
+      - name: Verify bundled Arabic fonts
+        run: |
+          test -s assets/fonts/Cairo-Variable.ttf
+          test -s assets/fonts/Tajawal-Regular.ttf
+          test -s assets/fonts/Tajawal-Medium.ttf
+          test -s assets/fonts/Tajawal-Bold.ttf
+          test -s assets/fonts/Tajawal-ExtraBold.ttf
+
       - name: Analyze Dart code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
