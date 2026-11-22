@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -7,113 +8,113 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/services/auth_service.dart';
 import '../models/engagement_item.dart';
 
-/// Service responsible for fetching engagement banners and tracking views.
+/// Fetches engagement placements and tracks views using the existing API.
 class EngagementService {
-  EngagementService._();
-  static final EngagementService instance = EngagementService._();
+  EngagementService(
+      {http.Client? client, Future<String?> Function()? tokenProvider})
+      : _client = client ?? http.Client(),
+        _tokenProvider = tokenProvider ?? AuthService.getToken;
 
+  static final EngagementService instance = EngagementService();
   static const String _baseUrl =
       'https://blueviolet-viper-439935.hostingersite.com/api/v1/engagement';
 
-  // Cache of UUIDs tracked in the current session to prevent redundant POST calls.
+  final http.Client _client;
+  final Future<String?> Function() _tokenProvider;
   final Set<String> _trackedUuids = <String>{};
+  final Map<String, Future<bool>> _tracking = <String, Future<bool>>{};
 
-  /// Constructs common headers with authentication token if available.
   Future<Map<String, String>> _buildHeaders() async {
-    final headers = <String, String>{
-      'Accept': 'application/json',
-    };
+    final headers = <String, String>{'Accept': 'application/json'};
     try {
-      final token = await AuthService.getToken();
+      final token = await _tokenProvider();
       if (token != null && token.trim().isNotEmpty) {
         headers['Authorization'] = 'Bearer ${token.trim()}';
       }
-    } catch (e) {
-      developer.log('Error reading auth token: $e', name: 'EngagementService');
+    } catch (_) {
+      if (kDebugMode) debugPrint('Engagement: authentication unavailable');
     }
     return headers;
   }
 
-  /// Fetches engagement items for a specific placement key (e.g. "home_top_desktop", "welcome_popup").
+  // Only known non-sensitive scalar metadata may be logged. All other body
+  // contents, including non-JSON and arbitrary text, are redacted by default.
+  void _debugResponse(String operation, http.Response response) {
+    if (!kDebugMode) return;
+    var body = '[REDACTED]';
+    try {
+      final decoded = json.decode(utf8.decode(response.bodyBytes));
+      if (decoded is Map<String, dynamic>) {
+        final safe = <String, Object>{};
+        if (decoded['success'] is bool) safe['success'] = decoded['success'];
+        if (decoded['count'] is int) safe['count'] = decoded['count'];
+        safe['remaining_body'] = '[REDACTED]';
+        body = json.encode(safe);
+      }
+    } catch (_) {
+      // The entire body remains redacted.
+    }
+    debugPrint(
+        'Engagement $operation: status ${response.statusCode}, body: $body');
+  }
+
   Future<List<EngagementItem>> fetchEngagementItems(String placementKey) async {
     try {
       final uri = Uri.parse('$_baseUrl/$placementKey');
-      final headers = await _buildHeaders();
-
-      final response = await http
-          .get(uri, headers: headers)
+      final response = await _client
+          .get(uri, headers: await _buildHeaders())
           .timeout(const Duration(seconds: 10));
-
+      _debugResponse('fetch', response);
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = json.decode(utf8.decode(response.bodyBytes));
         if (decoded is Map<String, dynamic>) {
-          final engagementResponse = EngagementResponse.fromJson(decoded);
-          if (engagementResponse.success && engagementResponse.count > 0) {
-            final items = engagementResponse.data;
+          final result = EngagementResponse.fromJson(decoded);
+          if (result.success && result.count > 0) {
+            final items = result.data;
             items.sort((a, b) => a.displayOrder.compareTo(b.displayOrder));
             return items;
           }
         }
-      } else {
-        developer.log(
-          'Failed to fetch engagement for $placementKey: status ${response.statusCode}',
-          name: 'EngagementService',
-        );
       }
-    } catch (e, stack) {
-      developer.log(
-        'Exception fetching engagement for $placementKey: $e',
-        name: 'EngagementService',
-        error: e,
-        stackTrace: stack,
-      );
+    } catch (_) {
+      if (kDebugMode) debugPrint('Engagement fetch failed');
     }
     return <EngagementItem>[];
   }
 
-  /// Sends a track-view POST request when an item becomes visible on screen.
-  Future<bool> trackView(String uuid) async {
-    if (uuid.trim().isEmpty) return false;
-    if (_trackedUuids.contains(uuid)) {
-      return true; // Already tracked during this session
-    }
-
-    _trackedUuids.add(uuid);
-
-    try {
-      final uri = Uri.parse('$_baseUrl/$uuid/track-view');
-      final headers = await _buildHeaders();
-      headers['Content-Type'] = 'application/json';
-
-      final response = await http
-          .post(uri, headers: headers)
-          .timeout(const Duration(seconds: 8));
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        developer.log('Successfully tracked view for $uuid', name: 'EngagementService');
-        return true;
-      } else {
-        developer.log(
-          'Failed tracking view for $uuid (status ${response.statusCode})',
-          name: 'EngagementService',
-        );
+  /// Concurrent callers share a request; failed views may be retried.
+  Future<bool> trackView(String uuid) {
+    if (uuid.trim().isEmpty) return Future.value(false);
+    if (_trackedUuids.contains(uuid)) return Future.value(true);
+    return _tracking.putIfAbsent(uuid, () async {
+      try {
+        final uri = Uri.parse('$_baseUrl/$uuid/track-view');
+        final headers = await _buildHeaders();
+        headers['Content-Type'] = 'application/json';
+        final response = await _client
+            .post(uri, headers: headers)
+            .timeout(const Duration(seconds: 8));
+        _debugResponse('track-view', response);
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          _trackedUuids.add(uuid);
+          return true;
+        }
+      } catch (_) {
+        if (kDebugMode) debugPrint('Engagement track-view failed');
+      } finally {
+        _tracking.remove(uuid);
       }
-    } catch (e) {
-      developer.log('Error tracking view for $uuid: $e', name: 'EngagementService');
-    }
-    return false;
+      return false;
+    });
   }
 
-  /// Executes the action configured on an engagement item.
   Future<void> executeAction(
     BuildContext context,
     EngagementAction? action, {
     void Function(String route)? onNavigateRoute,
   }) async {
     if (action == null) return;
-
     final type = action.type.trim().toLowerCase();
-
     if (type == 'url') {
       final rawUrl = action.url?.trim();
       if (rawUrl != null && rawUrl.isNotEmpty) {
@@ -122,25 +123,20 @@ class EngagementService {
           if (await canLaunchUrl(uri)) {
             await launchUrl(uri, mode: LaunchMode.externalApplication);
           }
-        } catch (e) {
-          developer.log('Could not launch URL $rawUrl: $e', name: 'EngagementService');
+        } catch (_) {
+          if (kDebugMode) debugPrint('Engagement URL action failed');
         }
       }
     } else if (type == 'screen') {
-      final screenTarget = (action.screen ?? action.url)?.trim();
-      if (screenTarget != null && screenTarget.isNotEmpty) {
-        if (onNavigateRoute != null) {
-          // Normalize route target (remove leading slash if present, or match home screen route keys)
-          final normalizedRoute = screenTarget.startsWith('/')
-              ? screenTarget.substring(1)
-              : screenTarget;
-          onNavigateRoute(normalizedRoute);
-        } else {
-          try {
-            Navigator.of(context).pushNamed(screenTarget);
-          } catch (e) {
-            developer.log('Could not navigate to $screenTarget: $e', name: 'EngagementService');
-          }
+      final target = (action.screen ?? action.url)?.trim();
+      if (target == null || target.isEmpty || !context.mounted) return;
+      if (onNavigateRoute != null) {
+        onNavigateRoute(target.startsWith('/') ? target.substring(1) : target);
+      } else {
+        try {
+          Navigator.of(context).pushNamed(target);
+        } catch (_) {
+          if (kDebugMode) debugPrint('Engagement screen action failed');
         }
       }
     }

@@ -128,6 +128,11 @@ class EngagementItem {
   final EngagementAction? action;
   final int displayOrder;
 
+  /// Some responses omit placement; if supplied it must agree with the request.
+  bool matchesPlacementAndType(String placementKey, String expectedType) =>
+      type.trim().toLowerCase() == expectedType &&
+      (placement.trim().isEmpty || placement.trim() == placementKey);
+
   const EngagementItem({
     required this.id,
     required this.uuid,

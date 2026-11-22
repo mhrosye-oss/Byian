@@ -9,8 +9,9 @@ import '../ai/screens/ai_chat_screen.dart';
 import '../asma/screens/asma_screen.dart';
 import '../audio/screens/audio_quran_screen.dart';
 import '../calendar/screens/hijri_calendar_screen.dart';
+import '../engagement/data/services/engagement_service.dart';
 import '../engagement/presentation/widgets/banner_slider_widget.dart';
-import '../engagement/presentation/widgets/dynamic_popup_widget.dart';
+import '../engagement/presentation/widgets/engagement_popup_widget.dart';
 import '../fazakkir/presentation/screens/fazakkir_dashboard_screen.dart';
 import '../gamification/presentation/widgets/journey_banner.dart';
 import '../hadiths/screens/hadiths_screen.dart';
@@ -44,7 +45,10 @@ import 'widgets/itqan_bottom_nav_bar.dart';
 import 'widgets/next_prayer_banner.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.engagementService, this.popupSession});
+
+  final EngagementService? engagementService;
+  final EngagementPopupSession? popupSession;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -54,18 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      DynamicPopupWidget.showIfAvailable(
-        context,
-        placementKey: 'welcome_popup',
-        onNavigateRoute: (route) => _open(context, route),
-      );
-    });
-  }
 
   @override
   void dispose() {
@@ -387,7 +379,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 s.subtitle.toLowerCase().contains(q);
           }).toList();
 
-    return Scaffold(
+    final scaffold = Scaffold(
       key: _scaffoldKey,
       drawer: const CustomDrawer(),
       backgroundColor: ItqanColors.cream,
@@ -409,6 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Banners (home_top_desktop) - Between NextPrayerBanner and JourneyBanner
                   BannerSliderWidget(
                     placementKey: 'home_top_desktop',
+                    service: widget.engagementService,
                     onNavigateRoute: (route) => _open(context, route),
                     padding: const EdgeInsets.only(top: 18),
                   ),
@@ -477,6 +470,12 @@ class _HomeScreenState extends State<HomeScreen> {
         onOpenTasbih: () => _open(context, 'tasbih'),
         onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
       ),
+    );
+    return EngagementPopupWidget(
+      service: widget.engagementService,
+      session: widget.popupSession,
+      onNavigateRoute: (route) => _open(context, route),
+      child: scaffold,
     );
   }
 
