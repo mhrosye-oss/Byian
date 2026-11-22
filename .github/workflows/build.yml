@@ -31,10 +31,8 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'
           channel: stable
           cache: true
-          cache-key: flutter-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
 
       - name: Get dependencies
         run: flutter pub get
@@ -44,6 +42,15 @@ jobs:
 
       - name: Run Flutter tests
         run: flutter test
+
+      - name: Run Android startup smoke test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: flutter test integration_test/app_startup_test.dart -d emulator-5554
 
       - name: Build release APKs
         run: flutter build apk --release --split-per-abi
