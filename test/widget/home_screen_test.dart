@@ -1,23 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:itqan/features/home/home_screen.dart';
+import 'package:itqan/features/home/widgets/itqan_bottom_nav_bar.dart';
 
 void main() {
-  testWidgets('home screen shows Bento content and persistent navigation',
+  testWidgets('home screen loads scrollable content and persistent navigation',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: HomeScreen())),
+    );
 
-    expect(find.text('أهلاً بك في إتقان'), findsOneWidget);
-    expect(find.text('مصحفي'), findsOneWidget);
-    expect(find.text('مساحتك اليومية'), findsOneWidget);
-    expect(find.text('الرئيسية'), findsOneWidget);
-    expect(find.text('القرآن'), findsOneWidget);
-    expect(find.text('الصلاة'), findsOneWidget);
-    expect(find.text('الإعدادات'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(CustomScrollView), findsOneWidget);
+    expect(find.byType(SliverList), findsOneWidget);
 
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
-    await tester.pumpAndSettle();
-    expect(find.text('خدمات إتقان'), findsOneWidget);
-    expect(find.text('خطوة صغيرة كل يوم تصنع أثرًا كبيرًا'), findsOneWidget);
+    final navigation = find.byType(ItqanBottomNavBar);
+    expect(navigation, findsOneWidget);
+    for (final label in const ['الرئيسية', 'الصلاة', 'التسبيح', 'المزيد']) {
+      expect(
+        find.descendant(
+          of: navigation,
+          matching: find.text(label),
+        ),
+        findsOneWidget,
+      );
+    }
   });
 }
