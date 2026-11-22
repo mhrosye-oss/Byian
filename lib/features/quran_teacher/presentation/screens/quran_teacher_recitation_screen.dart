@@ -1,18 +1,18 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/typography.dart';
 import '../../../../core/ui/base_widgets.dart';
 import '../../../quran/models/ayah.dart';
 import '../../../quran/services/quran_service.dart';
 import '../../data/audio/audio_player_service.dart';
-import '../../data/audio/engine/asr_engine.dart';
-import '../../data/audio/engine/no_op_asr_engine.dart';
 
 /// شاشة "سمّع لي" – تسجيل التلاوة، الاستماع إليها، والتحقق من الحفظ
 class QuranTeacherRecitationScreen extends ConsumerStatefulWidget {
@@ -28,7 +28,6 @@ class _QuranTeacherRecitationScreenState
   final QuranService _quranService = QuranService();
   final AudioRecorder _recorder = AudioRecorder();
   final AudioPlayerService _audioPlaybackService = AudioPlayerService();
-  final AsrEngine _asrEngine = NoOpAsrEngine();
 
   List<Surah> _surahs = [];
   Surah? _selectedSurah;
@@ -61,7 +60,9 @@ class _QuranTeacherRecitationScreenState
   }
 
   void _setupPlaybackListener() {
-    _playbackSubscription = _audioPlaybackService.playerStateStream.listen((state) {
+    _playbackSubscription = _audioPlaybackService.playerStateStream.listen((
+      state,
+    ) {
       if (mounted) {
         setState(() {
           _isPlayingRecorded = state.playing;
@@ -73,7 +74,8 @@ class _QuranTeacherRecitationScreenState
   Future<void> _checkDisclaimerAndLoadSurahs() async {
     try {
       final settingsBox = await Hive.openBox('settings');
-      final seenDisclaimer = settingsBox.get('seen_recitation_disclaimer') == true;
+      final seenDisclaimer =
+          settingsBox.get('seen_recitation_disclaimer') == true;
       if (!seenDisclaimer && mounted) {
         Navigator.of(context).pushReplacementNamed('/recitation_intro');
         return;
@@ -103,29 +105,29 @@ class _QuranTeacherRecitationScreenState
   }
 
   Future<void> _startRecording() async {
-    // إيقاف أي استماع سابق
-    await _audioPlaybackService.stop();
-    if (mounted) {
-      setState(() {
-        _recordedFilePath = null;
-        _recordingSeconds = 0;
-      });
-    }
-
-    // فحص إذن الميكروفون فقط عند الضغط
-    final hasPermission = await _recorder.hasPermission();
-    if (!hasPermission) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى منح إذن استخدام الميكروفون لتتمكن من التسميع والتسجيل.'),
-          backgroundColor: ItqanColors.roseGold,
-        ),
-      );
-      return;
-    }
-
     try {
+      await _audioPlaybackService.stop();
+      if (mounted) {
+        setState(() {
+          _recordedFilePath = null;
+          _recordingSeconds = 0;
+        });
+      }
+
+      final hasPermission = await _recorder.hasPermission();
+      if (!mounted) return;
+      if (!hasPermission) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'يرجى منح إذن استخدام الميكروفون لتتمكن من التسميع والتسجيل.',
+            ),
+            backgroundColor: ItqanColors.roseGold,
+          ),
+        );
+        return;
+      }
+
       final tempDir = await getTemporaryDirectory();
       final path =
           '${tempDir.path}/recitation_${DateTime.now().millisecondsSinceEpoch}.m4a';
@@ -139,6 +141,10 @@ class _QuranTeacherRecitationScreenState
         path: path,
       );
 
+      if (!mounted) {
+        await _recorder.stop();
+        return;
+      }
       setState(() {
         _isRecording = true;
       });
@@ -201,10 +207,22 @@ class _QuranTeacherRecitationScreenState
     setState(() => _isAnalyzing = true);
 
     try {
-      // استدعاء محرك ASR الحقيقي
-      final result = await _asrEngine
-          .recognize(_recordedFilePath!)
-          .timeout(const Duration(seconds: 30));
+      final selectedSurah = _selectedSurah;
+      if (selectedSurah == null) {
+        throw StateError('يرجى اختيار سورة قبل حفظ جلسة التسميع.');
+      }
+      final ayahs = await _quranService.getAyahs(selectedSurah.number);
+      final expectedText = ayahs
+          .where(
+            (ayah) =>
+                ayah.ayahNumber >= _targetStartAyah &&
+                ayah.ayahNumber <= _targetEndAyah,
+          )
+          .map((ayah) => ayah.textUthmani)
+          .join(' ');
+      if (expectedText.isEmpty) {
+        throw StateError('تعذر تحميل نص الآيات من بيانات القرآن المحلية.');
+      }
 
       // حفظ جلسة التسميع في Hive
       final box = await Hive.openBox('quran_teacher_recitation');
@@ -219,7 +237,8 @@ class _QuranTeacherRecitationScreenState
         'masteryLevel': 'تسميع صوتي',
         'isRevision': true,
         'timestamp': timestamp,
-        'nextReviewDate': DateTime.now().add(const Duration(days: 2)).toIso8601String(),
+        'nextReviewDate':
+            DateTime.now().add(const Duration(days: 2)).toIso8601String(),
       });
       final recordData = {
         'surah': _selectedSurah?.number ?? 1,
@@ -227,9 +246,9 @@ class _QuranTeacherRecitationScreenState
         'startAyah': _targetStartAyah,
         'endAyah': _targetEndAyah,
         'audioPath': _recordedFilePath,
-        'engineUnavailable': result.engineUnavailable,
-        'transcript': result.transcript,
-        'expectedText': result.expectedText ?? 'تلاوة ${_selectedSurah?.nameArabic} الآيات ($_targetStartAyah - $_targetEndAyah)',
+        'engineUnavailable': true,
+        'transcript': null,
+        'expectedText': expectedText,
         'timestamp': timestamp,
         'revisionScheduled': true,
       };
@@ -271,7 +290,10 @@ class _QuranTeacherRecitationScreenState
           actions: [
             IconButton(
               tooltip: 'تنويه التسميع',
-              icon: const Icon(Icons.info_outline_rounded, color: ItqanColors.emerald),
+              icon: const Icon(
+                Icons.info_outline_rounded,
+                color: ItqanColors.emerald,
+              ),
               onPressed: () {
                 Navigator.of(context).pushNamed('/recitation_intro');
               },
@@ -336,13 +358,27 @@ class _QuranTeacherRecitationScreenState
                   isExpanded: true,
                   decoration: InputDecoration(
                     labelText: 'السورة',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                   ),
-                  items: _surahs.map((s) => DropdownMenuItem(
-                    value: s,
-                    child: Text(s.nameArabic, style: const TextStyle(fontFamily: ItqanTypography.arabicFont)),
-                  )).toList(),
+                  items: _surahs
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(
+                            s.nameArabic,
+                            style: const TextStyle(
+                              fontFamily: ItqanTypography.arabicFont,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
                   onChanged: (s) {
                     if (s != null) {
                       setState(() {
@@ -361,18 +397,27 @@ class _QuranTeacherRecitationScreenState
                     initialValue: _targetStartAyah,
                     decoration: InputDecoration(
                       labelText: 'من آية',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 8,
+                      ),
                     ),
                     items: List.generate(
                       _selectedSurah!.ayahCount,
-                      (i) => DropdownMenuItem(value: i + 1, child: Text('${i + 1}')),
+                      (i) => DropdownMenuItem(
+                        value: i + 1,
+                        child: Text('${i + 1}'),
+                      ),
                     ),
                     onChanged: (val) {
                       if (val != null) {
                         setState(() {
                           _targetStartAyah = val;
-                          if (_targetEndAyah < _targetStartAyah) _targetEndAyah = _targetStartAyah;
+                          if (_targetEndAyah < _targetStartAyah)
+                            _targetEndAyah = _targetStartAyah;
                         });
                       }
                     },
@@ -384,8 +429,13 @@ class _QuranTeacherRecitationScreenState
                     initialValue: _targetEndAyah,
                     decoration: InputDecoration(
                       labelText: 'إلى آية',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 8,
+                      ),
                     ),
                     items: List.generate(
                       _selectedSurah!.ayahCount - _targetStartAyah + 1,
@@ -449,7 +499,9 @@ class _QuranTeacherRecitationScreenState
               color: _isRecording ? ItqanColors.roseGold : ItqanColors.emerald,
               boxShadow: [
                 BoxShadow(
-                  color: (_isRecording ? ItqanColors.roseGold : ItqanColors.emerald)
+                  color: (_isRecording
+                          ? ItqanColors.roseGold
+                          : ItqanColors.emerald)
                       .withValues(alpha: 0.35),
                   blurRadius: _isRecording ? 24 : 14,
                   spreadRadius: _isRecording ? 4 : 0,
@@ -480,19 +532,27 @@ class _QuranTeacherRecitationScreenState
           Row(
             children: [
               IconButton.filledTonal(
-                tooltip: _isPlayingRecorded ? 'إيقاف الاستماع' : 'استمع لتسجيلك',
+                tooltip:
+                    _isPlayingRecorded ? 'إيقاف الاستماع' : 'استمع لتسجيلك',
                 style: IconButton.styleFrom(
                   backgroundColor: ItqanColors.emerald.withValues(alpha: 0.15),
                   foregroundColor: ItqanColors.emerald,
                 ),
-                icon: Icon(_isPlayingRecorded ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                icon: Icon(
+                  _isPlayingRecorded
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                ),
                 onPressed: _togglePlayback,
               ),
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
                   'استمع إلى تلاوتك المسجلة للتحقق من وضوح الصوت',
-                  style: TextStyle(fontFamily: ItqanTypography.uiFont, fontSize: 13),
+                  style: TextStyle(
+                    fontFamily: ItqanTypography.uiFont,
+                    fontSize: 13,
+                  ),
                 ),
               ),
               TextButton(
@@ -516,17 +576,24 @@ class _QuranTeacherRecitationScreenState
               style: FilledButton.styleFrom(
                 backgroundColor: ItqanColors.emerald,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               icon: _isAnalyzing
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
                     )
                   : const Icon(Icons.analytics_rounded, size: 20),
               label: Text(
-                _isAnalyzing ? 'جاري التحقق من التسميع...' : 'تحليل التسميع وعرض النتيجة',
+                _isAnalyzing
+                    ? 'جاري حفظ جلسة التسميع...'
+                    : 'حفظ التسجيل وعرض النتيجة',
                 style: const TextStyle(
                   fontFamily: ItqanTypography.uiFont,
                   fontSize: 15,

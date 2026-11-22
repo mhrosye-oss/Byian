@@ -30,13 +30,11 @@ class GoogleAuthService {
   static Future<void> ensureInitialized() async {
     if (_initialized) return;
     try {
-      await GoogleSignIn.instance.initialize(
-        serverClientId: serverClientId,
-      );
+      await GoogleSignIn.instance.initialize(serverClientId: serverClientId);
       _initialized = true;
     } catch (e) {
       debugPrint('GoogleSignIn initialize warning: $e');
-      _initialized = true;
+      rethrow;
     }
   }
 
@@ -51,6 +49,13 @@ class GoogleAuthService {
 
       final googleAuth = account.authentication;
       final firebaseIdToken = googleAuth.idToken;
+      if (firebaseIdToken == null || firebaseIdToken.isEmpty) {
+        return const GoogleAuthResult(
+          success: false,
+          message:
+              'لم تُرجع Google رمز ID صالحًا. تحقق من إعداد OAuth في Firebase.',
+        );
+      }
 
       return GoogleAuthResult(
         success: true,
