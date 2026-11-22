@@ -37,18 +37,29 @@ class PrayerNotificationService {
   Future<bool> requestPermissions() async {
     await initialize();
 
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android != null) {
-      final notificationsGranted =
-          await android.requestNotificationsPermission();
+      final notificationsGranted = await android
+          .requestNotificationsPermission();
       if (notificationsGranted == false) return false;
-      final exactAlarmsGranted = await android.requestExactAlarmsPermission();
-      return exactAlarmsGranted != false;
+      // Exact alarms are optional for ordinary prayer reminders. Android may
+      // reject this special-access request while inexact notifications can
+      // still be delivered normally.
+      try {
+        await android.requestExactAlarmsPermission();
+      } catch (_) {
+        // Best effort only; ordinary reminders do not depend on this access.
+      }
+      return true;
     }
 
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     if (ios != null) {
       final granted = await ios.requestPermissions(
         alert: true,
@@ -64,11 +75,14 @@ class PrayerNotificationService {
   /// Checks permissions without showing any prompt, including in the worker.
   Future<bool> canSchedulePrayerAlerts() async {
     await initialize();
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android == null) return true;
-    return await android.areNotificationsEnabled() == true &&
-        await android.canScheduleExactNotifications() == true;
+    // Do not block ordinary prayer reminders when Exact Alarm special access
+    // is disabled. The scheduler selects an inexact mode as a fallback.
+    return await android.areNotificationsEnabled() == true;
   }
 
   Future<void> cancelPrayerNotification(int id) async {
@@ -114,8 +128,9 @@ class PrayerNotificationService {
       importance: Importance.max,
       priority: Priority.high,
       playSound: playAzan,
-      sound:
-          playAzan ? const RawResourceAndroidNotificationSound('adhan') : null,
+      sound: playAzan
+          ? const RawResourceAndroidNotificationSound('adhan')
+          : null,
       audioAttributesUsage: AudioAttributesUsage.notification,
     );
     final iosDetails = DarwinNotificationDetails(
@@ -125,13 +140,24 @@ class PrayerNotificationService {
       sound: playAzan ? 'adhan.caf' : null,
     );
 
+    final exactAlarmsAllowed =
+        playAzan &&
+        await _plugin
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >()
+                ?.canScheduleExactNotifications() ==
+            true;
+
     await _plugin.zonedSchedule(
       id,
       playAzan ? 'حان وقت صلاة $prayerName' : 'اقترب وقت صلاة $prayerName',
       playAzan ? 'حيّ على الصلاة' : 'بقي 15 دقيقة على الصلاة',
       tz.TZDateTime.from(at, tz.local),
       NotificationDetails(android: androidDetails, iOS: iosDetails),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: exactAlarmsAllowed
+          ? AndroidScheduleMode.exactAllowWhileIdle
+          : AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
@@ -172,13 +198,17 @@ class PrayerNotificationService {
 
   Future<bool> requestReminderPermissions() async {
     await initialize();
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (android != null) {
       return await android.requestNotificationsPermission() != false;
     }
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     if (ios != null) {
       return await ios.requestPermissions(
             alert: true,
