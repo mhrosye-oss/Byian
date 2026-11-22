@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:itqan/core/localization/app_localizations.dart';
+import 'package:itqan/l10n/app_localizations.dart';
 import 'package:itqan/core/theme/app_theme.dart';
 import 'package:itqan/core/ui/base_widgets.dart';
 import 'package:itqan/features/scoring/models/score_result.dart';
@@ -11,13 +10,8 @@ void main() {
   Widget testApp(Widget child) {
     return MaterialApp(
       theme: AppTheme.light,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [Locale('ar')],
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       locale: const Locale('ar'),
       home: Scaffold(body: child),
     );

@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:itqan/l10n/app_localizations.dart';
 import 'package:itqan/features/home/home_screen.dart';
 
 void main() {
   testWidgets('home screen shows Bento content and persistent navigation',
       (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('ar'),
+          home: const HomeScreen(),
+        ),
+      ),
+    );
 
     expect(find.text('أهلاً بك في إتقان'), findsOneWidget);
     expect(find.text('مصحفي'), findsOneWidget);
